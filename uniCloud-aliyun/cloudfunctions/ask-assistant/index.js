@@ -7,9 +7,13 @@ const DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1";
 const DEEPSEEK_MODEL = "deepseek-chat";
 const DEEPSEEK_TIMEOUT = 30000;
 const RAG_TOP_K = 3;
+const MAX_QUERY_LENGTH = 2000;
+const MAX_HISTORY_TURNS = 6;
+const MAX_HISTORY_CONTENT_LENGTH = 1200;
+const ALLOWED_PROVIDERS = new Set(["deepseek", "openai"]);
 
 exports.main = async (event = {}) => {
-  const session = event.session || {};
+  const session = normalizeSession(event.session || {});
   if (!["student", "teacher", "admin"].includes(session.role) || !session.userId) {
     return { ok: false, message: "Login is required." };
   }
@@ -17,6 +21,9 @@ exports.main = async (event = {}) => {
   const query = String(event.query || event.question || "").trim();
   if (!query) {
     return { ok: false, message: "Question is required." };
+  }
+  if (query.length > MAX_QUERY_LENGTH) {
+    return { ok: false, message: `Question cannot exceed ${MAX_QUERY_LENGTH} characters.` };
   }
 
   // Handle model listing request
@@ -40,15 +47,15 @@ exports.main = async (event = {}) => {
     { role: "user", content: query },
   ];
 
-  const userSettings = event.apiSettings || {};
+  const userSettings = normalizeApiSettings(event.apiSettings || {});
   const apiKey = userSettings.apiKey || getEnv("DEEPSEEK_API_KEY");
-  const provider = userSettings.provider || "deepseek";
+  const provider = userSettings.provider;
   const baseUrl = provider === "openai"
     ? "https://api.openai.com/v1"
     : DEEPSEEK_BASE_URL;
-  const model = userSettings.model || DEEPSEEK_MODEL;
-  const temperature = Number(userSettings.temperature ?? 0.7);
-  const maxTokens = Number(userSettings.maxTokens ?? 2048);
+  const model = userSettings.model;
+  const temperature = userSettings.temperature;
+  const maxTokens = userSettings.maxTokens;
   const citations = topHits.map((h) => ({ knowledge_base_id: h._id, title: h.title || "" }));
 
   if (!apiKey) {
@@ -319,9 +326,9 @@ async function enrichContext(session) {
 }
 
 async function listModels(event) {
-  const userSettings = event.apiSettings || {};
+  const userSettings = normalizeApiSettings(event.apiSettings || {});
   const apiKey = userSettings.apiKey || getEnv("DEEPSEEK_API_KEY");
-  const provider = userSettings.provider || "deepseek";
+  const provider = userSettings.provider;
   const baseUrl = provider === "openai"
     ? "https://api.openai.com/v1"
     : DEEPSEEK_BASE_URL;
@@ -362,9 +369,13 @@ function getEnv(name) {
 function buildHistoryMessages(history) {
   if (!Array.isArray(history)) return [];
   return history
-    .slice(-10)
+    .slice(-MAX_HISTORY_TURNS)
     .filter((item) => item && (item.role === "user" || item.role === "assistant"))
-    .map((item) => ({ role: item.role, content: item.content }));
+    .map((item) => ({
+      role: item.role,
+      content: String(item.content || "").slice(0, MAX_HISTORY_CONTENT_LENGTH),
+    }))
+    .filter((item) => item.content);
 }
 
 function findTopMatches(rows, query, keywords, topK) {
@@ -458,6 +469,9 @@ async function updateConversation(conversation, query, now) {
 }
 
 async function purgeExpiredAiHistory(now = Date.now()) {
+  if (Math.random() >= 0.02) {
+    return;
+  }
   const cutoff = now - HISTORY_RETENTION_MS;
   await removeOldRows("ai_messages", "created_at", cutoff);
   await removeOldRows("ai_conversations", "updated_at", cutoff);
@@ -490,11 +504,47 @@ function resolveScenario(query) {
 async function readKnowledgeBase() {
   try {
     const result = await db.collection("knowledge_base").limit(300).get();
-    return result.data || [];
+    return (result.data || []).filter((item) => item.status !== "hidden" && item.is_public !== false);
   } catch (error) {
     console.warn("[ask-assistant] knowledge_base read failed.", error);
     return [];
   }
+}
+
+function normalizeSession(session) {
+  const normalized = { ...session };
+  normalized.userId = normalizeCloudUserId(normalized.userId || normalized.uid || normalized.user_id || "");
+  normalized.role = String(normalized.role || "").trim();
+  normalized.displayName = String(normalized.displayName || normalized.display_name || "").slice(0, 80);
+  return normalized;
+}
+
+function normalizeCloudUserId(userId) {
+  const value = String(userId || "").trim();
+  if (/^u_student_/i.test(value)) return `user_s_${value.slice("u_student_".length)}`;
+  if (/^student_/i.test(value)) return `user_s_${value.slice("student_".length)}`;
+  if (/^u_teacher_/i.test(value)) return `user_t_${value.slice("u_teacher_".length)}`;
+  if (/^teacher_/i.test(value)) return `user_t_${value.slice("teacher_".length)}`;
+  if (/^u_admin_/i.test(value)) return `user_admin_${value.slice("u_admin_".length)}`;
+  return value;
+}
+
+function normalizeApiSettings(settings) {
+  const provider = ALLOWED_PROVIDERS.has(String(settings.provider || "").trim())
+    ? String(settings.provider || "").trim()
+    : "deepseek";
+  const model = String(settings.model || DEEPSEEK_MODEL).trim().slice(0, 80) || DEEPSEEK_MODEL;
+  const rawTemperature = Number(settings.temperature ?? 0.7);
+  const temperature = Number.isFinite(rawTemperature) ? Math.max(0, Math.min(2, rawTemperature)) : 0.7;
+  const rawMaxTokens = Number(settings.maxTokens ?? 2048);
+  const maxTokens = Number.isFinite(rawMaxTokens) ? Math.max(256, Math.min(4096, Math.round(rawMaxTokens))) : 2048;
+  return {
+    provider,
+    model,
+    temperature,
+    maxTokens,
+    apiKey: String(settings.apiKey || "").trim(),
+  };
 }
 
 async function scanCollection(name, limit) {

@@ -45,21 +45,32 @@ export default {
 .nav-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 12rpx;
-  padding: 0 28rpx 20rpx 28rpx;
+  gap: 8px;
+  padding: 0 14px 12px 14px;
 }
 
 .nav-btn {
-  flex: 1;
-  min-width: 140rpx;
-  margin: 0;
-  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: 96px;
+  min-height: 40px;
+  margin: 0 !important;
+  padding: 0 14px !important;
   background: #e2e8f0;
   color: #475569;
-  border-radius: 8rpx;
-  font-size: 26rpx;
-  line-height: 2.5;
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1.25;
   text-align: center;
+  white-space: nowrap;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.nav-btn::after {
+  border: 0;
 }
 
 .nav-btn-active {

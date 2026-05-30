@@ -9,8 +9,8 @@ function normalizeSession(event, context) {
   const session = event.session || {};
   const auth = context.auth || {};
   return {
-    userId: String(session.userId || session.uid || session.user_id || auth.uid || auth.user_id || auth.userId || 'test_user'),
-    role: String(session.role || auth.role || 'student')
+    userId: String(session.userId || session.uid || session.user_id || auth.uid || auth.user_id || auth.userId || '').trim(),
+    role: String(session.role || auth.role || '').trim()
   };
 }
 
@@ -19,7 +19,7 @@ exports.main = async (event = {}, context = {}) => {
   const uid = session.userId;
   const role = session.role;
 
-  if (role !== 'student') {
+  if (!uid || role !== 'student') {
     return { code: 403, message: 'Only students can submit course evaluations', data: null };
   }
 

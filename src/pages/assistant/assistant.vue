@@ -83,7 +83,7 @@
             <text class="composer-tool">+</text>
             <text class="composer-mode">Default</text>
           </view>
-          <button class="primary-btn composer-btn" :loading="loading" @click="ask">↑</button>
+          <button class="primary-btn composer-btn" :loading="loading" @click="ask">&gt;</button>
         </view>
       </view>
     </view>

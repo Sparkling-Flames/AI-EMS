@@ -133,12 +133,25 @@ exports.main = async (event = {}) => {
       coursesById,
     }))
     .sort((left, right) => Number(right.updatedAt || 0) - Number(left.updatedAt || 0));
+  const classSessionViews = classSessions
+    .map((item) => buildClassSessionView(item, {
+      offeringsById,
+      coursesById,
+      majorsById,
+      classroomsById,
+    }))
+    .filter(Boolean)
+    .sort((left, right) => {
+      const dateCompare = String(left.sessionDate || "").localeCompare(String(right.sessionDate || ""));
+      return dateCompare || String(left.startTime || "").localeCompare(String(right.startTime || ""));
+    });
 
   return {
     ok: true,
     data: {
       accounts,
       courses: courseViews,
+      classSessions: classSessionViews,
       materials: materialViews,
       options,
       summary: {
@@ -283,6 +296,8 @@ function buildCourseView(offering, indexes) {
     enrolledCount: Number(offering.enrolled_count || 0),
     selectionStatus: offering.selection_status || "not_started",
     syllabusUrl: offering.syllabus_url || "",
+    scheduleSlots: normalizeScheduleSlots(offering),
+    weeklySessionsCount: Number(offering.weekly_sessions_count || normalizeScheduleSlots(offering).length || 0),
     startDate: offering.course_start_date || "",
     endDate: offering.course_end_date || "",
     classWeekday: Number(offering.class_weekday || 0),
@@ -295,6 +310,53 @@ function buildCourseView(offering, indexes) {
     createdAt: Number(offering.created_at || 0),
     updatedAt: Number(offering.updated_at || 0),
   };
+}
+
+function buildClassSessionView(item, indexes) {
+  const offering = indexes.offeringsById.get(item.course_offering_id) || null;
+  if (!offering) return null;
+  const course = indexes.coursesById.get(offering.course_id) || {};
+  const major = offering.major_id ? indexes.majorsById.get(offering.major_id) : null;
+  const classroomId = item.classroom_id || offering.classroom_id || "";
+  const classroom = classroomId ? indexes.classroomsById.get(classroomId) : null;
+  return {
+    _id: item._id,
+    courseOfferingId: item.course_offering_id || "",
+    courseId: offering.course_id || "",
+    courseCode: course.course_code || "",
+    courseName: [course.course_code || "", course.name || ""].filter(Boolean).join(" ").trim(),
+    majorId: offering.major_id || "",
+    majorName: major ? major.name || major.code || major._id : "",
+    gradeYear: Number(offering.grade_year || 0),
+    classroomId,
+    classroomName: classroom ? classroom.name || [classroom.building, classroom.room_no].filter(Boolean).join("-") || classroom._id : classroomId,
+    weekday: Number(item.weekday || 0),
+    sessionDate: item.session_date || "",
+    startTime: item.start_time || "",
+    endTime: item.end_time || "",
+    sessionStartAt: Number(item.session_start_at || 0),
+    sessionEndAt: Number(item.session_end_at || 0),
+    sequenceNo: Number(item.sequence_no || 0),
+    status: item.status || "scheduled",
+  };
+}
+
+function normalizeScheduleSlots(offering) {
+  const explicit = Array.isArray(offering.schedule_slots) ? offering.schedule_slots : [];
+  const slots = explicit.length ? explicit : [{
+    weekday: offering.class_weekday,
+    startTime: offering.class_start_time,
+    endTime: offering.class_end_time,
+    classroomId: offering.classroom_id,
+  }];
+  return slots
+    .map((slot) => ({
+      weekday: Number(slot.weekday || slot.class_weekday || 0),
+      startTime: slot.startTime || slot.start_time || "",
+      endTime: slot.endTime || slot.end_time || "",
+      classroomId: slot.classroomId || slot.classroom_id || "",
+    }))
+    .filter((slot) => slot.weekday && slot.startTime && slot.endTime && slot.classroomId);
 }
 
 function buildMaterialView(item, indexes) {

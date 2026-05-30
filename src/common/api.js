@@ -25,7 +25,22 @@ const WRITE_FUNCTIONS = new Set([
   "ask-assistant",
 ]);
 
-const CLOUD_STRICT_FUNCTIONS = new Set([]);
+const CLOUD_STRICT_FUNCTIONS = new Set([
+  "save-admin-account",
+  "delete-admin-account",
+  "save-admin-course",
+  "select-course-teacher",
+  "submit-leave",
+  "review-leave",
+  "cancel-leave",
+  "submit-evaluation",
+  "save-course-material",
+  "submit-profile-change",
+  "review-profile-change",
+  "submit-attendance-checkin",
+  "save-attendance-records",
+  "ask-assistant",
+]);
 
 const responseCache = new Map();
 const inFlightReads = new Map();
@@ -1046,6 +1061,7 @@ function getAdminManagementFallback(session) {
     data: {
       accounts: fallbackState.users.map(buildAdminAccountView),
       courses: fallbackState.courses.map(buildAdminCourseView),
+      classSessions: fallbackState.classSessions.map(normalizeClassSessionView),
       materials: fallbackState.materials.map(buildMaterialView),
       options: {
         roles: [
@@ -1231,8 +1247,15 @@ function saveAdminCourseFallback(session, data) {
     return { ok: false, message: "Only administrators can manage courses." };
   }
   const payload = normalizeAdminCoursePayload(data);
-  if (!payload.courseCode || !payload.courseName || !payload.majorId || !payload.gradeYear || !payload.classroomId || !payload.teacherIds.length || !payload.startDate || !payload.endDate || !payload.classStartTime || !payload.classEndTime || !payload.totalSessions) {
-    return { ok: false, message: "Course, major, cohort year, classroom, teacher, dates, class time, and total sessions are required." };
+  if (!payload.courseCode || !payload.courseName || !payload.majorId || !payload.gradeYear || !payload.teacherIds.length || !payload.startDate || !payload.endDate || !payload.totalSessions || !payload.capacity || !payload.scheduleSlots.length) {
+    return { ok: false, message: "Course, major, cohort year, teacher, dates, schedule slots, total sessions, and capacity are required." };
+  }
+  if (!Number.isInteger(payload.capacity) || payload.capacity < 1) {
+    return { ok: false, message: "Capacity must be a positive integer." };
+  }
+  const scheduleValidation = validateAdminSchedulePayload(payload);
+  if (!scheduleValidation.ok) {
+    return scheduleValidation;
   }
 
   const now = Date.now();
@@ -1262,7 +1285,11 @@ function saveAdminCourseFallback(session, data) {
   if (payload.trainingPlanId && (!plan || plan.majorId !== payload.majorId || Number(plan.gradeYear || 0) !== Number(payload.gradeYear || 0))) {
     return { ok: false, message: "Training plan must match the selected major and cohort year." };
   }
-  const classroom = fallbackState.classrooms.find((item) => item._id === payload.classroomId) || null;
+  if (!plan) {
+    return { ok: false, message: "No active training plan matches the selected major and cohort year." };
+  }
+  const primarySlot = payload.scheduleSlots[0];
+  const classroom = fallbackState.classrooms.find((item) => item._id === primarySlot.classroomId) || null;
   if (!classroom) {
     return { ok: false, message: "Classroom was not found." };
   }
@@ -1270,6 +1297,28 @@ function saveAdminCourseFallback(session, data) {
     .map((id) => fallbackState.teachers.find((item) => item._id === id))
     .filter(Boolean)
     .map((item) => item.name || item.teacherNo || item._id);
+  const selectedCount = existing ? countSelectedEnrollmentsForCourseFallback(existing.courseOfferingId) : 0;
+  if (selectedCount > payload.capacity) {
+    return { ok: false, message: `Capacity cannot be lower than current selected student count (${selectedCount}).` };
+  }
+  const proposedCourse = {
+    courseOfferingId: existing ? existing.courseOfferingId : "__new_course_offering__",
+    majorId: payload.majorId,
+    gradeYear: Number(payload.gradeYear || plan.gradeYear || 0),
+    classroomId: primarySlot.classroomId,
+    startDate: payload.startDate,
+    endDate: payload.endDate,
+    scheduleSlots: payload.scheduleSlots,
+    totalSessions: payload.totalSessions,
+  };
+  const proposedSessions = generateFallbackClassSessions(proposedCourse, now);
+  if (proposedSessions.length < payload.totalSessions) {
+    return { ok: false, message: `Date range can only generate ${proposedSessions.length} sessions for the configured schedule slots.` };
+  }
+  const conflict = findFallbackScheduleConflict(proposedSessions, existing ? existing.courseOfferingId : "");
+  if (conflict) {
+    return { ok: false, message: conflict };
+  }
   Object.assign(course, {
     courseId: course.courseId || course._id,
     code: payload.courseCode,
@@ -1280,16 +1329,18 @@ function saveAdminCourseFallback(session, data) {
     majorName: major.name || major.code || major._id,
     trainingPlanId: plan ? plan._id : "",
     gradeYear: Number(payload.gradeYear || plan.gradeYear || 0),
-    classroomId: payload.classroomId,
+    classroomId: primarySlot.classroomId,
     classroomName: classroom.name || [classroom.building, classroom.roomNo].filter(Boolean).join("-") || classroom._id,
     teacherIds: payload.teacherIds,
     teacherNames,
-    schedule: `${weekdayLabel(payload.classWeekday)} ${payload.classStartTime}-${payload.classEndTime}`,
+    schedule: formatAdminScheduleSlots(payload.scheduleSlots),
     startDate: payload.startDate,
     endDate: payload.endDate,
-    classWeekday: payload.classWeekday,
-    classStartTime: payload.classStartTime,
-    classEndTime: payload.classEndTime,
+    classWeekday: primarySlot.weekday,
+    classStartTime: primarySlot.startTime,
+    classEndTime: primarySlot.endTime,
+    scheduleSlots: payload.scheduleSlots,
+    weeklySessionsCount: payload.scheduleSlots.length,
     totalSessions: payload.totalSessions,
     materialUploadDeadlineAt: Date.parse(`${payload.endDate}T23:59:59`),
     credits: payload.credits,
@@ -1801,6 +1852,7 @@ function buildAdminAccountView(user) {
 }
 
 function buildAdminCourseView(course) {
+  const scheduleSlots = normalizeAdminScheduleSlotsFromCourse(course);
   return {
     _id: course.courseOfferingId || course._id,
     courseId: course.courseId || course._id,
@@ -1828,6 +1880,8 @@ function buildAdminCourseView(course) {
     classWeekday: Number(course.classWeekday || 0),
     classStartTime: course.classStartTime || "",
     classEndTime: course.classEndTime || "",
+    scheduleSlots,
+    weeklySessionsCount: Number(course.weeklySessionsCount || scheduleSlots.length || 0),
     totalSessions: Number(course.totalSessions || 0),
     materialUploadDeadlineAt: Number(course.materialUploadDeadlineAt || 0),
     schedule: course.schedule || "",
@@ -1837,6 +1891,8 @@ function buildAdminCourseView(course) {
 }
 
 function normalizeAdminCoursePayload(data) {
+  const scheduleSlots = normalizeAdminScheduleSlots(data);
+  const primarySlot = scheduleSlots[0] || {};
   return {
     courseId: String(data.courseId || "").trim(),
     courseOfferingId: String(data.courseOfferingId || "").trim(),
@@ -1847,21 +1903,98 @@ function normalizeAdminCoursePayload(data) {
     semesterId: String(data.semesterId || "").trim(),
     trainingPlanId: String(data.trainingPlanId || data.training_plan_id || "").trim(),
     gradeYear: Number(data.gradeYear || data.grade_year || 0),
-    classroomId: String(data.classroomId || data.classroom_id || "").trim(),
+    classroomId: String(primarySlot.classroomId || data.classroomId || data.classroom_id || "").trim(),
     sectionNo: String(data.sectionNo || "01").trim(),
     teacherIds: normalizeIdList(data.teacherIds),
     startDate: String(data.startDate || data.courseStartDate || "").trim(),
     endDate: String(data.endDate || data.courseEndDate || "").trim(),
-    classWeekday: Number(data.classWeekday || data.weekday || 1),
-    classStartTime: String(data.classStartTime || data.startTime || "").trim(),
-    classEndTime: String(data.classEndTime || data.endTime || "").trim(),
+    classWeekday: Number(primarySlot.weekday || data.classWeekday || data.weekday || 1),
+    classStartTime: String(primarySlot.startTime || data.classStartTime || data.startTime || "").trim(),
+    classEndTime: String(primarySlot.endTime || data.classEndTime || data.endTime || "").trim(),
+    scheduleSlots,
     totalSessions: Number(data.totalSessions || 0),
     credits: Number(data.credits || 0),
     courseType: String(data.courseType || "major_required").trim(),
     difficultyLevel: Number(data.difficultyLevel || 3),
-    capacity: Number(data.capacity || 50),
+    capacity: Math.max(0, Math.round(Number(
+      data.capacity !== undefined ? data.capacity :
+      data.cpapcity !== undefined ? data.cpapcity :
+      data.capapcity !== undefined ? data.capapcity :
+      0
+    ))),
     status: String(data.status || "active").trim(),
   };
+}
+
+function normalizeAdminScheduleSlots(data) {
+  const explicit = Array.isArray(data.scheduleSlots) ? data.scheduleSlots : Array.isArray(data.schedule_slots) ? data.schedule_slots : [];
+  const source = explicit.length ? explicit : [{
+    weekday: data.classWeekday || data.weekday,
+    startTime: data.classStartTime || data.startTime,
+    endTime: data.classEndTime || data.endTime,
+    classroomId: data.classroomId || data.classroom_id,
+  }];
+  return source
+    .map((slot) => ({
+      weekday: Math.max(1, Math.min(7, Math.round(Number(slot.weekday || slot.class_weekday || 0)))),
+      startTime: String(slot.startTime || slot.start_time || "").trim(),
+      endTime: String(slot.endTime || slot.end_time || "").trim(),
+      classroomId: String(slot.classroomId || slot.classroom_id || "").trim(),
+    }))
+    .filter((slot) => slot.weekday && slot.startTime && slot.endTime && slot.classroomId);
+}
+
+function normalizeAdminScheduleSlotsFromCourse(course) {
+  const source = Array.isArray(course.scheduleSlots) && course.scheduleSlots.length ? course.scheduleSlots : [{
+    weekday: course.classWeekday,
+    startTime: course.classStartTime,
+    endTime: course.classEndTime,
+    classroomId: course.classroomId,
+  }];
+  return source
+    .map((slot) => ({
+      weekday: Number(slot.weekday || 0),
+      startTime: String(slot.startTime || "").trim(),
+      endTime: String(slot.endTime || "").trim(),
+      classroomId: String(slot.classroomId || "").trim(),
+    }))
+    .filter((slot) => slot.weekday && slot.startTime && slot.endTime && slot.classroomId);
+}
+
+function validateAdminSchedulePayload(payload) {
+  if (!Number.isInteger(payload.totalSessions) || payload.totalSessions < 1) {
+    return { ok: false, message: "Total sessions must be a positive integer." };
+  }
+  const startAt = Date.parse(`${payload.startDate}T00:00:00`);
+  const endAt = Date.parse(`${payload.endDate}T23:59:59`);
+  if (!Number.isFinite(startAt) || !Number.isFinite(endAt)) {
+    return { ok: false, message: "Course start date and end date must be valid." };
+  }
+  if (startAt > endAt) {
+    return { ok: false, message: "Start date cannot be later than end date." };
+  }
+  for (const slot of payload.scheduleSlots) {
+    if (!slot.weekday || !slot.startTime || !slot.endTime || !slot.classroomId) {
+      return { ok: false, message: "Every schedule slot must include weekday, start time, end time and classroom." };
+    }
+    if (timeToMinutes(slot.endTime) <= timeToMinutes(slot.startTime)) {
+      return { ok: false, message: "Each schedule slot end time must be later than start time." };
+    }
+  }
+  for (let leftIndex = 0; leftIndex < payload.scheduleSlots.length; leftIndex += 1) {
+    for (let rightIndex = leftIndex + 1; rightIndex < payload.scheduleSlots.length; rightIndex += 1) {
+      const left = payload.scheduleSlots[leftIndex];
+      const right = payload.scheduleSlots[rightIndex];
+      if (left.weekday === right.weekday && timeRangesOverlap(left.startTime, left.endTime, right.startTime, right.endTime)) {
+        return { ok: false, message: "Schedule slots in the same course cannot overlap." };
+      }
+    }
+  }
+  return { ok: true };
+}
+
+function formatAdminScheduleSlots(slots) {
+  return slots.map((slot) => `${weekdayLabel(slot.weekday)} ${slot.startTime}-${slot.endTime}`).join("; ");
 }
 
 function normalizeIdList(value) {
@@ -1873,6 +2006,25 @@ function normalizeIdList(value) {
 
 function weekdayLabel(value) {
   return ["", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][Number(value)] || "Mon";
+}
+
+function timeToMinutes(value) {
+  const parts = String(value || "").split(":").map(Number);
+  if (parts.length < 2 || !Number.isFinite(parts[0]) || !Number.isFinite(parts[1])) {
+    return -1;
+  }
+  return parts[0] * 60 + parts[1];
+}
+
+function timeRangesOverlap(leftStart, leftEnd, rightStart, rightEnd) {
+  return timeToMinutes(leftStart) < timeToMinutes(rightEnd) && timeToMinutes(rightStart) < timeToMinutes(leftEnd);
+}
+
+function formatLocalDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function resolveFallbackSemester(semesters, preferredSemesterId) {
@@ -1904,46 +2056,77 @@ function resolveFallbackSemester(semesters, preferredSemesterId) {
 
 function generateFallbackClassSessions(course, now) {
   const first = new Date(`${course.startDate}T00:00:00`);
-  const targetWeekday = Number(course.classWeekday || 1);
-  const jsTarget = targetWeekday % 7;
-  while (first.getDay() !== jsTarget) {
-    first.setDate(first.getDate() + 1);
-  }
   const end = new Date(`${course.endDate}T23:59:59`);
+  if (Number.isNaN(first.getTime()) || Number.isNaN(end.getTime())) {
+    return [];
+  }
+  const slots = normalizeAdminScheduleSlotsFromCourse(course);
   const sessions = [];
-  for (let index = 0; index < Number(course.totalSessions || 0); index += 1) {
-    const date = new Date(first.getTime() + index * 7 * 24 * 60 * 60 * 1000);
-    if (date.getTime() > end.getTime()) {
-      break;
+  for (let cursor = new Date(first.getTime()); cursor.getTime() <= end.getTime(); cursor.setDate(cursor.getDate() + 1)) {
+    const uniWeekday = cursor.getDay() === 0 ? 7 : cursor.getDay();
+    for (const slot of slots) {
+      if (Number(slot.weekday) !== uniWeekday) {
+        continue;
+      }
+      const sessionDate = formatLocalDate(cursor);
+      sessions.push({
+        _id: `${course.courseOfferingId}_session_pending_${sessions.length + 1}`,
+        courseOfferingId: course.courseOfferingId,
+        course_offering_id: course.courseOfferingId,
+        majorId: course.majorId || "",
+        major_id: course.majorId || "",
+        gradeYear: Number(course.gradeYear || 0),
+        grade_year: Number(course.gradeYear || 0),
+        classroomId: slot.classroomId || "",
+        classroom_id: slot.classroomId || "",
+        sessionDate,
+        session_date: sessionDate,
+        weekday: Number(slot.weekday || 1),
+        startTime: slot.startTime,
+        start_time: slot.startTime,
+        endTime: slot.endTime,
+        end_time: slot.endTime,
+        status: "scheduled",
+        sessionStartAt: Date.parse(`${sessionDate}T${slot.startTime}:00`),
+        session_start_at: Date.parse(`${sessionDate}T${slot.startTime}:00`),
+        sessionEndAt: Date.parse(`${sessionDate}T${slot.endTime}:00`),
+        session_end_at: Date.parse(`${sessionDate}T${slot.endTime}:00`),
+        createdAt: now,
+        created_at: now,
+        updatedAt: now,
+        updated_at: now,
+      });
     }
-    const sessionDate = date.toISOString().slice(0, 10);
-    sessions.push({
+  }
+  return sessions
+    .sort((left, right) => Number(left.sessionStartAt || left.session_start_at || 0) - Number(right.sessionStartAt || right.session_start_at || 0))
+    .slice(0, Number(course.totalSessions || 0))
+    .map((session, index) => ({
+      ...session,
       _id: `${course.courseOfferingId}_session_${index + 1}`,
-      courseOfferingId: course.courseOfferingId,
-      course_offering_id: course.courseOfferingId,
-      classroomId: course.classroomId || "",
-      classroom_id: course.classroomId || "",
-      sessionDate,
-      session_date: sessionDate,
-      weekday: targetWeekday,
-      startTime: course.classStartTime,
-      start_time: course.classStartTime,
-      endTime: course.classEndTime,
-      end_time: course.classEndTime,
       sequenceNo: index + 1,
       sequence_no: index + 1,
-      status: "scheduled",
-      sessionStartAt: Date.parse(`${sessionDate}T${course.classStartTime}:00`),
-      session_start_at: Date.parse(`${sessionDate}T${course.classStartTime}:00`),
-      sessionEndAt: Date.parse(`${sessionDate}T${course.classEndTime}:00`),
-      session_end_at: Date.parse(`${sessionDate}T${course.classEndTime}:00`),
-      createdAt: now,
-      created_at: now,
-      updatedAt: now,
-      updated_at: now,
-    });
+    }));
+}
+
+function findFallbackScheduleConflict(proposedSessions, currentOfferingId) {
+  for (const proposed of proposedSessions) {
+    for (const existing of fallbackState.classSessions) {
+      const existingOfferingId = existing.courseOfferingId || existing.course_offering_id || "";
+      if (currentOfferingId && existingOfferingId === currentOfferingId) continue;
+      if ((existing.sessionDate || existing.session_date) !== (proposed.sessionDate || proposed.session_date)) continue;
+      if (!timeRangesOverlap(proposed.startTime || proposed.start_time, proposed.endTime || proposed.end_time, existing.startTime || existing.start_time, existing.endTime || existing.end_time)) continue;
+      const existingCourse = findCourse(existingOfferingId) || {};
+      const sameCohort = existingCourse.majorId === proposed.majorId && Number(existingCourse.gradeYear || 0) === Number(proposed.gradeYear || 0);
+      const existingClassroomId = existing.classroomId || existing.classroom_id || existingCourse.classroomId || "";
+      const classroomConflict = proposed.classroomId && existingClassroomId && proposed.classroomId === existingClassroomId;
+      if (sameCohort || classroomConflict) {
+        const reason = classroomConflict ? "classroom" : "cohort";
+        return `Schedule conflict (${reason}) on ${proposed.sessionDate} ${proposed.startTime}-${proposed.endTime}.`;
+      }
+    }
   }
-  return sessions;
+  return "";
 }
 
 function enrollCohortStudentsFallback(course, now) {
@@ -2843,11 +3026,21 @@ function normalizeClassSessionView(session) {
   const sessionDate = session.sessionDate || session.session_date || "";
   const startTime = session.startTime || session.start_time || "";
   const endTime = session.endTime || session.end_time || "";
+  const classroomId = session.classroomId || session.classroom_id || course && course.classroomId || "";
+  const classroom = fallbackState.classrooms.find((item) => item._id === classroomId) || {};
   return {
     ...session,
     courseOfferingId,
     course_offering_id: courseOfferingId,
     courseName: buildCourseName(course, courseOfferingId),
+    majorId: session.majorId || session.major_id || course && course.majorId || "",
+    major_id: session.major_id || session.majorId || course && course.majorId || "",
+    majorName: course && course.majorName || "",
+    gradeYear: Number(session.gradeYear || session.grade_year || course && course.gradeYear || 0),
+    grade_year: Number(session.grade_year || session.gradeYear || course && course.gradeYear || 0),
+    classroomId,
+    classroom_id: classroomId,
+    classroomName: session.classroomName || classroom.name || [classroom.building, classroom.roomNo].filter(Boolean).join("-") || course && course.classroomName || "",
     sessionDate,
     session_date: sessionDate,
     startTime,

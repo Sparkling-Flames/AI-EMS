@@ -26,6 +26,8 @@
     "class_weekday": { "bsonType": "int", "description": "1-7, Monday as 1." },
     "class_start_time": { "bsonType": "string", "description": "HH:mm." },
     "class_end_time": { "bsonType": "string", "description": "HH:mm." },
+    "schedule_slots": { "bsonType": "array", "description": "Weekly schedule slots. Each item contains weekday, startTime, endTime, and classroomId." },
+    "weekly_sessions_count": { "bsonType": "int", "description": "Derived from schedule_slots length." },
     "total_sessions": { "bsonType": "int" },
     "material_upload_deadline_at": { "bsonType": "number" },
     "created_at": { "bsonType": "number" },

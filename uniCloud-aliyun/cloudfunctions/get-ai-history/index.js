@@ -4,12 +4,12 @@ const db = uniCloud.database();
 const HISTORY_RETENTION_MS = 60 * 24 * 60 * 60 * 1000;
 
 exports.main = async (event = {}) => {
-  const session = event.session || {};
+  const session = normalizeSession(event.session || {});
   if (!session.userId || !["student", "teacher", "admin"].includes(session.role)) {
     return { ok: false, message: "Login is required." };
   }
 
-  await purgeExpiredAiHistory(Date.now(), event);
+  await purgeExpiredAiHistory(Date.now());
 
   const conversations = await readUserConversations(session.userId);
   const requestedId = String(event.conversationId || "").trim();
@@ -79,16 +79,31 @@ function toMessageView(item) {
   };
 }
 
-async function purgeExpiredAiHistory(now, event = {}) {
-  if (event.skipRetentionCleanup === true) {
-    return;
-  }
+async function purgeExpiredAiHistory(now) {
   if (Math.random() >= 0.02) {
     return;
   }
   const cutoff = now - HISTORY_RETENTION_MS;
   await removeOldRows("ai_messages", "created_at", cutoff);
   await removeOldRows("ai_conversations", "updated_at", cutoff);
+}
+
+function normalizeSession(session) {
+  return {
+    ...session,
+    userId: normalizeCloudUserId(session.userId || session.uid || session.user_id || ""),
+    role: String(session.role || "").trim(),
+  };
+}
+
+function normalizeCloudUserId(userId) {
+  const value = String(userId || "").trim();
+  if (/^u_student_/i.test(value)) return `user_s_${value.slice("u_student_".length)}`;
+  if (/^student_/i.test(value)) return `user_s_${value.slice("student_".length)}`;
+  if (/^u_teacher_/i.test(value)) return `user_t_${value.slice("u_teacher_".length)}`;
+  if (/^teacher_/i.test(value)) return `user_t_${value.slice("teacher_".length)}`;
+  if (/^u_admin_/i.test(value)) return `user_admin_${value.slice("u_admin_".length)}`;
+  return value;
 }
 
 async function removeOldRows(collection, field, cutoff) {

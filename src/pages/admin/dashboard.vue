@@ -92,12 +92,12 @@
 
     <view class="section">
       <text class="section-title">Quick Actions</text>
-      <view class="btn-row">
-        <button class="primary-btn" @click="go('/pages/admin/management')">Management</button>
-        <button class="primary-btn" @click="go('/pages/leave/leave')">Leave Reviews</button>
-        <button class="primary-btn" @click="go('/pages/evaluation/evaluation')">Evaluations</button>
-        <button class="primary-btn" @click="go('/pages/materials/materials')">Materials</button>
-        <button class="primary-btn" @click="go('/pages/assistant/assistant')">Assistant</button>
+      <view class="quick-actions">
+        <button class="primary-btn quick-action-btn" @click="go('/pages/admin/management')">Management</button>
+        <button class="primary-btn quick-action-btn" @click="go('/pages/leave/leave')">Leave Reviews</button>
+        <button class="primary-btn quick-action-btn" @click="go('/pages/evaluation/evaluation')">Evaluations</button>
+        <button class="primary-btn quick-action-btn" @click="go('/pages/materials/materials')">Materials</button>
+        <button class="primary-btn quick-action-btn" @click="go('/pages/assistant/assistant')">Assistant</button>
       </view>
     </view>
   </view>
@@ -173,7 +173,7 @@ export default {
           profileChangeRequests: result.data.profileChangeRequests || [],
           evaluationSummary: result.data.evaluationSummary || [],
           atRiskStudents: result.data.atRiskStudents || [],
-          metrics: result.data.metrics || this.data.metrics
+          metrics: this.normalizeMetrics(result.data.metrics)
         }
         this.sysStats = result.data.systemStats || this.sysStats
         this.lastUpdatedAt = Date.now()
@@ -181,6 +181,15 @@ export default {
     },
     refresh() {
       this.load(true)
+    },
+    normalizeMetrics(metrics = {}) {
+      return {
+        courses: Number(metrics.courses || 0),
+        pendingLeaves: Number(metrics.pendingLeaves || 0),
+        evaluations: Number(metrics.evaluations || 0),
+        profileChanges: Number(metrics.profileChanges || 0),
+        riskStudents: Number(metrics.riskStudents || 0)
+      }
     },
     async reviewLeave(item, decision) {
       const result = await callAiemsFunction('review-leave', {
@@ -254,5 +263,42 @@ export default {
 .compact-btn {
   min-width: 126rpx;
   font-size: 24rpx;
+}
+
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.quick-action-btn {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: auto !important;
+  min-width: 112px !important;
+  max-width: none;
+  min-height: 40px !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 14px !important;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.quick-action-btn::after {
+  border: 0;
+}
+
+@media (max-width: 700px) {
+  .quick-action-btn {
+    min-width: calc(50% - 5px) !important;
+    max-width: none;
+  }
 }
 </style>

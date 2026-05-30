@@ -9,8 +9,15 @@ exports.main = async (event = {}) => {
   }
 
   const payload = normalizePayload(event);
-  if (!payload.courseCode || !payload.courseName || !payload.majorId || !payload.sectionNo || !payload.teacherIds.length || !payload.capacity || !payload.gradeYear || !payload.classroomId || !payload.courseStartDate || !payload.courseEndDate || !payload.classStartTime || !payload.classEndTime || !payload.totalSessions) {
+  if (!payload.courseCode || !payload.courseName || !payload.majorId || !payload.sectionNo || !payload.teacherIds.length || !payload.capacity || !payload.gradeYear || !payload.courseStartDate || !payload.courseEndDate || !payload.totalSessions || !payload.scheduleSlots.length) {
     return { ok: false, message: "Course code, major, cohort year, classroom, teachers, dates, class time, total sessions, and capacity are required." };
+  }
+  if (!Number.isInteger(payload.capacity) || payload.capacity < 1) {
+    return { ok: false, message: "Capacity must be a positive integer." };
+  }
+  const scheduleValidation = validateSchedulePayload(payload);
+  if (!scheduleValidation.ok) {
+    return { ok: false, message: scheduleValidation.message };
   }
 
   const [courses, offerings, teachers, departments, semesters, materials, trainingPlans, majors, students, enrollments, classSessions, classrooms] = await Promise.all([
@@ -87,9 +94,41 @@ exports.main = async (event = {}) => {
   if (payload.trainingPlanId && (!trainingPlan || trainingPlan.major_id !== payload.majorId || Number(trainingPlan.grade_year || 0) !== Number(payload.gradeYear || 0))) {
     return { ok: false, message: "Training plan must match the selected major and cohort year." };
   }
+  if (!trainingPlan) {
+    return { ok: false, message: "No active training plan matches the selected major and cohort year." };
+  }
   const classroom = classroomMap.get(payload.classroomId);
   if (!classroom) {
     return { ok: false, message: "Classroom was not found." };
+  }
+  if (currentOffering) {
+    const selectedCount = countSelectedEnrollments(enrollments.filter((item) => item.course_offering_id === currentOffering._id));
+    if (selectedCount > payload.capacity) {
+      return { ok: false, message: `Capacity cannot be lower than current selected student count (${selectedCount}).` };
+    }
+  }
+  const proposedOfferingForValidation = {
+    _id: currentOffering ? currentOffering._id : "__new_course_offering__",
+    major_id: payload.majorId,
+    grade_year: payload.gradeYear,
+    classroom_id: payload.scheduleSlots[0].classroomId,
+    course_start_date: payload.courseStartDate,
+    course_end_date: payload.courseEndDate,
+    schedule_slots: payload.scheduleSlots,
+    total_sessions: payload.totalSessions,
+  };
+  const proposedSessions = generateClassSessions(proposedOfferingForValidation, Date.now());
+  if (proposedSessions.length < payload.totalSessions) {
+    return { ok: false, message: `Date range and schedule slots can generate only ${proposedSessions.length} session(s), fewer than total sessions ${payload.totalSessions}.` };
+  }
+  const conflict = findScheduleConflict({
+    proposedSessions,
+    currentOfferingId: currentOffering ? currentOffering._id : "",
+    classSessions,
+    offerings,
+  });
+  if (conflict) {
+    return { ok: false, message: conflict };
   }
 
   const now = Date.now();
@@ -152,7 +191,7 @@ exports.main = async (event = {}) => {
   savedOffering.major_id = payload.majorId;
   savedOffering.training_plan_id = trainingPlan ? trainingPlan._id : "";
   savedOffering.grade_year = payload.gradeYear || Number(trainingPlan && trainingPlan.grade_year || 0);
-  savedOffering.classroom_id = payload.classroomId;
+  savedOffering.classroom_id = payload.scheduleSlots[0].classroomId;
   savedOffering.section_no = payload.sectionNo;
   savedOffering.teacher_ids = payload.teacherIds.slice();
   savedOffering.capacity = payload.capacity;
@@ -160,9 +199,11 @@ exports.main = async (event = {}) => {
   savedOffering.syllabus_url = payload.syllabusUrl;
   savedOffering.course_start_date = payload.courseStartDate;
   savedOffering.course_end_date = payload.courseEndDate;
-  savedOffering.class_weekday = payload.classWeekday;
-  savedOffering.class_start_time = payload.classStartTime;
-  savedOffering.class_end_time = payload.classEndTime;
+  savedOffering.schedule_slots = payload.scheduleSlots.map((slot) => ({ ...slot }));
+  savedOffering.weekly_sessions_count = payload.scheduleSlots.length;
+  savedOffering.class_weekday = payload.scheduleSlots[0].weekday;
+  savedOffering.class_start_time = payload.scheduleSlots[0].startTime;
+  savedOffering.class_end_time = payload.scheduleSlots[0].endTime;
   savedOffering.total_sessions = payload.totalSessions;
   savedOffering.material_upload_deadline_at = buildDateTime(payload.courseEndDate, "23:59");
   savedOffering.updated_at = now;
@@ -182,6 +223,8 @@ exports.main = async (event = {}) => {
       syllabus_url: savedOffering.syllabus_url,
       course_start_date: savedOffering.course_start_date,
       course_end_date: savedOffering.course_end_date,
+      schedule_slots: savedOffering.schedule_slots,
+      weekly_sessions_count: savedOffering.weekly_sessions_count,
       class_weekday: savedOffering.class_weekday,
       class_start_time: savedOffering.class_start_time,
       class_end_time: savedOffering.class_end_time,
@@ -205,6 +248,8 @@ exports.main = async (event = {}) => {
       syllabus_url: savedOffering.syllabus_url,
       course_start_date: savedOffering.course_start_date,
       course_end_date: savedOffering.course_end_date,
+      schedule_slots: savedOffering.schedule_slots,
+      weekly_sessions_count: savedOffering.weekly_sessions_count,
       class_weekday: savedOffering.class_weekday,
       class_start_time: savedOffering.class_start_time,
       class_end_time: savedOffering.class_end_time,
@@ -257,6 +302,8 @@ async function readCollection(name, limit = 1000) {
 }
 
 function normalizePayload(event) {
+  const scheduleSlots = normalizeScheduleSlots(event);
+  const primarySlot = scheduleSlots[0] || {};
   return {
     courseId: String(event.courseId || "").trim(),
     courseOfferingId: String(event.courseOfferingId || "").trim(),
@@ -272,10 +319,10 @@ function normalizePayload(event) {
     semesterId: String(event.semesterId || "").trim(),
     trainingPlanId: String(event.trainingPlanId || event.training_plan_id || "").trim(),
     gradeYear: Number(event.gradeYear || event.grade_year || 0),
-    classroomId: String(event.classroomId || event.classroom_id || "").trim(),
+    classroomId: String(primarySlot.classroomId || event.classroomId || event.classroom_id || "").trim(),
     sectionNo: String(event.sectionNo || "").trim(),
     teacherIds: normalizeTeacherIds(event.teacherIds),
-    capacity: Number(event.capacity || 0),
+    capacity: Math.max(0, Math.round(Number(event.capacity || event.cpapcity || event.capapcity || 0))),
     selectionStatus: normalizeSelectionStatus(String(event.selectionStatus || "not_started").trim()),
     syllabusUrl: String(event.syllabusUrl || "").trim(),
     courseStartDate: String(event.courseStartDate || event.startDate || "").trim(),
@@ -283,8 +330,59 @@ function normalizePayload(event) {
     classWeekday: normalizeWeekday(event.classWeekday || event.weekday),
     classStartTime: String(event.classStartTime || event.startTime || "").trim(),
     classEndTime: String(event.classEndTime || event.endTime || "").trim(),
+    scheduleSlots,
     totalSessions: Number(event.totalSessions || 0),
   };
+}
+
+function normalizeScheduleSlots(event) {
+  const explicit = Array.isArray(event.scheduleSlots) ? event.scheduleSlots : Array.isArray(event.schedule_slots) ? event.schedule_slots : [];
+  const source = explicit.length ? explicit : [{
+    weekday: event.classWeekday || event.weekday,
+    startTime: event.classStartTime || event.startTime,
+    endTime: event.classEndTime || event.endTime,
+    classroomId: event.classroomId || event.classroom_id,
+  }];
+  return source
+    .map((slot) => ({
+      weekday: normalizeWeekday(slot.weekday || slot.class_weekday),
+      startTime: String(slot.startTime || slot.start_time || "").trim(),
+      endTime: String(slot.endTime || slot.end_time || "").trim(),
+      classroomId: String(slot.classroomId || slot.classroom_id || "").trim(),
+    }))
+    .filter((slot) => slot.weekday && slot.startTime && slot.endTime && slot.classroomId);
+}
+
+function validateSchedulePayload(payload) {
+  if (!Number.isInteger(payload.totalSessions) || payload.totalSessions < 1) {
+    return { ok: false, message: "Total sessions must be a positive integer." };
+  }
+  const startAt = Date.parse(`${payload.courseStartDate}T00:00:00`);
+  const endAt = Date.parse(`${payload.courseEndDate}T23:59:59`);
+  if (!Number.isFinite(startAt) || !Number.isFinite(endAt)) {
+    return { ok: false, message: "Course start date and end date must be valid." };
+  }
+  if (startAt > endAt) {
+    return { ok: false, message: "Start date cannot be later than end date." };
+  }
+  for (const slot of payload.scheduleSlots) {
+    if (!slot.classroomId || !slot.weekday || !slot.startTime || !slot.endTime) {
+      return { ok: false, message: "Every schedule slot must include weekday, start time, end time and classroom." };
+    }
+    if (timeToMinutes(slot.endTime) <= timeToMinutes(slot.startTime)) {
+      return { ok: false, message: "Each schedule slot end time must be later than start time." };
+    }
+  }
+  for (let leftIndex = 0; leftIndex < payload.scheduleSlots.length; leftIndex += 1) {
+    for (let rightIndex = leftIndex + 1; rightIndex < payload.scheduleSlots.length; rightIndex += 1) {
+      const left = payload.scheduleSlots[leftIndex];
+      const right = payload.scheduleSlots[rightIndex];
+      if (left.weekday === right.weekday && timeRangesOverlap(left.startTime, left.endTime, right.startTime, right.endTime)) {
+        return { ok: false, message: "Schedule slots in the same course cannot overlap." };
+      }
+    }
+  }
+  return { ok: true };
 }
 
 function buildCourseView(input) {
@@ -337,6 +435,8 @@ function buildCourseView(input) {
     enrolledCount: Number(offering.enrolled_count || 0),
     selectionStatus: offering.selection_status || "not_started",
     syllabusUrl: offering.syllabus_url || "",
+    scheduleSlots: normalizeScheduleSlotsFromOffering(offering),
+    weeklySessionsCount: Number(offering.weekly_sessions_count || normalizeScheduleSlotsFromOffering(offering).length || 0),
     startDate: offering.course_start_date || "",
     endDate: offering.course_end_date || "",
     classWeekday: Number(offering.class_weekday || 0),
@@ -386,6 +486,25 @@ function buildDateTime(date, time) {
   return Number.isFinite(timestamp) ? timestamp : 0;
 }
 
+function formatLocalDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function timeToMinutes(value) {
+  const parts = String(value || "").split(":").map(Number);
+  if (parts.length < 2 || !Number.isFinite(parts[0]) || !Number.isFinite(parts[1])) {
+    return -1;
+  }
+  return parts[0] * 60 + parts[1];
+}
+
+function timeRangesOverlap(leftStart, leftEnd, rightStart, rightEnd) {
+  return timeToMinutes(leftStart) < timeToMinutes(rightEnd) && timeToMinutes(rightStart) < timeToMinutes(leftEnd);
+}
+
 function resolveSemester(semesters, preferredSemesterId) {
   const preferredId = String(preferredSemesterId || "").trim();
   if (preferredId) {
@@ -431,35 +550,80 @@ function generateClassSessions(offering, now) {
   if (Number.isNaN(first.getTime()) || Number.isNaN(end.getTime())) {
     return [];
   }
-  const jsTarget = Number(offering.class_weekday || 1) % 7;
-  while (first.getDay() !== jsTarget) {
-    first.setDate(first.getDate() + 1);
-  }
+  const slots = normalizeScheduleSlotsFromOffering(offering);
   const sessions = [];
-  for (let index = 0; index < Number(offering.total_sessions || 0); index += 1) {
-    const date = new Date(first.getTime() + index * 7 * 24 * 60 * 60 * 1000);
-    if (date.getTime() > end.getTime()) {
-      break;
+  for (let cursor = new Date(first.getTime()); cursor.getTime() <= end.getTime(); cursor.setDate(cursor.getDate() + 1)) {
+    const uniWeekday = cursor.getDay() === 0 ? 7 : cursor.getDay();
+    for (const slot of slots) {
+      if (Number(slot.weekday) !== uniWeekday) {
+        continue;
+      }
+      const sessionDate = formatLocalDate(cursor);
+      sessions.push({
+        course_offering_id: offering._id,
+        major_id: offering.major_id || "",
+        grade_year: Number(offering.grade_year || 0),
+        classroom_id: slot.classroomId || "",
+        weekday: Number(slot.weekday || 1),
+        start_time: slot.startTime,
+        end_time: slot.endTime,
+        week_start: 1,
+        week_end: Number(offering.total_sessions || 0),
+        sequence_no: 0,
+        session_date: sessionDate,
+        session_start_at: buildDateTime(sessionDate, slot.startTime),
+        session_end_at: buildDateTime(sessionDate, slot.endTime),
+        status: "scheduled",
+        created_at: now,
+        updated_at: now,
+      });
     }
-    const sessionDate = date.toISOString().slice(0, 10);
-    sessions.push({
-      course_offering_id: offering._id,
-      classroom_id: offering.classroom_id || "",
-      weekday: Number(offering.class_weekday || 1),
-      start_time: offering.class_start_time,
-      end_time: offering.class_end_time,
-      week_start: 1,
-      week_end: Number(offering.total_sessions || 0),
-      sequence_no: index + 1,
-      session_date: sessionDate,
-      session_start_at: buildDateTime(sessionDate, offering.class_start_time),
-      session_end_at: buildDateTime(sessionDate, offering.class_end_time),
-      status: "scheduled",
-      created_at: now,
-      updated_at: now,
-    });
   }
-  return sessions;
+  return sessions
+    .sort((left, right) => Number(left.session_start_at || 0) - Number(right.session_start_at || 0))
+    .slice(0, Number(offering.total_sessions || 0))
+    .map((session, index) => ({ ...session, sequence_no: index + 1 }));
+}
+
+function normalizeScheduleSlotsFromOffering(offering) {
+  const explicit = Array.isArray(offering.schedule_slots) ? offering.schedule_slots : [];
+  const slots = explicit.length ? explicit : [{
+    weekday: offering.class_weekday,
+    startTime: offering.class_start_time,
+    endTime: offering.class_end_time,
+    classroomId: offering.classroom_id,
+  }];
+  return slots
+    .map((slot) => ({
+      weekday: Number(slot.weekday || slot.class_weekday || 0),
+      startTime: slot.startTime || slot.start_time || "",
+      endTime: slot.endTime || slot.end_time || "",
+      classroomId: slot.classroomId || slot.classroom_id || "",
+    }))
+    .filter((slot) => slot.weekday && slot.startTime && slot.endTime && slot.classroomId);
+}
+
+function findScheduleConflict({ proposedSessions, currentOfferingId, classSessions, offerings }) {
+  const offeringMap = mapById(offerings);
+  for (const proposed of proposedSessions) {
+    for (const existing of classSessions || []) {
+      if (!existing || existing.status === "cancelled") continue;
+      const existingOfferingId = existing.course_offering_id || "";
+      if (currentOfferingId && existingOfferingId === currentOfferingId) continue;
+      if (existing.session_date !== proposed.session_date) continue;
+      if (!timeRangesOverlap(proposed.start_time, proposed.end_time, existing.start_time, existing.end_time)) continue;
+      const existingOffering = offeringMap.get(existingOfferingId) || {};
+      const sameCohort = existingOffering.major_id === proposed.major_id &&
+        Number(existingOffering.grade_year || 0) === Number(proposed.grade_year || 0);
+      const existingClassroomId = existing.classroom_id || existingOffering.classroom_id || "";
+      const classroomConflict = proposed.classroom_id && existingClassroomId && proposed.classroom_id === existingClassroomId;
+      if (sameCohort || classroomConflict) {
+        const reason = classroomConflict ? "classroom" : "cohort";
+        return `Schedule conflict (${reason}) on ${proposed.session_date} ${proposed.start_time}-${proposed.end_time}.`;
+      }
+    }
+  }
+  return "";
 }
 
 async function enrollCohortStudents(offering, students, enrollments, now) {

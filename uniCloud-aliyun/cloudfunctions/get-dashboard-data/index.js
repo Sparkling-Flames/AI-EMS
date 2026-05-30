@@ -148,6 +148,8 @@ exports.main = async (event = {}) => {
         pendingLeaves: leaveView.filter((item) => item.status === "pending").length,
         evaluations: summary.reduce((sum, item) => sum + Number(item.count || 0), 0),
         attendance: attendanceView.length,
+        profileChanges: 0,
+        riskStudents: session.role === "teacher" ? calculateAtRiskStudentCount(attendanceView) : 0,
       },
       meta: {
         source: "unicloud",
@@ -468,6 +470,15 @@ function buildEvaluationSummary(courses, evaluations) {
       feedback: rows.map((item) => item.feedback).filter(Boolean),
     };
   });
+}
+
+function calculateAtRiskStudentCount(attendanceView) {
+  const counts = {};
+  for (const item of attendanceView || []) {
+    if (item.status !== "absent" || !item.studentId) continue;
+    counts[item.studentId] = (counts[item.studentId] || 0) + 1;
+  }
+  return Object.values(counts).filter((count) => count >= 3).length;
 }
 
 function buildVisibleMaterials({ role, sessionUserId, teacher, studentEnrollmentByOffering, materials, allowedOfferingIds, offeringMap, courseMap, now }) {
