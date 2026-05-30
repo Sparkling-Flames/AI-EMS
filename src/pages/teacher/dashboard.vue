@@ -73,6 +73,50 @@
     </view>
 
     <view class="section">
+      <text class="section-title">Attendance Editor</text>
+      <template v-if="!attendanceCourses.length">
+        <text class="muted">No assigned courses available.</text>
+      </template>
+      <template v-else>
+        <view class="attendance-controls">
+          <view class="field">
+            <text class="label">Course</text>
+            <picker class="picker-shell" :range="attendanceCourseLabels" :value="attendanceCourseIndex" @change="changeAttendanceCourse">
+              <view class="picker-value">{{ attendanceCourseLabels[attendanceCourseIndex] || 'Select course' }}</view>
+            </picker>
+          </view>
+          <view class="field">
+            <text class="label">Class Session</text>
+            <picker class="picker-shell" :range="attendanceSessionLabels" :value="attendanceSessionIndex" @change="changeAttendanceSession">
+              <view class="picker-value">{{ attendanceSessionLabels[attendanceSessionIndex] || 'No sessions' }}</view>
+            </picker>
+          </view>
+        </view>
+        <view class="attendance-list">
+          <view v-for="student in attendanceStudents" :key="student.studentId" class="attendance-row">
+            <view class="student-meta">
+              <text class="value">{{ student.studentName }}</text>
+              <text class="muted">{{ student.studentNo }}</text>
+            </view>
+            <view v-if="attendanceStatus(student) !== 'on_leave'" class="status-options">
+              <button
+                v-for="status in attendanceStatuses"
+                :key="status.value"
+                class="status-option"
+                :class="{ active: attendanceStatus(student) === status.value }"
+                @click="changeAttendanceStatusValue(student, status.value)"
+              >
+                {{ status.label }}
+              </button>
+            </view>
+            <StatusBadge v-else status="on_leave" />
+          </view>
+        </view>
+        <button class="primary-btn full-btn" :loading="savingAttendance" @click="saveAttendance">Save Attendance</button>
+      </template>
+    </view>
+
+    <view class="section">
       <text class="section-title">At-Risk Students</text>
       <text class="section-hint">Absence threshold: 3+ records</text>
       <template v-if="!riskStudents.length">
@@ -134,8 +178,18 @@ export default {
       session: {},
       loading: false,
       savingProfile: false,
+      savingAttendance: false,
       lastUpdatedAt: 0,
       reviewComment: '',
+      attendanceCourseIndex: 0,
+      attendanceSessionIndex: 0,
+      attendanceDrafts: {},
+      attendanceStatuses: [
+        { value: 'present', label: 'Present' },
+        { value: 'late', label: 'Late' },
+        { value: 'absent', label: 'Absent' },
+        { value: 'excused', label: 'Excused' }
+      ],
       profileForm: {
         office: '',
         researchFields: '',
@@ -149,6 +203,8 @@ export default {
       },
       data: {
         courses: [],
+        classSessions: [],
+        courseStudents: [],
         attendance: [],
         leaveRequests: [],
         evaluationSummary: [],
@@ -188,6 +244,34 @@ export default {
     },
     lastUpdatedText() {
       return this.lastUpdatedAt ? 'Updated ' + this.formatTime(this.lastUpdatedAt) : ''
+    },
+    attendanceCourses() {
+      return this.data.courses || []
+    },
+    attendanceCourseLabels() {
+      return this.attendanceCourses.map(course => [course.code, course.name].filter(Boolean).join(' '))
+    },
+    selectedAttendanceCourse() {
+      return this.attendanceCourses[this.attendanceCourseIndex] || null
+    },
+    attendanceSessionsForCourse() {
+      const course = this.selectedAttendanceCourse
+      if (!course) return []
+      return (this.data.classSessions || []).filter(item => item.courseOfferingId === course.courseOfferingId)
+    },
+    attendanceSessionLabels() {
+      return this.attendanceSessionsForCourse.map(item => ['Session ' + item.sequenceNo, item.sessionDate, item.startTime + '-' + item.endTime].filter(Boolean).join(' - '))
+    },
+    selectedAttendanceSession() {
+      return this.attendanceSessionsForCourse[this.attendanceSessionIndex] || null
+    },
+    attendanceStudents() {
+      const course = this.selectedAttendanceCourse
+      if (!course) return []
+      return (this.data.courseStudents || []).filter(item => item.courseOfferingId === course.courseOfferingId)
+    },
+    attendanceStatusLabels() {
+      return this.attendanceStatuses.map(item => item.label)
     }
   },
   onShow() {
@@ -212,6 +296,8 @@ export default {
           ...this.data,
           ...result.data,
           courses: result.data.courses || [],
+          classSessions: result.data.classSessions || [],
+          courseStudents: result.data.courseStudents || [],
           attendance: result.data.attendance || [],
           leaveRequests: result.data.leaveRequests || [],
           evaluationSummary: result.data.evaluationSummary || [],
@@ -228,6 +314,7 @@ export default {
           teachingExperience: this.teacherProfile.teachingExperience || ''
         }
         this.lastUpdatedAt = Date.now()
+        this.normalizeAttendanceSelection()
       }
     },
     refresh() {
@@ -265,8 +352,85 @@ export default {
         uni.showToast({ title: result.message || 'Review failed.', icon: 'none' })
       }
     },
+    normalizeAttendanceSelection() {
+      if (this.attendanceCourseIndex >= this.attendanceCourses.length) this.attendanceCourseIndex = 0
+      if (this.attendanceSessionIndex >= this.attendanceSessionsForCourse.length) this.attendanceSessionIndex = 0
+    },
+    changeAttendanceCourse(event) {
+      this.attendanceCourseIndex = Number(event.detail.value)
+      this.attendanceSessionIndex = 0
+      this.attendanceDrafts = {}
+    },
+    changeAttendanceSession(event) {
+      this.attendanceSessionIndex = Number(event.detail.value)
+      this.attendanceDrafts = {}
+    },
+    attendanceRecord(student) {
+      const session = this.selectedAttendanceSession
+      if (!session) return null
+      return (this.data.attendance || []).find(item =>
+        item.studentId === student.studentId &&
+        item.courseOfferingId === student.courseOfferingId &&
+        item.date === session.sessionDate
+      ) || null
+    },
+    attendanceStatus(student) {
+      const key = student.studentId
+      if (this.attendanceDrafts[key]) return this.attendanceDrafts[key]
+      const record = this.attendanceRecord(student)
+      return record ? record.status : 'present'
+    },
+    attendanceStatusIndex(student) {
+      const status = this.attendanceStatus(student)
+      const index = this.attendanceStatuses.findIndex(item => item.value === status)
+      return index >= 0 ? index : 0
+    },
+    attendanceStatusLabel(status) {
+      const item = this.attendanceStatuses.find(option => option.value === status)
+      return item ? item.label : status
+    },
+    changeAttendanceStatus(student, event) {
+      const option = this.attendanceStatuses[Number(event.detail.value)] || this.attendanceStatuses[0]
+      this.changeAttendanceStatusValue(student, option.value)
+    },
+    changeAttendanceStatusValue(student, status) {
+      this.attendanceDrafts = { ...this.attendanceDrafts, [student.studentId]: status }
+    },
+    async saveAttendance() {
+      const course = this.selectedAttendanceCourse
+      const session = this.selectedAttendanceSession
+      if (!course || !session) {
+        uni.showToast({ title: 'Course and session are required.', icon: 'none' })
+        return
+      }
+      const records = this.attendanceStudents
+        .filter(student => this.attendanceStatus(student) !== 'on_leave')
+        .map(student => ({
+          studentId: student.studentId,
+          status: this.attendanceStatus(student)
+        }))
+      if (!records.length) {
+        uni.showToast({ title: 'No editable students.', icon: 'none' })
+        return
+      }
+      this.savingAttendance = true
+      const result = await callAiemsFunction('save-attendance-records', {
+        session: getSession(),
+        courseOfferingId: course.courseOfferingId,
+        attendanceDate: session.sessionDate,
+        records
+      })
+      this.savingAttendance = false
+      if (result.ok) {
+        uni.showToast({ title: 'Attendance saved', icon: 'success' })
+        this.attendanceDrafts = {}
+        this.load(true)
+        return
+      }
+      uni.showToast({ title: result.message || 'Save failed.', icon: 'none' })
+    },
     courseSubtitle(course) {
-      return [course.schedule, course.credits ? course.credits + ' credits' : ''].filter(Boolean).join(' - ')
+      return [course.schedule, course.credits ? course.credits + ' credits' : '', course.totalSessions ? course.totalSessions + ' sessions' : '', course.materialUploadDeadlineAt ? 'Materials until ' + this.formatDate(course.materialUploadDeadlineAt) : ''].filter(Boolean).join(' - ')
     },
     formatChangeRequest(item) {
       const changes = item.changes || {}
@@ -339,5 +503,98 @@ export default {
   background: #f8fafc;
   border: 1rpx solid #e2e8f0;
   border-radius: 8rpx;
+}
+
+.picker-value {
+  min-height: 44rpx;
+  padding: 18rpx;
+  background: #ffffff;
+  border: 1rpx solid #cbd5e1;
+  border-radius: 8rpx;
+  color: #0f172a;
+  font-size: 28rpx;
+  line-height: 1.5;
+}
+
+.picker-shell {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.attendance-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18rpx;
+  margin-bottom: 16rpx;
+}
+
+.attendance-list {
+  display: grid;
+  gap: 12rpx;
+}
+
+.attendance-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18rpx;
+  padding: 16rpx;
+  background: #f8fafc;
+  border: 1rpx solid #e2e8f0;
+  border-radius: 8rpx;
+}
+
+.student-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+  min-width: 180rpx;
+}
+
+.status-options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8rpx;
+}
+
+.status-option {
+  width: auto !important;
+  min-width: 126rpx !important;
+  margin: 0 !important;
+  padding: 0 18rpx !important;
+  border: 1rpx solid #cbd5e1;
+  border-radius: 8rpx;
+  background: #ffffff;
+  color: #334155;
+  font-size: 24rpx;
+  line-height: 2.2;
+}
+
+.status-option.active {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.compact-picker {
+  min-width: 170rpx;
+  text-align: center;
+}
+
+@media (max-width: 700px) {
+  .attendance-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .attendance-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .status-options {
+    justify-content: flex-start;
+  }
 }
 </style>
