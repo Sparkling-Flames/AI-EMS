@@ -25,7 +25,9 @@
         <view class="score-grid">
           <view v-for="field in scoreFields" :key="field.key" class="field">
             <text class="label">{{ field.label }}</text>
-            <input v-model="scores[field.key]" type="number" />
+            <picker :range="scoreOptions" :value="scoreIndex(field.key)" @change="changeScore(field.key, $event)">
+              <view class="picker-value score-picker">{{ scores[field.key] }} / 5</view>
+            </picker>
           </view>
         </view>
         <view class="field">
@@ -40,27 +42,51 @@
     </view>
 
     <view class="section">
-      <text class="section-title">Aggregated Evaluation Summary</text>
-      <template v-if="!summaries.length">
-        <text class="muted">No evaluation records available.</text>
+      <text class="section-title">Teacher Course Evaluation Reviews</text>
+      <template v-if="!reviewGroups.length">
+        <text class="muted">No teacher course evaluations available.</text>
       </template>
-      <view v-for="item in summaries" :key="item.courseOfferingId || item.courseId" class="card">
-        <view class="summary-head">
-          <view>
-            <text class="value">{{ item.courseName }}</text>
-            <text class="muted">Average {{ item.average }} / 5 - {{ item.count }} response(s)</text>
+      <template v-else>
+        <view class="filter-grid">
+          <view class="field">
+            <text class="label">Teacher</text>
+            <picker :range="reviewTeacherNames" :value="reviewTeacherIndex" @change="changeReviewTeacher">
+              <view class="picker-value">{{ selectedReviewTeacherName }}</view>
+            </picker>
           </view>
-          <StatusBadge :status="item.average < 3 ? 'high' : 'present'" />
+          <view class="field">
+            <text class="label">Course</text>
+            <picker :range="reviewCourseNames" :value="reviewCourseIndex" @change="changeReviewCourse">
+              <view class="picker-value">{{ selectedReviewCourseName }}</view>
+            </picker>
+          </view>
+          <button class="secondary-btn filter-reset-btn" @click="resetReviewFilters">Clear Filters</button>
+        </view>
+        <view v-if="!visibleReviewGroups.length" class="empty-note">
+          <text class="muted">No evaluations match the selected filters.</text>
+        </view>
+      </template>
+      <view v-for="item in visibleReviewGroups" :key="reviewGroupKey(item)" class="card review-link-card" @click="openReviewGroup(item)">
+        <view class="summary-head">
+          <view class="summary-title-block">
+            <text class="review-title">{{ reviewGroupTitle(item) }}</text>
+            <text class="review-meta">Average {{ reviewAverage(item) }} / 5 - {{ item.evaluation_count || item.total_evaluations || 0 }} review(s)</text>
+          </view>
+          <StatusBadge :status="Number(reviewAverage(item)) < 3 ? 'high' : 'present'" />
         </view>
         <view v-if="item.averageScores" class="dimension-grid">
           <view v-for="field in scoreFields" :key="field.key" class="dimension-cell">
-            <text class="label">{{ field.label }}</text>
-            <text class="value">{{ formatScore(item.averageScores[field.key]) }}</text>
+            <text class="dimension-label">{{ field.label }}</text>
+            <text class="dimension-value">{{ formatScore(item.averageScores[field.key]) }}</text>
           </view>
         </view>
-        <view v-for="(comment, index) in item.feedback" :key="index" class="comment">
-          <text class="muted">Anonymous feedback: {{ comment }}</text>
+        <view v-else-if="item.average_scores" class="dimension-grid">
+          <view v-for="field in scoreFields" :key="field.key" class="dimension-cell">
+            <text class="dimension-label">{{ field.label }}</text>
+            <text class="dimension-value">{{ formatScore(item.average_scores[field.key]) }}</text>
+          </view>
         </view>
+        <button class="secondary-btn detail-btn" @click.stop="openReviewGroup(item)">View All Reviews</button>
       </view>
     </view>
   </view>
@@ -78,7 +104,10 @@ export default {
       session: {},
       courses: [],
       summaries: [],
+      reviewGroups: [],
       courseIndex: 0,
+      reviewTeacherIndex: 0,
+      reviewCourseIndex: 0,
       loading: false,
       submitting: false,
       feedback: '',
@@ -98,6 +127,7 @@ export default {
         { key: 'achievement', label: 'Achievement' },
         { key: 'overall', label: 'Overall' }
       ],
+      scoreOptions: ['1', '2', '3', '4', '5'],
       lastLoadedAt: 0,
       loadTtlMs: 30000
     }
@@ -108,6 +138,37 @@ export default {
     },
     selectedCourseName() {
       return this.courseNames[this.courseIndex] || 'No courses available'
+    },
+    reviewTeacherOptions() {
+      return this.buildUniqueOptions(this.reviewGroups, this.reviewTeacherValue, this.reviewTeacherLabel, 'All Teachers')
+    },
+    reviewTeacherNames() {
+      return this.reviewTeacherOptions.map(item => item.label)
+    },
+    reviewCourseOptions() {
+      return this.buildUniqueOptions(this.reviewGroups, this.reviewCourseValue, this.reviewCourseLabel, 'All Courses')
+    },
+    reviewCourseNames() {
+      return this.reviewCourseOptions.map(item => item.label)
+    },
+    selectedReviewTeacherName() {
+      return (this.reviewTeacherOptions[this.reviewTeacherIndex] || this.reviewTeacherOptions[0] || {}).label || 'All Teachers'
+    },
+    selectedReviewCourseName() {
+      return (this.reviewCourseOptions[this.reviewCourseIndex] || this.reviewCourseOptions[0] || {}).label || 'All Courses'
+    },
+    selectedReviewTeacherId() {
+      return (this.reviewTeacherOptions[this.reviewTeacherIndex] || this.reviewTeacherOptions[0] || {}).value || ''
+    },
+    selectedReviewCourseId() {
+      return (this.reviewCourseOptions[this.reviewCourseIndex] || this.reviewCourseOptions[0] || {}).value || ''
+    },
+    visibleReviewGroups() {
+      return this.reviewGroups.filter(item => {
+        const teacherMatches = !this.selectedReviewTeacherId || this.reviewTeacherValue(item) === this.selectedReviewTeacherId
+        const courseMatches = !this.selectedReviewCourseId || this.reviewCourseValue(item) === this.selectedReviewCourseId
+        return teacherMatches && courseMatches
+      })
     }
   },
   onShow() {
@@ -146,7 +207,10 @@ export default {
       })
       this.loading = false
       if (result.ok) {
-        this.summaries = result.summary || result.data || []
+        const payload = result.data || {}
+        this.summaries = result.summary || payload.summary || (Array.isArray(payload) ? payload : [])
+        this.reviewGroups = result.teacherCourseReviews || payload.teacher_course_reviews || payload.teacherCourseReviews || []
+        this.clampReviewFilters()
       }
       this.lastLoadedAt = Date.now()
       if (this.courseIndex >= this.courses.length) this.courseIndex = 0
@@ -200,6 +264,53 @@ export default {
     changeCourse(event) {
       this.courseIndex = Number(event.detail.value)
     },
+    changeReviewTeacher(event) {
+      this.reviewTeacherIndex = Number(event.detail.value)
+    },
+    changeReviewCourse(event) {
+      this.reviewCourseIndex = Number(event.detail.value)
+    },
+    resetReviewFilters() {
+      this.reviewTeacherIndex = 0
+      this.reviewCourseIndex = 0
+    },
+    clampReviewFilters() {
+      if (this.reviewTeacherIndex >= this.reviewTeacherOptions.length) this.reviewTeacherIndex = 0
+      if (this.reviewCourseIndex >= this.reviewCourseOptions.length) this.reviewCourseIndex = 0
+    },
+    buildUniqueOptions(items, valueGetter, labelGetter, allLabel) {
+      const options = [{ value: '', label: allLabel }]
+      const seen = new Set()
+      for (const item of items || []) {
+        const value = valueGetter(item)
+        if (!value || seen.has(value)) continue
+        seen.add(value)
+        options.push({ value, label: labelGetter(item) })
+      }
+      return options
+    },
+    reviewTeacherValue(item) {
+      return String(item.teacher_id || item.teacherId || '').trim()
+    },
+    reviewTeacherLabel(item) {
+      return item.teacher_name || item.teacherName || this.reviewTeacherValue(item) || 'Unassigned Teacher'
+    },
+    reviewCourseValue(item) {
+      return String(item.course_offering_id || item.courseOfferingId || item.course_id || item.courseId || '').trim()
+    },
+    reviewCourseLabel(item) {
+      return this.resolveReviewCourseLabel(item)
+    },
+    scoreIndex(key) {
+      const value = Number(this.scores[key] || 1)
+      return Math.max(0, Math.min(4, value - 1))
+    },
+    changeScore(key, event) {
+      this.scores = {
+        ...this.scores,
+        [key]: Number(event.detail.value) + 1
+      }
+    },
     filterEvaluableCourses(courses) {
       if (this.session.role !== 'student') return courses
       return courses.filter(course => this.canEvaluateCourse(course))
@@ -208,11 +319,54 @@ export default {
       return Boolean(course && (course.completed === true || course.enrollmentStatus === 'completed'))
     },
     formatCourseLabel(course) {
-      return [course.code, course.name].filter(Boolean).join(' ').trim()
+      return [course.code || course.courseCode || course.course_code, course.name || course.courseName || course.course_name].filter(Boolean).join(' ').trim()
     },
     formatScore(value) {
       const numberValue = Number(value || 0)
       return numberValue ? numberValue.toFixed(1) : '0.0'
+    },
+    reviewGroupKey(item) {
+      return [item.teacher_id || item.teacherId || '', item.course_offering_id || item.courseOfferingId || item.course_id || item.courseId || ''].join('-')
+    },
+    reviewGroupTitle(item) {
+      const teacher = item.teacher_name || item.teacherName || 'Unassigned Teacher'
+      const course = this.resolveReviewCourseLabel(item)
+      return teacher + ' - ' + course
+    },
+    resolveReviewCourseLabel(item) {
+      const courseId = String(item.course_id || item.courseId || '').trim()
+      const offeringId = String(item.course_offering_id || item.courseOfferingId || '').trim()
+      const course = this.courses.find(course => {
+        const ids = [
+          course.courseOfferingId,
+          course.course_offering_id,
+          course._id,
+          course.id,
+          course.courseId,
+          course.course_id
+        ].map(value => String(value || '').trim())
+        return ids.includes(offeringId) || ids.includes(courseId)
+      })
+      const dashboardLabel = course ? this.formatCourseLabel(course) : ''
+      const storedLabel = item.course_name || item.courseName || ''
+      if (dashboardLabel) return dashboardLabel
+      if (this.isDisplayCourseName(storedLabel, courseId, offeringId)) return storedLabel
+      return courseId || offeringId || 'Unnamed Course'
+    },
+    isDisplayCourseName(value, ...ids) {
+      const text = String(value || '').trim()
+      if (!text) return false
+      if (ids.some(id => String(id || '').trim() === text)) return false
+      return !/^[a-f0-9]{20,}$/i.test(text)
+    },
+    reviewAverage(item) {
+      const value = item.average_rating || item.averageRating || item.average || item.average_scores && item.average_scores.overall || item.averageScores && item.averageScores.overall || 0
+      return Number(value || 0).toFixed(1)
+    },
+    openReviewGroup(item) {
+      const teacherId = encodeURIComponent(item.teacher_id || item.teacherId || '')
+      const courseOfferingId = encodeURIComponent(item.course_offering_id || item.courseOfferingId || '')
+      uni.navigateTo({ url: `/pages/evaluation/details?teacherId=${teacherId}&courseOfferingId=${courseOfferingId}` })
     },
     backHome() {
       uni.reLaunch({ url: dashboardUrl(this.session.role) })
@@ -232,6 +386,15 @@ export default {
   border: 1rpx solid #cbd5e1;
   border-radius: 8rpx;
   font-size: 28rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.score-picker {
+  text-align: center;
+  font-weight: 600;
+  color: #0f172a;
 }
 
 .score-grid,
@@ -241,15 +404,46 @@ export default {
   gap: 14rpx;
 }
 
+.filter-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 16rpx;
+  align-items: end;
+  margin-top: 18rpx;
+  margin-bottom: 18rpx;
+}
+
+.filter-reset-btn {
+  min-width: 180rpx;
+}
+
 .dimension-grid {
   margin-top: 16rpx;
 }
 
 .dimension-cell {
-  padding: 14rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  min-width: 0;
+  padding: 16rpx 18rpx;
   background: #ffffff;
   border: 1rpx solid #e2e8f0;
   border-radius: 8rpx;
+}
+
+.dimension-label {
+  color: #475569;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.dimension-value {
+  color: #0f172a;
+  font-size: 30rpx;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .summary-head {
@@ -257,6 +451,27 @@ export default {
   align-items: flex-start;
   justify-content: space-between;
   gap: 16rpx;
+}
+
+.summary-title-block {
+  min-width: 0;
+}
+
+.review-title {
+  display: block;
+  color: #0f172a;
+  font-size: 30rpx;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.review-meta {
+  display: block;
+  margin-top: 8rpx;
+  color: #64748b;
+  font-size: 24rpx;
+  line-height: 1.4;
 }
 
 .full-btn {
@@ -273,7 +488,21 @@ export default {
   border-top: 1rpx solid #e2e8f0;
 }
 
+.review-link-card {
+  cursor: pointer;
+}
+
+.detail-btn {
+  margin-top: 16rpx;
+}
+
 .top-actions {
   margin-top: 0;
+}
+
+@media (max-width: 700px) {
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

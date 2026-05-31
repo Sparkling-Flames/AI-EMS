@@ -132,7 +132,8 @@ function normalizeChanges(role, target, raw) {
     }
 
     const canonicalField = canonicalizeField(field);
-    if (changes[canonicalField]) {
+    const changeKey = safeChangeKey(canonicalField);
+    if (changes[changeKey]) {
       continue;
     }
 
@@ -142,7 +143,8 @@ function normalizeChanges(role, target, raw) {
       continue;
     }
 
-    changes[canonicalField] = {
+    changes[changeKey] = {
+      field: canonicalField,
       oldValue: oldValue === undefined ? "" : oldValue,
       newValue: normalizedNewValue,
       label,
@@ -158,6 +160,12 @@ function canonicalizeField(field) {
     .replace(/^publicProfile\./, "public_profile.")
     .replace(/^teachingExperience$/, "teaching_experience")
     .replace(/^researchFields$/, "research_fields");
+}
+
+function safeChangeKey(field) {
+  return String(field || "")
+    .replace(/[^a-zA-Z0-9_]/g, "_")
+    .replace(/^_+|_+$/g, "") || "field";
 }
 
 function readInputValue(raw, field) {

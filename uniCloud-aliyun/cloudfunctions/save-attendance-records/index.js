@@ -29,11 +29,6 @@ exports.main = async (event = {}) => {
     return { ok: false, message: "Class session was not found for this date." };
   }
   const now = Date.now();
-  const startAt = getSessionStartAt(classSession);
-  const endAt = getSessionEndAt(classSession);
-  if (session.role === "teacher" && (now < startAt || now > endAt)) {
-    return { ok: false, message: "Teachers can edit attendance only during the class time." };
-  }
 
   const saved = [];
   for (const row of records) {

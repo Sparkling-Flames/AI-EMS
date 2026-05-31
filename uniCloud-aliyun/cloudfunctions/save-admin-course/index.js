@@ -94,9 +94,6 @@ exports.main = async (event = {}) => {
   if (payload.trainingPlanId && (!trainingPlan || trainingPlan.major_id !== payload.majorId || Number(trainingPlan.grade_year || 0) !== Number(payload.gradeYear || 0))) {
     return { ok: false, message: "Training plan must match the selected major and cohort year." };
   }
-  if (!trainingPlan) {
-    return { ok: false, message: "No active training plan matches the selected major and cohort year." };
-  }
   const classroom = classroomMap.get(payload.classroomId);
   if (!classroom) {
     return { ok: false, message: "Classroom was not found." };

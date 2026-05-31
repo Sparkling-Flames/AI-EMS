@@ -10,7 +10,7 @@ exports.main = async (event = {}) => {
 
   const payload = normalizePayload(event);
   if (!payload.courseOfferingId || !payload.title || !payload.fileUrl) {
-    return { ok: false, message: "Course, title, and file URL are required." };
+    return { ok: false, message: "Course, title, and uploaded file are required." };
   }
 
   const offering = await findById("course_offerings", payload.courseOfferingId);
@@ -34,6 +34,9 @@ exports.main = async (event = {}) => {
     teacher_id: teacher ? teacher._id : payload.teacherId,
     title: payload.title,
     file_url: payload.fileUrl,
+    file_id: payload.fileId || payload.fileUrl,
+    file_name: payload.fileName,
+    file_size: payload.fileSize,
     file_type: payload.fileType,
     is_public_to_students: payload.isPublicToStudents,
     knowledge_document_id: payload.knowledgeDocumentId,
@@ -84,8 +87,11 @@ function normalizePayload(event) {
     materialId: String(event.materialId || event._id || "").trim(),
     courseOfferingId: String(event.courseOfferingId || "").trim(),
     title: String(event.title || "").trim(),
-    fileUrl: String(event.fileUrl || "").trim(),
-    fileType: String(event.fileType || "").trim(),
+    fileUrl: String(event.fileUrl || event.fileID || event.fileId || "").trim(),
+    fileId: String(event.fileId || event.fileID || event.fileUrl || "").trim(),
+    fileName: String(event.fileName || event.name || "").trim(),
+    fileSize: Number(event.fileSize || event.size || 0),
+    fileType: String(event.fileType || inferFileType(event.fileName || event.fileUrl || event.fileID || "")).trim(),
     isPublicToStudents: event.isPublicToStudents !== false,
     knowledgeDocumentId: String(event.knowledgeDocumentId || "").trim(),
     availableAt: Number(event.availableAt || 0),
@@ -137,6 +143,9 @@ function buildMaterialView(item, offering) {
     uploaderUserId: item.uploader_user_id || "",
     title: item.title || "",
     fileUrl: item.file_url || "",
+    fileId: item.file_id || item.file_url || "",
+    fileName: item.file_name || "",
+    fileSize: Number(item.file_size || 0),
     fileType: item.file_type || "",
     isPublicToStudents: item.is_public_to_students === true,
     knowledgeDocumentId: item.knowledge_document_id || "",
@@ -144,6 +153,15 @@ function buildMaterialView(item, offering) {
     createdAt: Number(item.created_at || 0),
     updatedAt: Number(item.updated_at || 0),
   };
+}
+
+function inferFileType(value) {
+  const ext = String(value || "").split("?")[0].split(".").pop().toLowerCase();
+  if (["pdf", "doc", "docx", "xls", "xlsx", "txt"].includes(ext)) return "document";
+  if (["ppt", "pptx"].includes(ext)) return "slide";
+  if (["mp4", "mov", "avi", "mkv"].includes(ext)) return "video";
+  if (["png", "jpg", "jpeg", "gif", "webp"].includes(ext)) return "image";
+  return "file";
 }
 
 function materialBelongsToTeacher(material, teacher, sessionUserId) {

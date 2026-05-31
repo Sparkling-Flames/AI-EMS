@@ -37,6 +37,15 @@
     "file_url": {
       "bsonType": "string"
     },
+    "file_id": {
+      "bsonType": "string"
+    },
+    "file_name": {
+      "bsonType": "string"
+    },
+    "file_size": {
+      "bsonType": "number"
+    },
     "file_type": {
       "bsonType": "string"
     },

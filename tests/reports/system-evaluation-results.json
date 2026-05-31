@@ -1,0 +1,341 @@
+{
+  "generatedAt": "2026-05-31T17:49:44.332Z",
+  "summary": {
+    "tests": {
+      "total": 23,
+      "passed": 23,
+      "failed": 0,
+      "passRate": 100
+    },
+    "syntaxChecks": {
+      "total": 21,
+      "passed": 21,
+      "failed": 0,
+      "passRate": 100
+    },
+    "total": 44,
+    "passed": 44,
+    "failed": 0,
+    "durationMs": 1623
+  },
+  "commands": {
+    "tests": "E:\\Program Files\\nodejs\\node.exe --test --test-reporter=tap tests/cloud-core.unit.test.cjs tests/course-evaluation.unit.test.cjs tests/frontend-ui.contract.test.cjs tests/local-api.fallback.unit.test.cjs",
+    "syntaxCheckPattern": "E:\\Program Files\\nodejs\\node.exe --check uniCloud-aliyun/cloudfunctions/*/index.js"
+  },
+  "categories": [
+    {
+      "category": "Admin Management",
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "passRate": 100
+    },
+    {
+      "category": "AI Assistant",
+      "total": 5,
+      "passed": 5,
+      "failed": 0,
+      "passRate": 100
+    },
+    {
+      "category": "Course Evaluation",
+      "total": 9,
+      "passed": 9,
+      "failed": 0,
+      "passRate": 100
+    },
+    {
+      "category": "Course Materials",
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "passRate": 100
+    },
+    {
+      "category": "Dashboard & Profile",
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "passRate": 100
+    },
+    {
+      "category": "Leave & Attendance",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "passRate": 100
+    }
+  ],
+  "tests": [
+    {
+      "name": "ask-assistant evaluation prompt includes detailed score dimensions and feedback",
+      "status": "passed",
+      "durationMs": 5.321,
+      "category": "Course Evaluation"
+    },
+    {
+      "name": "ask-assistant uses current user query instead of locking on previous assistant answer",
+      "status": "passed",
+      "durationMs": 10.0044,
+      "category": "AI Assistant"
+    },
+    {
+      "name": "ask-assistant gives admins concrete student roster from database context",
+      "status": "passed",
+      "durationMs": 5.0164,
+      "category": "AI Assistant"
+    },
+    {
+      "name": "AI history and requested conversations are isolated by user and role",
+      "status": "passed",
+      "durationMs": 8.2569,
+      "category": "AI Assistant"
+    },
+    {
+      "name": "get-dashboard-data returns enrolled courses for user_s_005 via student mapping",
+      "status": "passed",
+      "durationMs": 3.9591,
+      "category": "Dashboard & Profile"
+    },
+    {
+      "name": "get-dashboard-data returns pending profile changes for admin review",
+      "status": "passed",
+      "durationMs": 1.8695,
+      "category": "Dashboard & Profile"
+    },
+    {
+      "name": "get-dashboard-data includes student names on pending leave reviews",
+      "status": "passed",
+      "durationMs": 1.9236,
+      "category": "Dashboard & Profile"
+    },
+    {
+      "name": "save-course-material allows teacher when offering stores user_id in teacher_ids",
+      "status": "passed",
+      "durationMs": 2.1308,
+      "category": "Course Materials"
+    },
+    {
+      "name": "save-attendance-records lets a teacher save a scheduled session outside the class time",
+      "status": "passed",
+      "durationMs": 3.1505,
+      "category": "Leave & Attendance"
+    },
+    {
+      "name": "save-admin-course allows cohort offerings without a training plan",
+      "status": "passed",
+      "durationMs": 4.3948,
+      "category": "Admin Management"
+    },
+    {
+      "name": "delete-admin-course removes a published offering and related records",
+      "status": "passed",
+      "durationMs": 2.428,
+      "category": "Admin Management"
+    },
+    {
+      "name": "profile change requests use database-safe keys and apply nested fields",
+      "status": "passed",
+      "durationMs": 3.7635,
+      "category": "Dashboard & Profile"
+    },
+    {
+      "name": "submit-evaluation writes doc-compliant anonymous records and blocks duplicates",
+      "status": "passed",
+      "durationMs": 9.3659,
+      "category": "Course Evaluation"
+    },
+    {
+      "name": "submit-evaluation derives course identity from offering metadata",
+      "status": "passed",
+      "durationMs": 3.0848,
+      "category": "Course Evaluation"
+    },
+    {
+      "name": "get-evaluation-summary returns anonymous aggregates and no identity fields",
+      "status": "passed",
+      "durationMs": 18.0615,
+      "category": "Course Evaluation"
+    },
+    {
+      "name": "get-evaluation-summary resolves legacy offering ids to course titles",
+      "status": "passed",
+      "durationMs": 1.4901,
+      "category": "Course Evaluation"
+    },
+    {
+      "name": "submit-evaluation rejects courses not taken or not yet completed",
+      "status": "passed",
+      "durationMs": 1.6735,
+      "category": "Course Evaluation"
+    },
+    {
+      "name": "course-evaluation endpoints enforce access control and validation",
+      "status": "passed",
+      "durationMs": 2.3401,
+      "category": "Course Evaluation"
+    },
+    {
+      "name": "evaluation review pages expose teacher/course filters and readable score cells",
+      "status": "passed",
+      "durationMs": 2.1884,
+      "category": "Course Evaluation"
+    },
+    {
+      "name": "student materials hide raw URLs and keep download as the student action",
+      "status": "passed",
+      "durationMs": 0.5561,
+      "category": "Course Materials"
+    },
+    {
+      "name": "assistant history is loaded without cache and keyed by the active account",
+      "status": "passed",
+      "durationMs": 1.0327,
+      "category": "AI Assistant"
+    },
+    {
+      "name": "fallback ask-assistant answers anonymous evaluation questions",
+      "status": "passed",
+      "durationMs": 11.9703,
+      "category": "Course Evaluation"
+    },
+    {
+      "name": "fallback ask-assistant answers roster queries for admins",
+      "status": "passed",
+      "durationMs": 3.1281,
+      "category": "AI Assistant"
+    }
+  ],
+  "syntaxChecks": [
+    {
+      "file": "uniCloud-aliyun/cloudfunctions/ask-assistant/index.js",
+      "status": "passed",
+      "durationMs": 76,
+      "stderr": ""
+    },
+    {
+      "file": "uniCloud-aliyun/cloudfunctions/auth-login/index.js",
+      "status": "passed",
+      "durationMs": 74,
+      "stderr": ""
+    },
+    {
+      "file": "uniCloud-aliyun/cloudfunctions/cancel-leave/index.js",
+      "status": "passed",
+      "durationMs": 72,
+      "stderr": ""
+    },
+    {
+      "file": "uniCloud-aliyun/cloudfunctions/delete-admin-account/index.js",
+      "status": "passed",
+      "durationMs": 71,
+      "stderr": ""
+    },
+    {
+      "file": "uniCloud-aliyun/cloudfunctions/delete-admin-course/index.js",
+      "status": "passed",
+      "durationMs": 64,
+      "stderr": ""
+    },
+    {
+      "file": "uniCloud-aliyun/cloudfunctions/get-admin-management-data/index.js",
+      "status": "passed",
+      "durationMs": 65,
+      "stderr": ""
+    },
+    {
+      "file": "uniCloud-aliyun/cloudfunctions/get-ai-history/index.js",
+      "status": "passed",
+      "durationMs": 69,
+      "stderr": ""
+    },
+    {
+      "file": "uniCloud-aliyun/cloudfunctions/get-course-materials/index.js",
+      "status": "passed",
+      "durationMs": 65,
+      "stderr": ""
+    },
+    {
+      "file": "uniCloud-aliyun/cloudfunctions/get-dashboard-data/index.js",
+      "status": "passed",
+      "durationMs": 68,
+      "stderr": ""
+    },
+    {
+      "file": "uniCloud-aliyun/cloudfunctions/get-evaluation-summary/index.js",
+      "status": "passed",
+      "durationMs": 66,
+      "stderr": ""
+    },
+    {
+      "file": "uniCloud-aliyun/cloudfunctions/review-leave/index.js",
+      "status": "passed",
+      "durationMs": 67,
+      "stderr": ""
+    },
+    {
+      "file": "uniCloud-aliyun/cloudfunctions/review-profile-change/index.js",
+      "status": "passed",
+      "durationMs": 62,
+      "stderr": ""
+    },
+    {
+      "file": "uniCloud-aliyun/cloudfunctions/save-admin-account/index.js",
+      "status": "passed",
+      "durationMs": 62,
+      "stderr": ""
+    },
+    {
+      "file": "uniCloud-aliyun/cloudfunctions/save-admin-course/index.js",
+      "status": "passed",
+      "durationMs": 65,
+      "stderr": ""
+    },
+    {
+      "file": "uniCloud-aliyun/cloudfunctions/save-attendance-records/index.js",
+      "status": "passed",
+      "durationMs": 67,
+      "stderr": ""
+    },
+    {
+      "file": "uniCloud-aliyun/cloudfunctions/save-course-material/index.js",
+      "status": "passed",
+      "durationMs": 65,
+      "stderr": ""
+    },
+    {
+      "file": "uniCloud-aliyun/cloudfunctions/select-course-teacher/index.js",
+      "status": "passed",
+      "durationMs": 64,
+      "stderr": ""
+    },
+    {
+      "file": "uniCloud-aliyun/cloudfunctions/submit-attendance-checkin/index.js",
+      "status": "passed",
+      "durationMs": 62,
+      "stderr": ""
+    },
+    {
+      "file": "uniCloud-aliyun/cloudfunctions/submit-evaluation/index.js",
+      "status": "passed",
+      "durationMs": 62,
+      "stderr": ""
+    },
+    {
+      "file": "uniCloud-aliyun/cloudfunctions/submit-leave/index.js",
+      "status": "passed",
+      "durationMs": 63,
+      "stderr": ""
+    },
+    {
+      "file": "uniCloud-aliyun/cloudfunctions/submit-profile-change/index.js",
+      "status": "passed",
+      "durationMs": 60,
+      "stderr": ""
+    }
+  ],
+  "raw": {
+    "testStdout": "TAP version 13\n# Subtest: ask-assistant evaluation prompt includes detailed score dimensions and feedback\nok 1 - ask-assistant evaluation prompt includes detailed score dimensions and feedback\n  ---\n  duration_ms: 5.321\n  type: 'test'\n  ...\n# Subtest: ask-assistant uses current user query instead of locking on previous assistant answer\nok 2 - ask-assistant uses current user query instead of locking on previous assistant answer\n  ---\n  duration_ms: 10.0044\n  type: 'test'\n  ...\n# Subtest: ask-assistant gives admins concrete student roster from database context\nok 3 - ask-assistant gives admins concrete student roster from database context\n  ---\n  duration_ms: 5.0164\n  type: 'test'\n  ...\n# Subtest: AI history and requested conversations are isolated by user and role\nok 4 - AI history and requested conversations are isolated by user and role\n  ---\n  duration_ms: 8.2569\n  type: 'test'\n  ...\n# Subtest: get-dashboard-data returns enrolled courses for user_s_005 via student mapping\nok 5 - get-dashboard-data returns enrolled courses for user_s_005 via student mapping\n  ---\n  duration_ms: 3.9591\n  type: 'test'\n  ...\n# Subtest: get-dashboard-data returns pending profile changes for admin review\nok 6 - get-dashboard-data returns pending profile changes for admin review\n  ---\n  duration_ms: 1.8695\n  type: 'test'\n  ...\n# Subtest: get-dashboard-data includes student names on pending leave reviews\nok 7 - get-dashboard-data includes student names on pending leave reviews\n  ---\n  duration_ms: 1.9236\n  type: 'test'\n  ...\n# Subtest: save-course-material allows teacher when offering stores user_id in teacher_ids\nok 8 - save-course-material allows teacher when offering stores user_id in teacher_ids\n  ---\n  duration_ms: 2.1308\n  type: 'test'\n  ...\n# Subtest: save-attendance-records lets a teacher save a scheduled session outside the class time\nok 9 - save-attendance-records lets a teacher save a scheduled session outside the class time\n  ---\n  duration_ms: 3.1505\n  type: 'test'\n  ...\n# Subtest: save-admin-course allows cohort offerings without a training plan\nok 10 - save-admin-course allows cohort offerings without a training plan\n  ---\n  duration_ms: 4.3948\n  type: 'test'\n  ...\n# Subtest: delete-admin-course removes a published offering and related records\nok 11 - delete-admin-course removes a published offering and related records\n  ---\n  duration_ms: 2.428\n  type: 'test'\n  ...\n# Subtest: profile change requests use database-safe keys and apply nested fields\nok 12 - profile change requests use database-safe keys and apply nested fields\n  ---\n  duration_ms: 3.7635\n  type: 'test'\n  ...\n# [submit-evaluation stored record]\n# {\n#   \"course_id\": \"c_software_design\",\n#   \"course_offering_id\": \"co_001\",\n#   \"course_name\": \"Software Design and Implementation\",\n#   \"teacher_ids\": [\n#     \"t_001\"\n#   ],\n#   \"token_hash\": \"cc6f3ae38fed0b26662ad050b0792a51\",\n#   \"scores\": {\n#     \"content\": 5,\n#     \"teaching_method\": 4,\n#     \"difficulty\": 3,\n#     \"workload\": 2,\n#     \"achievement\": 5,\n#     \"overall\": 4\n#   },\n#   \"difficulty_score\": 3,\n#   \"workload_score\": 2,\n#   \"feedback_text\": \"The course is practical and the teaching flow is clear.\",\n#   \"status\": \"submitted\",\n#   \"submitted_at\": 1780249784498,\n#   \"created_at\": 1780249784498,\n#   \"updated_at\": 1780249784498,\n#   \"_id\": \"course_evaluations_1\"\n# }\n# [evaluation-summary detailed report]\n# {\n#   \"summary\": [\n#     {\n#       \"course_id\": \"c_software_design\",\n#       \"course_offering_id\": \"co_001\",\n#       \"course_name\": \"Software Design and Implementation\",\n#       \"evaluation_count\": 2,\n#       \"total_evaluations\": 2,\n#       \"average_scores\": {\n#         \"content\": 4.5,\n#         \"teaching_method\": 3.5,\n#         \"difficulty\": 3.5,\n#         \"workload\": 2.5,\n#         \"achievement\": 4.5,\n#         \"overall\": 4.5\n#       },\n#       \"average_rating\": \"4.5\",\n#       \"rating_distribution\": {\n#         \"1\": 0,\n#         \"2\": 0,\n#         \"3\": 0,\n#         \"4\": 1,\n#         \"5\": 1\n#       },\n#       \"positive_tags\": [],\n#       \"negative_tags\": [],\n#       \"ai_summary\": \"\"\n#     }\n#   ],\n#   \"teacher_course_reviews\": [\n#     {\n#       \"teacher_id\": \"t_001\",\n#       \"teacher_name\": \"t_001\",\n#       \"course_id\": \"c_software_design\",\n#       \"course_offering_id\": \"co_001\",\n#       \"course_name\": \"Software Design and Implementation\",\n#       \"evaluation_count\": 1,\n#       \"total_evaluations\": 1,\n#       \"average_scores\": {\n#         \"content\": 5,\n#         \"teaching_method\": 4,\n#         \"difficulty\": 3,\n#         \"workload\": 3,\n#         \"achievement\": 5,\n#         \"overall\": 4\n#       },\n#       \"average_rating\": \"4.0\",\n#       \"rating_distribution\": {\n#         \"1\": 0,\n#         \"2\": 0,\n#         \"3\": 0,\n#         \"4\": 1,\n#         \"5\": 0\n#       },\n#       \"evaluations\": [\n#         {\n#           \"course_id\": \"c_software_design\",\n#           \"course_offering_id\": \"co_001\",\n#           \"course_name\": \"Software Design and Implementation\",\n#           \"teacher_id\": \"t_001\",\n#           \"teacher_name\": \"t_001\",\n#           \"scores\": {\n#             \"content\": 5,\n#             \"teaching_method\": 4,\n#             \"difficulty\": 3,\n#             \"workload\": 3,\n#             \"achievement\": 5,\n#             \"overall\": 4\n#           },\n#           \"feedback_text\": \"Clear and practical.\",\n#           \"status\": \"submitted\",\n#           \"submitted_at\": 1780249784507,\n#           \"rating\": 4,\n#           \"content\": \"Clear and practical.\",\n#           \"create_time\": 1780249784507\n#         }\n#       ]\n#     },\n#     {\n#       \"teacher_id\": \"t_002\",\n#       \"teacher_name\": \"t_002\",\n#       \"course_id\": \"c_software_design\",\n#       \"course_offering_id\": \"co_001\",\n#       \"course_name\": \"Software Design and Implementation\",\n#       \"evaluation_count\": 1,\n#       \"total_evaluations\": 1,\n#       \"average_scores\": {\n#         \"content\": 4,\n#         \"teaching_method\": 3,\n#         \"difficulty\": 4,\n#         \"workload\": 2,\n#         \"achievement\": 4,\n#         \"overall\": 5\n#       },\n#       \"average_rating\": \"5.0\",\n#       \"rating_distribution\": {\n#         \"1\": 0,\n#         \"2\": 0,\n#         \"3\": 0,\n#         \"4\": 0,\n#         \"5\": 1\n#       },\n#       \"evaluations\": [\n#         {\n#           \"course_id\": \"c_software_design\",\n#           \"course_offering_id\": \"co_001\",\n#           \"course_name\": \"Software Design and Implementation\",\n#           \"teacher_id\": \"t_002\",\n#           \"teacher_name\": \"t_002\",\n#           \"scores\": {\n#             \"content\": 4,\n#             \"teaching_method\": 3,\n#             \"difficulty\": 4,\n#             \"workload\": 2,\n#             \"achievement\": 4,\n#             \"overall\": 5\n#           },\n#           \"feedback_text\": \"Lots of hands-on exercises.\",\n#           \"status\": \"submitted\",\n#           \"submitted_at\": 1780249784507,\n#           \"rating\": 5,\n#           \"content\": \"Lots of hands-on exercises.\",\n#           \"create_time\": 1780249784507\n#         }\n#       ]\n#     }\n#   ],\n#   \"anonymous_evaluations\": [\n#     {\n#       \"course_id\": \"c_software_design\",\n#       \"course_offering_id\": \"co_001\",\n#       \"course_name\": \"Software Design and Implementation\",\n#       \"teacher_id\": \"\",\n#       \"teacher_name\": \"\",\n#       \"scores\": {\n#         \"content\": 5,\n#         \"teaching_method\": 4,\n#         \"difficulty\": 3,\n#         \"workload\": 3,\n#         \"achievement\": 5,\n#         \"overall\": 4\n#       },\n#       \"feedback_text\": \"Clear and practical.\",\n#       \"status\": \"submitted\",\n#       \"submitted_at\": 1780249784507,\n#       \"rating\": 4,\n#       \"content\": \"Clear and practical.\",\n#       \"create_time\": 1780249784507\n#     },\n#     {\n#       \"course_id\": \"c_software_design\",\n#       \"course_offering_id\": \"co_001\",\n#       \"course_name\": \"Software Design and Implementation\",\n#       \"teacher_id\": \"\",\n#       \"teacher_name\": \"\",\n#       \"scores\": {\n#         \"content\": 4,\n#         \"teaching_method\": 3,\n#         \"difficulty\": 4,\n#         \"workload\": 2,\n#         \"achievement\": 4,\n#         \"overall\": 5\n#       },\n#       \"feedback_text\": \"Lots of hands-on exercises.\",\n#       \"status\": \"submitted\",\n#       \"submitted_at\": 1780249784507,\n#       \"rating\": 5,\n#       \"content\": \"Lots of hands-on exercises.\",\n#       \"create_time\": 1780249784507\n#     }\n#   ]\n# }\n# Subtest: submit-evaluation writes doc-compliant anonymous records and blocks duplicates\nok 13 - submit-evaluation writes doc-compliant anonymous records and blocks duplicates\n  ---\n  duration_ms: 9.3659\n  type: 'test'\n  ...\n# Subtest: submit-evaluation derives course identity from offering metadata\nok 14 - submit-evaluation derives course identity from offering metadata\n  ---\n  duration_ms: 3.0848\n  type: 'test'\n  ...\n# Subtest: get-evaluation-summary returns anonymous aggregates and no identity fields\nok 15 - get-evaluation-summary returns anonymous aggregates and no identity fields\n  ---\n  duration_ms: 18.0615\n  type: 'test'\n  ...\n# Subtest: get-evaluation-summary resolves legacy offering ids to course titles\nok 16 - get-evaluation-summary resolves legacy offering ids to course titles\n  ---\n  duration_ms: 1.4901\n  type: 'test'\n  ...\n# Subtest: submit-evaluation rejects courses not taken or not yet completed\nok 17 - submit-evaluation rejects courses not taken or not yet completed\n  ---\n  duration_ms: 1.6735\n  type: 'test'\n  ...\n# Subtest: course-evaluation endpoints enforce access control and validation\nok 18 - course-evaluation endpoints enforce access control and validation\n  ---\n  duration_ms: 2.3401\n  type: 'test'\n  ...\n# Subtest: evaluation review pages expose teacher/course filters and readable score cells\nok 19 - evaluation review pages expose teacher/course filters and readable score cells\n  ---\n  duration_ms: 2.1884\n  type: 'test'\n  ...\n# Subtest: student materials hide raw URLs and keep download as the student action\nok 20 - student materials hide raw URLs and keep download as the student action\n  ---\n  duration_ms: 0.5561\n  type: 'test'\n  ...\n# Subtest: assistant history is loaded without cache and keyed by the active account\nok 21 - assistant history is loaded without cache and keyed by the active account\n  ---\n  duration_ms: 1.0327\n  type: 'test'\n  ...\n# Subtest: fallback ask-assistant answers anonymous evaluation questions\nok 22 - fallback ask-assistant answers anonymous evaluation questions\n  ---\n  duration_ms: 11.9703\n  type: 'test'\n  ...\n# Subtest: fallback ask-assistant answers roster queries for admins\nok 23 - fallback ask-assistant answers roster queries for admins\n  ---\n  duration_ms: 3.1281\n  type: 'test'\n  ...\n1..23\n# tests 23\n# suites 0\n# pass 23\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 147.8693\n",
+    "testStderr": ""
+  }
+}

@@ -172,6 +172,16 @@ function baseCourseOffering(overrides = {}) {
   };
 }
 
+function baseCourse(overrides = {}) {
+  return {
+    _id: 'c_software_design',
+    course_code: 'JC2506',
+    name: 'Software Design',
+    status: 'active',
+    ...overrides
+  };
+}
+
 function baseStudent(userId, studentId) {
   return {
     _id: studentId,
@@ -280,6 +290,39 @@ test('submit-evaluation writes doc-compliant anonymous records and blocks duplic
   console.log(JSON.stringify(db.snapshot('course_evaluations')[0], null, 2));
 });
 
+test('submit-evaluation derives course identity from offering metadata', async () => {
+  const db = createMockDb({
+    courses: [baseCourse()],
+    course_offerings: [baseCourseOffering()],
+    students: [baseStudent('stu_001', 'student_001')],
+    enrollments: [baseEnrollment('student_001', 'co_001', 't_001')],
+    class_sessions: [completedSession('co_001')],
+    course_evaluations: [],
+    audit_logs: []
+  });
+  const submitEvaluation = loadFunction('uniCloud-aliyun/cloudfunctions/submit-evaluation/index.js', db);
+
+  const result = await submitEvaluation(
+    {
+      course_offering_id: 'co_001',
+      scores: {
+        content: 5,
+        teaching_method: 5,
+        difficulty: 3,
+        workload: 3,
+        achievement: 5,
+        overall: 5
+      },
+      feedback_text: 'The course was useful.'
+    },
+    { auth: { uid: 'stu_001', role: 'student' } }
+  );
+
+  assert.equal(result.code, 200);
+  assert.equal(result.data.evaluation.course_id, 'c_software_design');
+  assert.equal(result.data.evaluation.course_name, 'JC2506 Software Design');
+});
+
 test('get-evaluation-summary returns anonymous aggregates and no identity fields', async () => {
   const db = createMockDb({
     course_offerings: [
@@ -377,6 +420,7 @@ test('get-evaluation-summary returns anonymous aggregates and no identity fields
   assert.equal(summaryResult.code, 200);
   assert.equal(summaryResult.data.summary.length, 1);
   assert.equal(summaryResult.data.anonymous_evaluations.length, 2);
+  assert.equal(summaryResult.data.teacher_course_reviews.length, 2);
 
   const summary = summaryResult.data.summary[0];
   assert.equal(summary.course_id, 'c_software_design');
@@ -400,8 +444,76 @@ test('get-evaluation-summary returns anonymous aggregates and no identity fields
     assert.equal(Object.prototype.hasOwnProperty.call(evaluation, 'teacher_ids'), false);
   }
 
+  const teacherOne = summaryResult.data.teacher_course_reviews.find((item) => item.teacher_id === 't_001');
+  const teacherTwo = summaryResult.data.teacher_course_reviews.find((item) => item.teacher_id === 't_002');
+  assert.equal(teacherOne.evaluation_count, 1);
+  assert.equal(teacherTwo.evaluation_count, 1);
+  assert.match(teacherOne.evaluations[0].feedback_text, /Clear and practical/);
+  assert.match(teacherTwo.evaluations[0].feedback_text, /Lots of hands-on/);
+
+  const sessionResult = await getEvaluationSummary(
+    { session: { userId: 'user_admin', role: 'admin' }, courseOfferingId: 'co_001' },
+    {}
+  );
+  assert.equal(sessionResult.code, 200);
+  assert.equal(sessionResult.data.teacher_course_reviews.length, 2);
+
   console.log('\n[evaluation-summary detailed report]');
   console.log(JSON.stringify(summaryResult.data, null, 2));
+});
+
+test('get-evaluation-summary resolves legacy offering ids to course titles', async () => {
+  const db = createMockDb({
+    course_offerings: [
+      baseCourseOffering({
+        _id: 'co_legacy',
+        course_id: 'c_software_design',
+        teacher_ids: ['t_john']
+      })
+    ],
+    courses: [baseCourse()],
+    teachers: [
+      {
+        _id: 't_john',
+        user_id: 'u_teacher_john',
+        teacher_no: 'T001',
+        name: 'John'
+      }
+    ],
+    course_evaluations: [
+      {
+        _id: 'eval_legacy_1',
+        course_id: 'co_legacy',
+        course_offering_id: 'co_legacy',
+        course_name: 'co_legacy',
+        teacher_ids: ['t_john'],
+        scores: {
+          content: 5,
+          teaching_method: 5,
+          difficulty: 3,
+          workload: 3,
+          achievement: 5,
+          overall: 5
+        },
+        feedback_text: 'good',
+        status: 'submitted',
+        submitted_at: 1
+      }
+    ]
+  });
+  const getEvaluationSummary = loadFunction('uniCloud-aliyun/cloudfunctions/get-evaluation-summary/index.js', db);
+
+  const result = await getEvaluationSummary(
+    { session: { userId: 'user_admin', role: 'admin' } },
+    {}
+  );
+
+  assert.equal(result.code, 200);
+  assert.equal(result.data.summary[0].course_id, 'c_software_design');
+  assert.equal(result.data.summary[0].course_name, 'JC2506 Software Design');
+  assert.equal(result.data.teacher_course_reviews[0].teacher_name, 'John');
+  assert.equal(result.data.teacher_course_reviews[0].course_name, 'JC2506 Software Design');
+  assert.equal(result.data.teacher_course_reviews[0].evaluations[0].course_name, 'JC2506 Software Design');
 });
 
 test('submit-evaluation rejects courses not taken or not yet completed', async () => {
@@ -510,5 +622,7 @@ test('course-evaluation endpoints enforce access control and validation', async 
     { course_id: 'c_software_design' },
     { auth: { uid: 'stu_001', role: 'student' } }
   );
-  assert.equal(studentSummary.code, 403);
+  assert.equal(studentSummary.code, 200);
+  assert.equal(studentSummary.data.summary.length, 0);
+  assert.deepEqual(studentSummary.data.anonymous_evaluations, []);
 });
