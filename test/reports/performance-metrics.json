@@ -1,0 +1,30 @@
+[
+  {
+    "name": "Admin dashboard aggregation",
+    "durationMs": 9.11,
+    "thresholdMs": 1200,
+    "passed": true,
+    "details": "160 students, 8 offerings, 5120 attendance records"
+  },
+  {
+    "name": "Teacher dashboard role filtering",
+    "durationMs": 11.06,
+    "thresholdMs": 900,
+    "passed": true,
+    "details": "120 students, 6 offerings, teacher-scoped data"
+  },
+  {
+    "name": "Frontend fallback dashboard first read",
+    "durationMs": 15.37,
+    "thresholdMs": 250,
+    "passed": true,
+    "details": "Local fallback without uniCloud"
+  },
+  {
+    "name": "Frontend fallback dashboard cached read",
+    "durationMs": 0.48,
+    "thresholdMs": 80,
+    "passed": true,
+    "details": "Local fallback response cache"
+  }
+]

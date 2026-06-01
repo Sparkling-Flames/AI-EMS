@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "test": "node --test tests/*.cjs",
-    "test:system": "node scripts/system-evaluation-report.cjs",
+    "test": "node --test test/*.test.cjs",
+    "test:system": "node test/system-evaluation-visual-report.cjs",
     "dev:h5": "env-cmd -f .env.development uni",
     "dev:h5:local": "uni"
   },
