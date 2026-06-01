@@ -213,6 +213,7 @@ export default {
   data() {
     return {
       session: {},
+      activeSessionKey: '',
       query: '',
       messages: [],
       currentConversationId: '',
@@ -246,24 +247,31 @@ export default {
   onShow() {
     const session = requireRole(['student', 'teacher', 'admin'])
     if (!session) return
+    const nextSessionKey = this.sessionStorageKey(session)
+    if (this.activeSessionKey && this.activeSessionKey !== nextSessionKey) {
+      this.resetChatState()
+    }
+    this.activeSessionKey = nextSessionKey
     this.session = session
     this.loadSettings()
-    this.loadHistory()
+    this.loadHistory(nextSessionKey)
   },
   methods: {
     loadSettings() {
       try {
-        const saved = uni.getStorageSync(SETTINGS_KEY)
+        const saved = uni.getStorageSync(this.settingsStorageKey())
         if (saved) {
           this.apiSettings = { ...DEFAULT_SETTINGS, ...JSON.parse(saved) }
+        } else {
+          this.apiSettings = { ...DEFAULT_SETTINGS }
         }
       } catch (_) {
-        // use defaults
+        this.apiSettings = { ...DEFAULT_SETTINGS }
       }
     },
     saveSettings() {
       try {
-        uni.setStorageSync(SETTINGS_KEY, JSON.stringify(this.apiSettings))
+        uni.setStorageSync(this.settingsStorageKey(), JSON.stringify(this.apiSettings))
         uni.showToast({ title: 'Settings saved.', icon: 'success' })
       } catch (_) {
         uni.showToast({ title: 'Failed to save settings.', icon: 'none' })
@@ -312,13 +320,21 @@ export default {
       this.apiSettings.maxTokens = e.detail.value
     },
 
-    async loadHistory() {
+    async loadHistory(expectedSessionKey = this.activeSessionKey) {
+      const session = getSession()
+      if (!session || this.sessionStorageKey(session) !== expectedSessionKey) return
       const result = await callAiemsFunction('get-ai-history', {
-        session: getSession(),
+        session,
         forceRefresh: true,
       })
+      if (this.activeSessionKey !== expectedSessionKey) return
       if (!result.ok) return
       const data = result.data || {}
+      const responseOwnerKey = data.userId && data.role ? this.sessionStorageKey({ userId: data.userId, role: data.role }) : expectedSessionKey
+      if (responseOwnerKey !== expectedSessionKey) {
+        this.resetChatState()
+        return
+      }
       this.currentConversationId = data.activeConversationId || ''
       this.messages = (data.messages || []).map((item) =>
         this.buildMessage(
@@ -333,6 +349,17 @@ export default {
     async ask() {
       const question = this.query.trim()
       if (!question) return
+      const session = getSession()
+      if (!session) {
+        this.resetChatState()
+        return
+      }
+      const nextSessionKey = this.sessionStorageKey(session)
+      if (nextSessionKey !== this.activeSessionKey) {
+        this.resetChatState()
+        this.activeSessionKey = nextSessionKey
+        this.session = session || {}
+      }
 
       this.messages.push(this.buildMessage('user', question))
       this.query = ''
@@ -340,7 +367,7 @@ export default {
       this.scrollToBottom()
 
       const result = await callAiemsFunction('ask-assistant', {
-        session: getSession(),
+        session,
         conversationId: this.currentConversationId,
         query: question,
         history: this.messages.slice(-10),
@@ -353,6 +380,7 @@ export default {
         },
       })
       this.loading = false
+      if (this.activeSessionKey !== nextSessionKey) return
 
       if (result.ok) {
         const data = result.data || {}
@@ -367,9 +395,29 @@ export default {
       uni.showToast({ title: result.message || 'Query failed.', icon: 'none' })
     },
     newChat() {
+      this.resetChatState()
+    },
+    resetChatState() {
       this.currentConversationId = ''
       this.messages = []
+      this.query = ''
       this.scrollAnchor = ''
+    },
+    settingsStorageKey() {
+      return `${SETTINGS_KEY}:${this.activeSessionKey || this.sessionStorageKey(this.session)}`
+    },
+    sessionStorageKey(session) {
+      if (!session) return ''
+      return [String(session.role || '').trim(), this.normalizeAssistantUserId(session.userId || session.uid || session.user_id || '')].join(':')
+    },
+    normalizeAssistantUserId(userId) {
+      const value = String(userId || '').trim()
+      if (/^u_student_/i.test(value)) return `user_s_${value.slice('u_student_'.length)}`
+      if (/^student_/i.test(value)) return `user_s_${value.slice('student_'.length)}`
+      if (/^u_teacher_/i.test(value)) return `user_t_${value.slice('u_teacher_'.length)}`
+      if (/^teacher_/i.test(value)) return `user_t_${value.slice('teacher_'.length)}`
+      if (/^u_admin_/i.test(value)) return `user_admin_${value.slice('u_admin_'.length)}`
+      return value
     },
     buildMessage(role, content, sourceTitle = '', id = '') {
       return {

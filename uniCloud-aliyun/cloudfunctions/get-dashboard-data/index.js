@@ -8,7 +8,7 @@ exports.main = async (event = {}) => {
     return { ok: false, message: "Login is required." };
   }
 
-  const [courses, offerings, enrollments, students, teachers, attendance, leaves, evaluations, classSessions, materials, trainingPlans, adminClasses, majors] = await Promise.all([
+  const [courses, offerings, enrollments, students, teachers, attendance, leaves, evaluations, classSessions, materials, profileChangeRequests, trainingPlans, adminClasses, majors] = await Promise.all([
     readCollection("courses"),
     readCollection("course_offerings"),
     readCollection("enrollments"),
@@ -19,6 +19,7 @@ exports.main = async (event = {}) => {
     readCollection("course_evaluations"),
     readCollection("class_sessions"),
     readCollection("course_materials"),
+    readCollection("profile_change_requests", 5000),
     readCollection("training_plans"),
     readCollection("admin_classes"),
     readCollection("majors"),
@@ -88,6 +89,10 @@ exports.main = async (event = {}) => {
     })
     .map((item) => ({
       ...item,
+      studentName: item.studentName || resolveStudentName(students, item.studentId),
+      student_name: item.studentName || resolveStudentName(students, item.studentId),
+      studentNo: item.studentNo || resolveStudentNo(students, item.studentId),
+      student_no: item.studentNo || resolveStudentNo(students, item.studentId),
       courseName: item.courseName || buildCourseName(offeringMap.get(item.courseOfferingId), courseMap),
     }));
 
@@ -123,6 +128,11 @@ exports.main = async (event = {}) => {
   const courseStudents = ["teacher", "admin"].includes(session.role)
     ? buildCourseStudents({ role: session.role, allowedOfferingIds, enrollments, students, teacher, sessionUserId: session.userId })
     : [];
+  const profileChangeRequestView = buildProfileChangeRequests({
+    role: session.role,
+    sessionUserId: session.userId,
+    rows: profileChangeRequests,
+  });
 
   return {
     ok: true,
@@ -135,6 +145,7 @@ exports.main = async (event = {}) => {
       leaveRequests: leaveView,
       evaluationSummary: summary,
       materials: materialView,
+      profileChangeRequests: profileChangeRequestView,
       profile,
       teacherProfile,
       systemStats: {
@@ -148,7 +159,7 @@ exports.main = async (event = {}) => {
         pendingLeaves: leaveView.filter((item) => item.status === "pending").length,
         evaluations: summary.reduce((sum, item) => sum + Number(item.count || 0), 0),
         attendance: attendanceView.length,
-        profileChanges: 0,
+        profileChanges: profileChangeRequestView.filter((item) => isPendingStatus(item.status)).length,
         riskStudents: session.role === "teacher" ? calculateAtRiskStudentCount(attendanceView) : 0,
       },
       meta: {
@@ -168,11 +179,64 @@ exports.main = async (event = {}) => {
           courseEvaluations: evaluations.length,
           classSessions: classSessions.length,
           courseMaterials: materials.length,
+          profileChangeRequests: profileChangeRequests.length,
         },
       },
     },
   };
 };
+
+function buildProfileChangeRequests({ role, sessionUserId, rows }) {
+  const sessionUserKeys = buildUserKeys(sessionUserId);
+  return (rows || [])
+    .map(normalizeProfileChangeRequest)
+    .filter((item) => {
+      if (role === "admin") {
+        return isPendingStatus(item.status);
+      }
+      return sessionUserKeys.has(item.requesterUserId) || sessionUserKeys.has(item.requester_user_id);
+    })
+    .sort((left, right) => Number(right.createdAt || 0) - Number(left.createdAt || 0));
+}
+
+function normalizeProfileChangeRequest(item = {}) {
+  const requesterUserId = String(item.requester_user_id || item.requesterUserId || "").trim();
+  const requesterName = String(item.requester_name || item.requesterName || requesterUserId).trim();
+  const targetType = String(item.target_type || item.targetType || "").trim();
+  const targetId = String(item.target_id || item.targetId || "").trim();
+  const status = normalizeStatus(item.status || "pending");
+  return {
+    _id: item._id,
+    requesterUserId,
+    requester_user_id: requesterUserId,
+    requesterName,
+    requester_name: requesterName,
+    targetType,
+    target_type: targetType,
+    targetId,
+    target_id: targetId,
+    changes: item.changes || {},
+    status,
+    reviewerUserId: item.reviewer_user_id || item.reviewerUserId || "",
+    reviewer_user_id: item.reviewer_user_id || item.reviewerUserId || "",
+    reviewComment: item.review_comment || item.reviewComment || "",
+    review_comment: item.review_comment || item.reviewComment || "",
+    reviewedAt: Number(item.reviewed_at || item.reviewedAt || 0),
+    reviewed_at: Number(item.reviewed_at || item.reviewedAt || 0),
+    createdAt: Number(item.created_at || item.createdAt || 0),
+    created_at: Number(item.created_at || item.createdAt || 0),
+    updatedAt: Number(item.updated_at || item.updatedAt || 0),
+    updated_at: Number(item.updated_at || item.updatedAt || 0),
+  };
+}
+
+function isPendingStatus(status) {
+  return normalizeStatus(status) === "pending";
+}
+
+function normalizeStatus(status) {
+  return String(status || "").trim().toLowerCase();
+}
 
 async function readCollection(name, limit = 1000) {
   try {
@@ -412,6 +476,8 @@ function normalizeLeave(item) {
   return {
     ...item,
     studentId: String(item.student_id || item.studentId || ""),
+    studentName: item.student_name || item.studentName || "",
+    studentNo: item.student_no || item.studentNo || "",
     courseOfferingId: String(item.course_offering_id || item.courseOfferingId || ""),
     courseName: item.course_name || item.courseName || "",
     date: item.leave_date || item.date || "",
@@ -422,6 +488,25 @@ function normalizeLeave(item) {
     createdAt: Number(item.created_at || item.createdAt || 0),
     updatedAt: Number(item.updated_at || item.updatedAt || 0),
   };
+}
+
+function resolveStudentName(students, studentId) {
+  const student = findStudentByAnyId(students, studentId);
+  return student ? student.name || student.student_no || student._id : String(studentId || "");
+}
+
+function resolveStudentNo(students, studentId) {
+  const student = findStudentByAnyId(students, studentId);
+  return student ? student.student_no || student.studentNo || "" : "";
+}
+
+function findStudentByAnyId(students, studentId) {
+  const keys = buildUserKeys(studentId);
+  return (students || []).find((item) =>
+    keys.has(String(item._id || "").trim()) ||
+    keys.has(String(item.user_id || item.userId || "").trim()) ||
+    keys.has(String(item.student_no || item.studentNo || "").trim()),
+  ) || null;
 }
 
 function buildCourseName(offering, courseMap) {

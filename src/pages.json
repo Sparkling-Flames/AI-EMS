@@ -43,6 +43,12 @@
       }
     },
     {
+      "path": "pages/evaluation/details",
+      "style": {
+        "navigationBarTitleText": "Evaluation Details"
+      }
+    },
+    {
       "path": "pages/materials/materials",
       "style": {
         "navigationBarTitleText": "Course Materials"

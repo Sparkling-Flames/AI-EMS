@@ -152,10 +152,7 @@ export default {
     const session = requireRole(['admin'])
     if (!session) return
     this.session = session
-    const now = Date.now()
-    if (!this.lastUpdatedAt || now - this.lastUpdatedAt > 30000) {
-      this.load()
-    }
+    this.load(true)
   },
   methods: {
     async load(forceRefresh = false) {
@@ -223,7 +220,7 @@ export default {
       const changes = item.changes || {}
       return Object.keys(changes).map(key => {
         const change = changes[key] || {}
-        return (change.label || key) + ': ' + change.oldValue + ' -> ' + change.newValue
+        return (change.label || change.field || key) + ': ' + change.oldValue + ' -> ' + change.newValue
       }).join('; ')
     },
     formatTime(value) {

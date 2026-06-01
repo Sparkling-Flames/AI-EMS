@@ -52,21 +52,6 @@
     </view>
 
     <view class="section">
-      <text class="section-title">Recommended Courses</text>
-      <template v-if="!data.recommendations.length">
-        <text class="muted">No recommendations yet.</text>
-      </template>
-      <DataCard
-        v-for="item in data.recommendations"
-        :key="item._id || item.courseOfferingId"
-        :title="item.courseName"
-        :subtitle="[item.pathName, item.reason].filter(Boolean).join(' - ')"
-      >
-        <StatusBadge status="new" />
-      </DataCard>
-    </view>
-
-    <view class="section">
       <text class="section-title">Academic Alerts</text>
       <template v-if="!data.academicAlerts.length">
         <text class="muted">No active alerts.</text>
@@ -110,7 +95,7 @@
         <input v-model="profileForm.familyInfo.guardianPhone" />
       </view>
       <button class="primary-btn full-btn" :loading="savingProfile" @click="submitProfileChange">
-        Submit for Review
+        Save
       </button>
       <DataCard
         v-for="item in data.profileChangeRequests"
@@ -124,58 +109,50 @@
 
     <view class="section">
       <text class="section-title">My Courses</text>
-      <DataCard
+      <view
         v-for="course in data.courses"
         :key="course.courseOfferingId || course._id"
-        :title="course.code + ' ' + course.name"
-        :subtitle="courseSubtitle(course)"
+        class="course-entry"
+        @click="openCourseMaterials(course)"
       >
-        <view v-if="course.teacherOptions && course.teacherOptions.length > 1" class="teacher-select-panel" :class="{ locked: course.teacherSelected }">
-          <view class="teacher-select-head">
-            <view>
-              <text class="label">Selected Teacher</text>
-              <text class="teacher-select-note">
-                {{ course.teacherSelected ? 'Selection is locked after one choice.' : 'Choose once. You cannot change it later.' }}
+        <DataCard
+          :title="course.code + ' ' + course.name"
+          :subtitle="courseSubtitle(course)"
+        >
+          <view v-if="course.teacherOptions && course.teacherOptions.length > 1" class="teacher-select-panel" :class="{ locked: course.teacherSelected }" @click.stop>
+            <view class="teacher-select-head">
+              <view>
+                <text class="label">Selected Teacher</text>
+                <text class="teacher-select-note">
+                  {{ course.teacherSelected ? 'Selection is locked after one choice.' : 'Choose once. You cannot change it later.' }}
+                </text>
+              </view>
+              <text class="teacher-lock-pill" :class="{ locked: course.teacherSelected }">
+                {{ course.teacherSelected ? 'Locked' : 'One-time' }}
               </text>
             </view>
-            <text class="teacher-lock-pill" :class="{ locked: course.teacherSelected }">
-              {{ course.teacherSelected ? 'Locked' : 'One-time' }}
-            </text>
-          </view>
-          <view v-if="course.teacherSelected" class="teacher-final-choice">
-            <text class="teacher-final-name">{{ course.selectedTeacherName || 'Teacher selected' }}</text>
-            <text class="teacher-final-meta">Final choice saved</text>
-          </view>
-          <view v-else class="teacher-choice-grid">
-            <view
-              v-for="option in course.teacherOptions"
-              :key="option.teacherId"
-              class="teacher-choice-card"
-              @click="selectTeacher(course, option.teacherId)"
-            >
-              <view class="teacher-choice-copy">
-                <text class="teacher-choice-name">{{ option.name }}</text>
-                <text class="teacher-choice-no">{{ option.teacherNo || option.teacherId }}</text>
-              </view>
-              <text class="teacher-choice-action">Choose</text>
+            <view v-if="course.teacherSelected" class="teacher-final-choice">
+              <text class="teacher-final-name">{{ course.selectedTeacherName || 'Teacher selected' }}</text>
+              <text class="teacher-final-meta">Final choice saved</text>
             </view>
+            <view v-else class="teacher-choice-grid">
+              <view
+                v-for="option in course.teacherOptions"
+                :key="option.teacherId"
+                class="teacher-choice-card"
+                @click="selectTeacher(course, option.teacherId)"
+              >
+                <view class="teacher-choice-copy">
+                  <text class="teacher-choice-name">{{ option.name }}</text>
+                  <text class="teacher-choice-no">{{ option.teacherNo || option.teacherId }}</text>
+                </view>
+                <text class="teacher-choice-action">Choose</text>
+              </view>
+            </view>
+            <text v-if="isCourseFull(course) && !course.teacherSelected" class="teacher-select-note warning">Course is full.</text>
           </view>
-          <text v-if="isCourseFull(course) && !course.teacherSelected" class="teacher-select-note warning">Course is full.</text>
-        </view>
-      </DataCard>
-    </view>
-
-    <view class="section">
-      <text class="section-title">Course Materials</text>
-      <template v-if="!data.materials.length">
-        <text class="muted">No visible materials yet.</text>
-      </template>
-      <DataCard
-        v-for="item in data.materials"
-        :key="item._id"
-        :title="item.title"
-        :subtitle="[item.courseName, item.fileType].filter(Boolean).join(' - ')"
-      />
+        </DataCard>
+      </view>
     </view>
 
     <view class="section">
@@ -360,20 +337,30 @@ export default {
     refresh() {
       this.load(true)
     },
+    openCourseMaterials(course) {
+      if (!course || !course.courseOfferingId) return
+      uni.navigateTo({
+        url: `/pages/materials/materials?courseOfferingId=${encodeURIComponent(course.courseOfferingId)}`
+      })
+    },
     async submitProfileChange() {
       this.savingProfile = true
       const result = await callAiemsFunction('submit-profile-change', {
         session: getSession(),
         changes: {
-          'contact.email': this.profileForm.contact.email,
-          'contact.phone': this.profileForm.contact.phone,
-          'contact.address': this.profileForm.contact.address,
-          'familyInfo.guardianPhone': this.profileForm.familyInfo.guardianPhone
+          contact: {
+            email: this.profileForm.contact.email,
+            phone: this.profileForm.contact.phone,
+            address: this.profileForm.contact.address
+          },
+          familyInfo: {
+            guardianPhone: this.profileForm.familyInfo.guardianPhone
+          }
         }
       })
       this.savingProfile = false
       if (result.ok) {
-        uni.showToast({ title: 'Submitted', icon: 'success' })
+        uni.showToast({ title: 'Saved', icon: 'success' })
         this.load(true)
         return
       }
@@ -427,7 +414,7 @@ export default {
       const changes = item.changes || {}
       return Object.keys(changes).map(key => {
         const change = changes[key] || {}
-        return (change.label || key) + ': ' + change.newValue
+        return (change.label || change.field || key) + ': ' + change.newValue
       }).join('; ')
     },
     formatDate(value) {
@@ -476,6 +463,34 @@ export default {
   background: #f8fafc;
   border: 1rpx solid #e2e8f0;
   border-radius: 8rpx;
+}
+
+.full-btn {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 100% !important;
+  min-height: 42px !important;
+  height: auto !important;
+  margin: 10px 0 0 !important;
+  padding: 0 16px !important;
+  line-height: 1.25 !important;
+  white-space: nowrap;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.full-btn::after {
+  border: 0;
+}
+
+.course-entry {
+  display: block;
+  cursor: pointer;
+}
+
+.course-entry:active {
+  opacity: 0.78;
 }
 
 .teacher-select {

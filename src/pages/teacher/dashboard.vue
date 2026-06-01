@@ -99,20 +99,20 @@
               <text class="muted">{{ student.studentNo }}</text>
             </view>
             <view v-if="attendanceStatus(student) !== 'on_leave'" class="status-options">
-              <button
+              <view
                 v-for="status in attendanceStatuses"
                 :key="status.value"
                 class="status-option"
                 :class="{ active: attendanceStatus(student) === status.value }"
-                @click="changeAttendanceStatusValue(student, status.value)"
+                @tap.stop="changeAttendanceStatusValue(student, status.value)"
               >
-                {{ status.label }}
-              </button>
+                <text>{{ status.label }}</text>
+              </view>
             </view>
             <StatusBadge v-else status="on_leave" />
           </view>
         </view>
-        <button class="primary-btn full-btn" :loading="savingAttendance" @click="saveAttendance">Save Attendance</button>
+        <button class="primary-btn attendance-save-btn" :loading="savingAttendance" @tap="saveAttendance">Save Attendance</button>
       </template>
     </view>
 
@@ -368,14 +368,15 @@ export default {
     attendanceRecord(student) {
       const session = this.selectedAttendanceSession
       if (!session) return null
+      const studentIds = [this.studentKey(student), student.userId].filter(Boolean)
       return (this.data.attendance || []).find(item =>
-        item.studentId === student.studentId &&
+        studentIds.includes(item.studentId) &&
         item.courseOfferingId === student.courseOfferingId &&
         item.date === session.sessionDate
       ) || null
     },
     attendanceStatus(student) {
-      const key = student.studentId
+      const key = this.studentKey(student)
       if (this.attendanceDrafts[key]) return this.attendanceDrafts[key]
       const record = this.attendanceRecord(student)
       return record ? record.status : 'present'
@@ -394,7 +395,12 @@ export default {
       this.changeAttendanceStatusValue(student, option.value)
     },
     changeAttendanceStatusValue(student, status) {
-      this.attendanceDrafts = { ...this.attendanceDrafts, [student.studentId]: status }
+      const key = this.studentKey(student)
+      if (!key) {
+        uni.showToast({ title: 'Student id is missing.', icon: 'none' })
+        return
+      }
+      this.attendanceDrafts = { ...this.attendanceDrafts, [key]: status }
     },
     async saveAttendance() {
       const course = this.selectedAttendanceCourse
@@ -406,9 +412,10 @@ export default {
       const records = this.attendanceStudents
         .filter(student => this.attendanceStatus(student) !== 'on_leave')
         .map(student => ({
-          studentId: student.studentId,
+          studentId: this.studentKey(student),
           status: this.attendanceStatus(student)
         }))
+        .filter(record => record.studentId)
       if (!records.length) {
         uni.showToast({ title: 'No editable students.', icon: 'none' })
         return
@@ -428,6 +435,9 @@ export default {
         return
       }
       uni.showToast({ title: result.message || 'Save failed.', icon: 'none' })
+    },
+    studentKey(student) {
+      return String(student && (student.studentId || student.userId || student.studentNo) || '').trim()
     },
     courseSubtitle(course) {
       return [course.schedule, course.credits ? course.credits + ' credits' : '', course.totalSessions ? course.totalSessions + ' sessions' : '', course.materialUploadDeadlineAt ? 'Materials until ' + this.formatDate(course.materialUploadDeadlineAt) : ''].filter(Boolean).join(' - ')
@@ -478,6 +488,24 @@ export default {
 .full-btn {
   width: 100%;
   margin-top: 10rpx;
+}
+
+.attendance-save-btn {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 100% !important;
+  min-height: 44px !important;
+  height: auto !important;
+  margin: 14px 0 0 !important;
+  padding: 0 16px !important;
+  line-height: 1.25 !important;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.attendance-save-btn::after {
+  border: 0;
 }
 
 .inline-actions {
@@ -560,16 +588,23 @@ export default {
 }
 
 .status-option {
-  width: auto !important;
-  min-width: 126rpx !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: 126rpx;
+  min-height: 66rpx;
   margin: 0 !important;
-  padding: 0 18rpx !important;
+  padding: 0 18rpx;
   border: 1rpx solid #cbd5e1;
   border-radius: 8rpx;
   background: #ffffff;
   color: #334155;
   font-size: 24rpx;
-  line-height: 2.2;
+  line-height: 1.2;
+  cursor: pointer;
+  user-select: none;
+  box-sizing: border-box;
 }
 
 .status-option.active {

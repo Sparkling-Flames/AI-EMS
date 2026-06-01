@@ -43,3 +43,8 @@ AI assistant history is stored in `ai_conversations` and `ai_messages`. Each con
 - This PoC does not implement production SSO or full `uni-id` login.
 - This PoC does not connect DeepSeek, LangChain or Pinecone yet.
 - This PoC does not generate official academic documents.
+
+## Admin Account
+
+ - admin001
+ - password:AiEms2026!

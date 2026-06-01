@@ -84,8 +84,9 @@ exports.main = async (event = {}, context = {}) => {
       return { code: 400, message: 'You have already submitted an evaluation for this course', data: null };
     }
 
-    const resolvedCourseId = payload.courseId || (courseMeta && courseMeta.course_id) || payload.courseOfferingId;
-    const resolvedCourseName = payload.courseName || (courseMeta && (courseMeta.name || courseMeta.course_name)) || resolvedCourseId;
+    const payloadCourseId = payload.courseId !== payload.courseOfferingId ? payload.courseId : '';
+    const resolvedCourseId = (courseMeta && (courseMeta.course_id || courseMeta.courseId)) || payloadCourseId || payload.courseOfferingId;
+    const resolvedCourseName = payload.courseName || buildCourseTitle(courseMeta) || resolvedCourseId;
     const teacherIds = normalizeTeacherIds(payload.teacherIds, courseMeta, enrollment);
     const now = Date.now();
 
@@ -197,10 +198,41 @@ function toScoreNumber(value) {
 async function loadCourseOffering(courseOfferingId) {
   try {
     const result = await db.collection('course_offerings').doc(courseOfferingId).get();
-    return result.data && result.data[0] ? result.data[0] : null;
+    const offering = firstRecord(result.data);
+    if (!offering) return null;
+    return await enrichCourseOffering(offering);
   } catch (error) {
     return null;
   }
+}
+
+async function enrichCourseOffering(offering) {
+  const courseId = String(offering.course_id || offering.courseId || '').trim();
+  if (!courseId) return offering;
+
+  try {
+    const result = await db.collection('courses').doc(courseId).get();
+    const course = firstRecord(result.data);
+    if (!course) return offering;
+    return {
+      ...offering,
+      course_code: course.course_code || course.courseCode || course.code || offering.course_code || offering.courseCode || offering.code || '',
+      name: course.name || course.course_name || offering.name || offering.course_name || '',
+      course_name: buildCourseTitle(course) || offering.course_name || offering.name || ''
+    };
+  } catch (error) {
+    return offering;
+  }
+}
+
+function firstRecord(data) {
+  return Array.isArray(data) ? data[0] : data;
+}
+
+function buildCourseTitle(course = {}) {
+  const code = String(course.course_code || course.courseCode || course.code || '').trim();
+  const name = String(course.name || course.course_name || course.courseName || '').trim();
+  return [code, name].filter(Boolean).join(' ').trim();
 }
 
 async function readCollection(name, limit = 1000) {

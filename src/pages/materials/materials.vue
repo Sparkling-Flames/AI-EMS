@@ -3,8 +3,8 @@
     <view class="section">
       <view class="row">
         <view>
-          <text class="section-title">Course Materials</text>
-          <text class="muted">{{ session.displayName }} - {{ session.role }}</text>
+          <text class="section-title">{{ selectedCourse ? formatCourseLabel(selectedCourse) : 'Course Materials' }}</text>
+          <text class="muted">{{ selectedCourse ? 'Course materials and timeline' : session.displayName + ' - ' + session.role }}</text>
         </view>
         <view class="btn-row top-actions">
           <button class="secondary-btn" :loading="loading" @click="refresh">Refresh</button>
@@ -23,7 +23,7 @@
       <template v-else>
         <view class="field">
           <text class="label">Course</text>
-          <picker :range="courseLabels" :value="courseIndex" @change="changeCourse">
+          <picker :range="courseLabels" :value="courseIndex" @change="changeCourse" :disabled="Boolean(routeCourseOfferingId)">
             <view class="picker-value">{{ selectedCourseLabel }}</view>
           </picker>
         </view>
@@ -34,20 +34,16 @@
         </view>
 
         <view class="field">
-          <text class="label">File URL</text>
-          <input v-model="form.fileUrl" placeholder="https://..." />
-        </view>
-
-        <view class="field">
-          <text class="label">File Type</text>
-          <picker :range="fileTypes" :value="fileTypeIndex" @change="changeFileType">
-            <view class="picker-value">{{ fileTypes[fileTypeIndex] }}</view>
-          </picker>
-        </view>
-
-        <view class="field">
-          <text class="label">Knowledge Document ID</text>
-          <input v-model="form.knowledgeDocumentId" placeholder="Optional" />
+          <text class="label">File</text>
+          <view class="file-picker">
+            <view class="file-picker-main">
+              <text class="file-name">{{ form.fileName || fileNameFromUrl(form.fileUrl) || 'No file selected' }}</text>
+              <text class="muted">{{ form.fileSize ? formatFileSize(form.fileSize) : form.fileUrl ? 'Uploaded to UniCloud cloud storage' : 'Choose a local file from this computer.' }}</text>
+            </view>
+            <button class="secondary-btn file-picker-btn" :loading="uploadingFile" @click="chooseMaterialFile">
+              {{ form.fileUrl ? 'Replace File' : 'Choose File' }}
+            </button>
+          </view>
         </view>
 
         <view class="field">
@@ -80,36 +76,56 @@
     </view>
 
     <view class="section">
-      <text class="section-title">Uploaded Materials</text>
-      <template v-if="!materials.length">
+      <text class="section-title">{{ selectedCourse ? 'Materials' : 'Uploaded Materials' }}</text>
+      <template v-if="!visibleMaterials.length">
         <text class="muted">No course materials yet.</text>
       </template>
 
-      <view v-for="item in materials" :key="item._id" class="card material-card">
-        <view>
-          <text class="value">{{ item.title }}</text>
-          <text class="muted">{{ item.courseName || 'Course not found' }}</text>
-          <text class="muted">{{ [item.fileType || 'link', item.isPublicToStudents ? 'public' : 'private', formatTimeline(item.timelineAt)].filter(Boolean).join(' - ') }}</text>
-          <text class="link-text">{{ item.fileUrl }}</text>
+      <view v-for="item in visibleMaterials" :key="item._id" class="card material-card">
+        <view class="material-file-icon">
+          <text>{{ fileExtensionLabel(item) }}</text>
         </view>
-        <view class="btn-row">
-          <button class="secondary-btn" @click="copyUrl(item)">Copy URL</button>
-          <button v-if="session.role !== 'student'" class="primary-btn" @click="editMaterial(item)">Edit</button>
+        <view class="material-content">
+          <text class="material-title">{{ item.title }}</text>
+          <text class="material-course">{{ item.courseName || 'Course not found' }}</text>
+          <view class="material-meta">
+            <text>{{ item.fileName || fileNameFromUrl(item.fileUrl) || 'Course material' }}</text>
+            <text v-if="session.role !== 'student'">{{ item.isPublicToStudents ? 'Public' : 'Private' }}</text>
+            <text v-if="formatTimeline(item.timelineAt)">{{ formatTimeline(item.timelineAt) }}</text>
+          </view>
+          <text v-if="session.role !== 'student' && (item.fileId || item.fileUrl)" class="link-text">{{ item.fileId || item.fileUrl }}</text>
+        </view>
+        <view class="material-actions">
+          <button class="primary-btn" :loading="downloadingMaterialId === item._id" @click="downloadMaterial(item)">Download</button>
+          <button v-if="session.role !== 'student'" class="secondary-btn" @click="editMaterial(item)">Edit</button>
         </view>
       </view>
     </view>
 
     <view v-if="session.role === 'student'" class="section">
       <text class="section-title">Course Timeline</text>
-      <template v-if="!timeline.length">
+      <template v-if="!visibleTimeline.length">
         <text class="muted">No scheduled sessions yet.</text>
       </template>
-      <view v-for="item in timeline" :key="item._id" class="card">
-        <text class="value">{{ item.courseName }}</text>
-        <text class="muted">{{ ['Session ' + item.sequenceNo, item.sessionDate, item.startTime + '-' + item.endTime].filter(Boolean).join(' - ') }}</text>
-        <view v-for="material in materialsForSession(item)" :key="material._id" class="timeline-material">
-          <text class="link-text">{{ material.title }}</text>
-          <text class="muted">{{ material.fileType || 'link' }}</text>
+      <view class="timeline-list">
+        <view v-for="item in visibleTimeline" :key="item._id" class="timeline-card">
+          <view class="timeline-marker">
+            <text>{{ item.sequenceNo || '-' }}</text>
+          </view>
+          <view class="timeline-body">
+            <view class="timeline-head">
+              <text class="timeline-title">{{ item.courseName }}</text>
+              <text class="timeline-date">{{ item.sessionDate }}</text>
+            </view>
+            <text class="timeline-time">{{ formatSessionTime(item) }}</text>
+            <view v-if="materialsForSession(item).length" class="timeline-material-list">
+              <view v-for="material in materialsForSession(item)" :key="material._id" class="timeline-material">
+                <text class="timeline-material-title">{{ material.title }}</text>
+                <text class="timeline-material-type">{{ material.fileType || 'link' }}</text>
+              </view>
+            </view>
+            <text v-else class="timeline-empty">No materials for this session.</text>
+          </view>
         </view>
       </view>
     </view>
@@ -127,18 +143,21 @@ export default {
       courses: [],
       materials: [],
       timeline: [],
+      routeCourseOfferingId: '',
       courseIndex: 0,
-      fileTypeIndex: 0,
-      fileTypes: ['document', 'slide', 'video', 'link', 'other'],
       loading: false,
       saving: false,
+      uploadingFile: false,
+      downloadingMaterialId: '',
       lastLoadedAt: 0,
       loadTtlMs: 30000,
       form: {
         materialId: '',
         title: '',
         fileUrl: '',
-        knowledgeDocumentId: '',
+        fileName: '',
+        fileSize: 0,
+        fileType: '',
         availableDate: new Date().toISOString().slice(0, 10),
         availableTime: '10:00',
         isPublicToStudents: true
@@ -146,16 +165,35 @@ export default {
     }
   },
   computed: {
+    visibleCourses() {
+      if (!this.routeCourseOfferingId) return this.courses
+      return this.courses.filter(item => item.courseOfferingId === this.routeCourseOfferingId)
+    },
     courseLabels() {
-      return this.courses.map(item => this.formatCourseLabel(item))
+      return this.visibleCourses.map(item => this.formatCourseLabel(item))
     },
     selectedCourseLabel() {
       return this.courseLabels[this.courseIndex] || 'No courses available'
     },
+    selectedCourse() {
+      return this.visibleCourses[this.courseIndex] || null
+    },
     selectedCourseOfferingId() {
-      const course = this.courses[this.courseIndex]
+      if (this.routeCourseOfferingId) return this.routeCourseOfferingId
+      const course = this.selectedCourse
       return course ? course.courseOfferingId : ''
+    },
+    visibleMaterials() {
+      if (!this.selectedCourseOfferingId) return this.materials
+      return this.materials.filter(item => item.courseOfferingId === this.selectedCourseOfferingId)
+    },
+    visibleTimeline() {
+      if (!this.selectedCourseOfferingId) return this.timeline
+      return this.timeline.filter(item => item.courseOfferingId === this.selectedCourseOfferingId)
     }
+  },
+  onLoad(options = {}) {
+    this.routeCourseOfferingId = String(options.courseOfferingId || options.course_offering_id || '').trim()
   },
   onShow() {
     const session = requireRole(['student', 'teacher', 'admin'])
@@ -172,7 +210,9 @@ export default {
         materialId: '',
         title: '',
         fileUrl: '',
-        knowledgeDocumentId: '',
+        fileName: '',
+        fileSize: 0,
+        fileType: '',
         availableDate: new Date().toISOString().slice(0, 10),
         availableTime: '10:00',
         isPublicToStudents: true
@@ -194,7 +234,12 @@ export default {
       this.materials = result.data.materials || []
       this.timeline = result.data.timeline || []
       this.lastLoadedAt = Date.now()
-      if (this.courseIndex >= this.courses.length) {
+      const matchedIndex = this.routeCourseOfferingId
+        ? this.visibleCourses.findIndex(course => course.courseOfferingId === this.routeCourseOfferingId)
+        : -1
+      if (matchedIndex >= 0) {
+        this.courseIndex = matchedIndex
+      } else if (this.courseIndex >= this.visibleCourses.length) {
         this.courseIndex = 0
       }
     },
@@ -204,8 +249,12 @@ export default {
     async saveMaterial() {
       const title = this.form.title.trim()
       const fileUrl = this.form.fileUrl.trim()
+      if (this.uploadingFile) {
+        uni.showToast({ title: 'File is still uploading.', icon: 'none' })
+        return
+      }
       if (!this.selectedCourseOfferingId || !title || !fileUrl) {
-        uni.showToast({ title: 'Course, title and URL are required.', icon: 'none' })
+        uni.showToast({ title: 'Course, title and uploaded file are required.', icon: 'none' })
         return
       }
 
@@ -216,9 +265,11 @@ export default {
         courseOfferingId: this.selectedCourseOfferingId,
         title,
         fileUrl,
-        fileType: this.fileTypes[this.fileTypeIndex] || 'link',
+        fileId: fileUrl,
+        fileName: this.form.fileName.trim() || this.fileNameFromUrl(fileUrl),
+        fileSize: Number(this.form.fileSize || 0),
+        fileType: this.form.fileType || this.inferFileType(this.form.fileName || fileUrl),
         isPublicToStudents: this.form.isPublicToStudents,
-        knowledgeDocumentId: this.form.knowledgeDocumentId.trim(),
         availableAt: this.buildAvailableAt()
       })
       this.saving = false
@@ -233,15 +284,15 @@ export default {
       uni.showToast({ title: result.message || 'Save failed.', icon: 'none' })
     },
     editMaterial(item) {
-      const courseIndex = this.courses.findIndex(course => course.courseOfferingId === item.courseOfferingId)
-      const fileTypeIndex = this.fileTypes.indexOf(item.fileType || 'link')
+      const courseIndex = this.visibleCourses.findIndex(course => course.courseOfferingId === item.courseOfferingId)
       this.courseIndex = courseIndex >= 0 ? courseIndex : 0
-      this.fileTypeIndex = fileTypeIndex >= 0 ? fileTypeIndex : this.fileTypes.indexOf('link')
       this.form = {
         materialId: item._id,
         title: item.title || '',
         fileUrl: item.fileUrl || '',
-        knowledgeDocumentId: item.knowledgeDocumentId || '',
+        fileName: item.fileName || this.fileNameFromUrl(item.fileUrl),
+        fileSize: Number(item.fileSize || 0),
+        fileType: item.fileType || '',
         availableDate: item.timelineAt ? new Date(item.timelineAt).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
         availableTime: item.timelineAt ? this.formatClock(item.timelineAt) : '10:00',
         isPublicToStudents: item.isPublicToStudents === true
@@ -249,16 +300,79 @@ export default {
     },
     resetForm() {
       this.form = this.emptyForm()
-      this.fileTypeIndex = this.fileTypes.indexOf('link')
     },
     changeCourse(event) {
       this.courseIndex = Number(event.detail.value)
     },
-    changeFileType(event) {
-      this.fileTypeIndex = Number(event.detail.value)
-    },
     togglePublic(event) {
       this.form.isPublicToStudents = event.detail.value === true
+    },
+    async chooseMaterialFile() {
+      if (!this.selectedCourseOfferingId) {
+        uni.showToast({ title: 'Select a course first.', icon: 'none' })
+        return
+      }
+      try {
+        const file = await this.chooseLocalFile()
+        if (!file || !file.path) return
+        await this.uploadMaterialFile(file)
+      } catch (error) {
+        if (error && error.cancel) return
+        uni.showToast({ title: error && error.message || 'File selection failed.', icon: 'none' })
+      }
+    },
+    chooseLocalFile() {
+      return new Promise((resolve, reject) => {
+        const onSuccess = (res) => {
+          const file = (res.tempFiles && res.tempFiles[0]) || {}
+          const path = file.path || file.tempFilePath || (res.tempFilePaths && res.tempFilePaths[0]) || ''
+          resolve({
+            path,
+            name: file.name || this.fileNameFromUrl(path) || 'material',
+            size: Number(file.size || 0)
+          })
+        }
+        const onFail = (error) => reject(error && error.errMsg && error.errMsg.includes('cancel') ? { cancel: true } : error)
+        if (typeof uni.chooseFile === 'function') {
+          uni.chooseFile({ count: 1, success: onSuccess, fail: onFail })
+          return
+        }
+        if (typeof uni.chooseImage === 'function') {
+          uni.chooseImage({ count: 1, success: onSuccess, fail: onFail })
+          return
+        }
+        reject(new Error('Local file picker is unavailable in this runtime.'))
+      })
+    },
+    async uploadMaterialFile(file) {
+      if (typeof uniCloud === 'undefined' || typeof uniCloud.uploadFile !== 'function') {
+        uni.showToast({ title: 'UniCloud upload is unavailable. Use HBuilderX cloud runtime.', icon: 'none' })
+        return
+      }
+      this.uploadingFile = true
+      try {
+        const safeName = this.sanitizeCloudFileName(file.name)
+        const cloudPath = `course-materials/${this.selectedCourseOfferingId}/${Date.now()}-${safeName}`
+        const result = await uniCloud.uploadFile({
+          filePath: file.path,
+          cloudPath
+        })
+        const fileUrl = result.fileID || result.fileId || result.fileUrl || result.tempFileURL || ''
+        if (!fileUrl) {
+          throw new Error('UniCloud did not return a file id.')
+        }
+        this.form = {
+          ...this.form,
+          fileUrl,
+          fileName: file.name || safeName,
+          fileSize: Number(file.size || 0),
+          fileType: this.inferFileType(file.name || safeName)
+        }
+        uni.showToast({ title: 'Uploaded', icon: 'success' })
+      } catch (error) {
+        uni.showToast({ title: error && error.message || 'Upload failed.', icon: 'none' })
+      }
+      this.uploadingFile = false
     },
     buildAvailableAt() {
       const timestamp = Date.parse(`${this.form.availableDate}T${this.form.availableTime || '00:00'}:00`)
@@ -277,19 +391,111 @@ export default {
       const timestamp = Number(value || 0)
       return timestamp ? new Date(timestamp).toISOString().slice(0, 16).replace('T', ' ') : ''
     },
+    formatSessionTime(item) {
+      return ['Session ' + (item.sequenceNo || '-'), [item.startTime, item.endTime].filter(Boolean).join('-')].filter(Boolean).join(' - ')
+    },
     formatClock(value) {
       const date = new Date(Number(value || 0))
       return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
     },
-    copyUrl(item) {
-      if (!item.fileUrl) return
-      uni.setClipboardData({
-        data: item.fileUrl,
-        success: () => uni.showToast({ title: 'Copied', icon: 'success' })
+    async downloadMaterial(item) {
+      if (!item || this.downloadingMaterialId) return
+      this.downloadingMaterialId = item._id
+      try {
+        const url = await this.resolveDownloadUrl(item)
+        if (!url) {
+          throw new Error('Download file was not found.')
+        }
+        await this.openDownloadUrl(url, item.fileName || this.fileNameFromUrl(url) || item.title || 'material')
+      } catch (error) {
+        uni.showToast({ title: error && error.message || 'Download failed.', icon: 'none' })
+      }
+      this.downloadingMaterialId = ''
+    },
+    async resolveDownloadUrl(item) {
+      const value = String(item.fileId || item.fileUrl || '').trim()
+      if (!value) return ''
+      if (/^cloud:\/\//i.test(value) && typeof uniCloud !== 'undefined' && typeof uniCloud.getTempFileURL === 'function') {
+        const result = await uniCloud.getTempFileURL({ fileList: [value] })
+        const file = result && result.fileList && result.fileList[0] || {}
+        return file.tempFileURL || file.download_url || file.url || value
+      }
+      return value
+    },
+    openDownloadUrl(url, fileName) {
+      return new Promise((resolve, reject) => {
+        if (typeof window !== 'undefined' && /^https?:\/\//i.test(url)) {
+          const link = document.createElement('a')
+          link.href = url
+          link.target = '_blank'
+          link.rel = 'noopener'
+          link.download = fileName || ''
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          uni.showToast({ title: 'Download started', icon: 'success' })
+          resolve()
+          return
+        }
+        if (typeof uni.downloadFile !== 'function') {
+          reject(new Error('Download is unavailable in this runtime.'))
+          return
+        }
+        uni.downloadFile({
+          url,
+          success: (res) => {
+            if (res.statusCode && res.statusCode !== 200) {
+              reject(new Error('Download failed.'))
+              return
+            }
+            if (typeof uni.openDocument === 'function' && res.tempFilePath) {
+              uni.openDocument({
+                filePath: res.tempFilePath,
+                showMenu: true,
+                success: () => resolve(),
+                fail: () => resolve()
+              })
+              return
+            }
+            uni.showToast({ title: 'Downloaded', icon: 'success' })
+            resolve()
+          },
+          fail: reject
+        })
       })
     },
     formatCourseLabel(course) {
       return [course.code, course.name, course.sectionNo].filter(Boolean).join(' ').trim() || 'Unnamed course'
+    },
+    fileNameFromUrl(value) {
+      const text = String(value || '')
+      return decodeURIComponent(text.split('?')[0].split('/').filter(Boolean).pop() || '')
+    },
+    formatFileSize(value) {
+      const size = Number(value || 0)
+      if (!size) return ''
+      if (size < 1024) return size + ' B'
+      if (size < 1024 * 1024) return (size / 1024).toFixed(1) + ' KB'
+      return (size / 1024 / 1024).toFixed(1) + ' MB'
+    },
+    fileExtensionLabel(item) {
+      const fileName = item && (item.fileName || this.fileNameFromUrl(item.fileUrl)) || ''
+      const ext = String(fileName || item && item.fileType || 'file').split('?')[0].split('.').pop().toUpperCase()
+      return ext && ext.length <= 5 ? ext : 'FILE'
+    },
+    sanitizeCloudFileName(value) {
+      const fallback = 'material'
+      const name = String(value || fallback).trim()
+      const sanitized = name.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/^_+|_+$/g, '')
+      return sanitized || fallback
+    },
+    inferFileType(value) {
+      const ext = String(value || '').split('?')[0].split('.').pop().toLowerCase()
+      if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt'].includes(ext)) return 'document'
+      if (['ppt', 'pptx'].includes(ext)) return 'slide'
+      if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) return 'video'
+      if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext)) return 'image'
+      return 'file'
     },
     backHome() {
       uni.reLaunch({ url: dashboardUrl(this.session.role) })
@@ -319,8 +525,113 @@ export default {
   margin-bottom: 22rpx;
 }
 
+.file-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-top: 10rpx;
+  padding: 18rpx;
+  background: #f8fafc;
+  border: 1rpx solid #cbd5e1;
+  border-radius: 8rpx;
+  box-sizing: border-box;
+}
+
+.file-picker-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.file-name {
+  display: block;
+  color: #0f172a;
+  font-size: 28rpx;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.file-picker-btn {
+  flex: 0 0 280rpx;
+  width: 250rpx;
+  min-width: 0;
+  padding: 0 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
 .material-card {
+  display: grid;
+  grid-template-columns: 76rpx minmax(0, 1fr) auto;
+  align-items: center;
   gap: 18rpx;
+  padding: 20rpx;
+}
+
+.material-file-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 76rpx;
+  height: 76rpx;
+  border-radius: 8rpx;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 22rpx;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.material-content {
+  min-width: 0;
+}
+
+.material-title {
+  display: block;
+  color: #0f172a;
+  font-size: 30rpx;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.material-course {
+  display: block;
+  margin-top: 6rpx;
+  color: #475569;
+  font-size: 24rpx;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.material-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx 14rpx;
+  margin-top: 10rpx;
+  color: #64748b;
+  font-size: 23rpx;
+  line-height: 1.4;
+}
+
+.material-meta text {
+  display: inline-flex;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.material-actions {
+  display: flex;
+  gap: 12rpx;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.material-actions button {
+  min-width: 150rpx;
+  margin: 0;
 }
 
 .link-text {
@@ -338,14 +649,6 @@ export default {
   gap: 14rpx;
 }
 
-.timeline-material {
-  margin-top: 10rpx;
-  padding: 10rpx 12rpx;
-  background: #f8fafc;
-  border: 1rpx solid #e2e8f0;
-  border-radius: 8rpx;
-}
-
 .primary-btn,
 .secondary-btn {
   min-width: 160rpx;
@@ -354,5 +657,142 @@ export default {
 
 .top-actions {
   margin-top: 0;
+}
+
+.timeline-list {
+  display: grid;
+  gap: 14rpx;
+}
+
+.timeline-card {
+  display: flex;
+  gap: 18rpx;
+  padding: 18rpx;
+  background: #ffffff;
+  border: 1rpx solid #dbe3ef;
+  border-radius: 8rpx;
+  box-shadow: 0 2rpx 8rpx rgba(15, 23, 42, 0.04);
+  box-sizing: border-box;
+}
+
+.timeline-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 56rpx;
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 24rpx;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.timeline-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.timeline-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18rpx;
+}
+
+.timeline-title {
+  display: block;
+  min-width: 0;
+  color: #0f172a;
+  font-size: 30rpx;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.timeline-date {
+  flex-shrink: 0;
+  color: #475569;
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.timeline-time {
+  display: block;
+  margin-top: 4rpx;
+  color: #64748b;
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.timeline-material-list {
+  display: grid;
+  gap: 10rpx;
+  margin-top: 14rpx;
+}
+
+.timeline-material {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+  padding: 12rpx 14rpx;
+  background: #f8fafc;
+  border: 1rpx solid #e2e8f0;
+  border-radius: 8rpx;
+}
+
+.timeline-material-title {
+  min-width: 0;
+  color: #1d4ed8;
+  font-size: 24rpx;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.timeline-material-type {
+  flex-shrink: 0;
+  color: #64748b;
+  font-size: 22rpx;
+  line-height: 1.4;
+}
+
+.timeline-empty {
+  display: block;
+  margin-top: 12rpx;
+  color: #94a3b8;
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+@media (max-width: 700px) {
+  .timeline-card {
+    gap: 14rpx;
+    padding: 16rpx;
+  }
+
+  .timeline-head,
+  .timeline-material,
+  .material-card,
+  .material-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .material-card {
+    display: flex;
+  }
+
+  .material-file-icon {
+    width: 64rpx;
+    height: 64rpx;
+  }
+
+  .timeline-date,
+  .timeline-material-type {
+    flex-shrink: 1;
+  }
 }
 </style>

@@ -62,7 +62,8 @@ async function applyChanges(request, now) {
   }
 
   const next = clone(target);
-  for (const [field, change] of Object.entries(request.changes || {})) {
+  for (const [key, change] of Object.entries(request.changes || {})) {
+    const field = change && change.field ? change.field : key;
     setByPath(next, field, change.newValue);
   }
   next.updated_at = now;
@@ -78,7 +79,7 @@ async function applyChanges(request, now) {
     updated: true,
     collection,
     targetId: target._id,
-    fields: Object.keys(request.changes || {}),
+    fields: Object.entries(request.changes || {}).map(([key, change]) => change && change.field ? change.field : key),
   };
 }
 

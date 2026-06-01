@@ -238,7 +238,12 @@
     <view class="section">
       <text class="section-title">Published Courses</text>
       <DataCard v-for="course in courses" :key="course.courseOfferingId"
-        :title="[course.courseCode, course.courseName].filter(Boolean).join(' ')" :subtitle="courseSummary(course)" />
+        :title="[course.courseCode, course.courseName].filter(Boolean).join(' ')" :subtitle="courseSummary(course)">
+        <view class="course-actions">
+          <button class="mini-btn danger" :loading="deletingCourseId === course.courseOfferingId"
+            @click="deleteCourse(course)">Delete</button>
+        </view>
+      </DataCard>
     </view>
 
     <view class="section">
@@ -280,6 +285,7 @@
         loading: false,
         savingAccount: false,
         savingCourse: false,
+        deletingCourseId: '',
         accounts: [],
         courses: [],
         classSessions: [],
@@ -371,10 +377,10 @@
       filteredTimetableSessions() {
         const majorId = this.optionValue('majors', this.timetableMajorIndex)
         const gradeYear = Number(this.timetableYear || 0)
-        const rows = (this.classSessions || []).filter(item =>
+        const rows = this.groupTimetableSessions((this.classSessions || []).filter(item =>
           (!majorId || item.majorId === majorId) &&
           (!gradeYear || Number(item.gradeYear || 0) === gradeYear)
-        )
+        ))
         return rows.map(item => ({
           ...item,
           hasConflict: this.sessionHasConflict(item, rows)
@@ -667,13 +673,6 @@
         if (!this.courseForm.courseCode || !this.courseForm.courseName || !majorId || !gradeYear || !this.courseForm.teacherIds.length || !capacity) {
           return 'Course code, name, major, cohort year, teachers and capacity are required.'
         }
-        const matchingTrainingPlan = (this.options.trainingPlans || []).find(item =>
-          item.majorId === majorId &&
-          Number(item.gradeYear || 0) === gradeYear
-        )
-        if (!matchingTrainingPlan) {
-          return `No training plan matches the selected major and cohort year ${gradeYear}.`
-        }
         if (!Number.isInteger(capacity) || capacity < 1) {
           return 'Capacity must be a positive integer.'
         }
@@ -738,10 +737,40 @@
         return this.timeToMinutes(leftStart) < this.timeToMinutes(rightEnd) &&
           this.timeToMinutes(rightStart) < this.timeToMinutes(leftEnd)
       },
+      groupTimetableSessions(rows) {
+        const grouped = new Map()
+        const sortedRows = (rows || []).slice().sort((left, right) =>
+          Number(left.sessionStartAt || 0) - Number(right.sessionStartAt || 0) ||
+          String(left.courseName || '').localeCompare(String(right.courseName || ''))
+        )
+        sortedRows.forEach(item => {
+          const key = this.timetableSessionKey(item)
+          const existing = grouped.get(key)
+          if (!existing) {
+            grouped.set(key, {
+              ...item,
+              _id: `weekly_${key}`,
+              sessionCount: 1
+            })
+            return
+          }
+          existing.sessionCount = Number(existing.sessionCount || 1) + 1
+        })
+        return Array.from(grouped.values())
+      },
+      timetableSessionKey(item) {
+        return [
+          item.courseOfferingId || item.courseId || item.courseName || '',
+          Number(item.weekday || 0),
+          item.startTime || '',
+          item.endTime || '',
+          item.classroomId || item.classroomName || ''
+        ].join('|')
+      },
       sessionHasConflict(sessionItem, rows) {
         return rows.some(item =>
           item._id !== sessionItem._id &&
-          item.sessionDate === sessionItem.sessionDate &&
+          Number(item.weekday || 0) === Number(sessionItem.weekday || 0) &&
           this.timeRangesOverlap(sessionItem.startTime, sessionItem.endTime, item.startTime, item.endTime)
         )
       },
@@ -793,6 +822,43 @@
         uni.showToast({
           title: result.message || 'Publish failed.',
           icon: 'none'
+        })
+      },
+      deleteCourse(course) {
+        if (!course || !course.courseOfferingId) {
+          uni.showToast({
+            title: 'Course offering id is missing.',
+            icon: 'none'
+          })
+          return
+        }
+        const courseName = [course.courseCode, course.courseName].filter(Boolean).join(' ') || course.courseOfferingId
+        uni.showModal({
+          title: 'Delete Course',
+          content: `Delete ${courseName}? Related sessions, enrollments, attendance, leave requests, evaluations and materials will be removed.`,
+          confirmText: 'Delete',
+          success: async (modal) => {
+            if (!modal.confirm) return
+            this.deletingCourseId = course.courseOfferingId
+            const result = await callAiemsFunction('delete-admin-course', {
+              session: getSession(),
+              courseOfferingId: course.courseOfferingId,
+              courseId: course.courseId
+            })
+            this.deletingCourseId = ''
+            if (result.ok) {
+              uni.showToast({
+                title: 'Course deleted',
+                icon: 'success'
+              })
+              this.load(true)
+              return
+            }
+            uni.showToast({
+              title: result.message || 'Delete failed.',
+              icon: 'none'
+            })
+          }
         })
       },
       courseSummary(course) {
@@ -1101,7 +1167,8 @@
     box-sizing: border-box;
   }
 
-  .account-actions {
+  .account-actions,
+  .course-actions {
     display: flex;
     gap: 10rpx;
     align-items: center;
@@ -1149,7 +1216,8 @@
       grid-template-columns: repeat(7, 220rpx);
     }
 
-    .account-actions {
+    .account-actions,
+    .course-actions {
       margin-top: 14rpx;
       width: 100%;
     }
