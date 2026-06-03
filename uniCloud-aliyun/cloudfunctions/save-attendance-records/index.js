@@ -55,7 +55,7 @@ exports.main = async (event = {}) => {
       status,
       source: "teacher_manual",
       remark: String(row.remark || "").trim(),
-      updated_at: now,
+      updated_at: now
     };
 
     let attendanceId = existing ? existing._id : "";
@@ -65,17 +65,24 @@ exports.main = async (event = {}) => {
       const result = await db.collection("attendance_records").add({
         ...payload,
         leave_request_id: "",
-        created_at: now,
+        created_at: now
       });
       attendanceId = result.id;
     }
-    saved.push(buildAttendanceView({ ...existing, ...payload, _id: attendanceId, created_at: existing ? existing.created_at : now }));
+    saved.push(
+      buildAttendanceView({
+        ...existing,
+        ...payload,
+        _id: attendanceId,
+        created_at: existing ? existing.created_at : now
+      })
+    );
   }
 
   await writeAudit("attendance.manual_update", session, courseOfferingId, null, {
     courseOfferingId,
     attendanceDate,
-    count: saved.length,
+    count: saved.length
   });
 
   return { ok: true, data: { attendance: saved } };
@@ -86,8 +93,11 @@ async function canManageOffering(session, offering) {
     return true;
   }
   const teacher = await findByField("teachers", "user_id", session.userId);
-  const ids = Array.isArray(offering.teacher_ids) ? offering.teacher_ids.map((item) => String(item || "").trim()) : [];
-  return ids.includes(String(session.userId || "").trim()) || Boolean(teacher && ids.includes(String(teacher._id || "").trim()));
+  const ids = Array.isArray(offering.teacher_ids) ? offering.teacher_ids.map(item => String(item || "").trim()) : [];
+  return (
+    ids.includes(String(session.userId || "").trim()) ||
+    Boolean(teacher && ids.includes(String(teacher._id || "").trim()))
+  );
 }
 
 async function findClassSession(courseOfferingId, attendanceDate) {
@@ -129,7 +139,11 @@ async function findById(collection, id) {
 
 async function findByField(collection, field, value) {
   try {
-    const result = await db.collection(collection).where({ [field]: value }).limit(1).get();
+    const result = await db
+      .collection(collection)
+      .where({ [field]: value })
+      .limit(1)
+      .get();
     return result.data && result.data[0] ? result.data[0] : null;
   } catch (error) {
     console.warn(`[save-attendance-records] ${collection} lookup failed.`, error);
@@ -151,7 +165,7 @@ function enrollmentBelongsToTeacher(enrollment, teacher, sessionUserId) {
   }
   return Boolean(
     (teacher && selectedTeacherId && selectedTeacherId === String(teacher._id || "").trim()) ||
-    (selectedTeacherUserId && selectedTeacherUserId === String(sessionUserId || "").trim()),
+    (selectedTeacherUserId && selectedTeacherUserId === String(sessionUserId || "").trim())
   );
 }
 
@@ -183,7 +197,7 @@ function buildAttendanceView(item) {
     source: item.source || "",
     remark: item.remark || "",
     createdAt: Number(item.created_at || 0),
-    updatedAt: Number(item.updated_at || 0),
+    updatedAt: Number(item.updated_at || 0)
   };
 }
 
@@ -196,7 +210,7 @@ async function writeAudit(action, session, targetId, before, after) {
       target_id: targetId,
       before,
       after,
-      created_at: Date.now(),
+      created_at: Date.now()
     });
   } catch (error) {
     console.warn("[save-attendance-records] audit write skipped.", error);

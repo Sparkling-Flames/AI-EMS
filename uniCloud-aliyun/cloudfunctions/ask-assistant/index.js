@@ -54,7 +54,7 @@ const AI_KNOWLEDGE_COLLECTIONS = [
   { name: "students", limit: 200 },
   { name: "teachers", limit: 100 },
   { name: "training_plans", limit: 50 },
-  { name: "users", limit: 80 },
+  { name: "users", limit: 80 }
 ];
 
 exports.main = async (event = {}) => {
@@ -86,57 +86,60 @@ exports.main = async (event = {}) => {
 
   const systemPrompt = buildSystemPrompt(topHits, contextData, session);
   const historyMessages = buildHistoryMessages(event.history);
-  const messages = [
-    { role: "system", content: systemPrompt },
-    ...historyMessages,
-    { role: "user", content: query },
-  ];
+  const messages = [{ role: "system", content: systemPrompt }, ...historyMessages, { role: "user", content: query }];
 
   const userSettings = normalizeApiSettings(event.apiSettings || {});
   const apiKey = userSettings.apiKey || getEnv("DEEPSEEK_API_KEY");
   const provider = userSettings.provider;
-  const baseUrl = provider === "openai"
-    ? "https://api.openai.com/v1"
-    : DEEPSEEK_BASE_URL;
+  const baseUrl = provider === "openai" ? "https://api.openai.com/v1" : DEEPSEEK_BASE_URL;
   const model = userSettings.model;
   const temperature = userSettings.temperature;
   const maxTokens = userSettings.maxTokens;
-  const citations = topHits.map((h) => ({ knowledge_base_id: h._id, title: h.title || "" }));
+  const citations = topHits.map(h => ({ knowledge_base_id: h._id, title: h.title || "" }));
 
   if (!apiKey) {
     const latencyMs = Date.now() - startedAt;
     const localAnswer = buildLocalContextAnswer(session, query, contextData);
     const grounded = Boolean(localAnswer) || topHits.length > 0;
-    const answer = localAnswer && localAnswer.answer
-      ? localAnswer.answer
-      : topHits.length > 0
-      ? topHits[0].content || ""
-      : "The current knowledge base does not have enough information. Please configure a DeepSeek API key or contact academic staff for confirmation.";
+    const answer =
+      localAnswer && localAnswer.answer
+        ? localAnswer.answer
+        : topHits.length > 0
+          ? topHits[0].content || ""
+          : "The current knowledge base does not have enough information. Please configure a DeepSeek API key or contact academic staff for confirmation.";
     const answerCitations = localAnswer ? [] : citations;
-    const sourceTitle = localAnswer && localAnswer.sourceTitle
-      ? localAnswer.sourceTitle
-      : (topHits[0] && topHits[0].title) || "";
-    const knowledgeBaseId = localAnswer && localAnswer.sourceId && /^kb_/i.test(localAnswer.sourceId)
-      ? localAnswer.sourceId
-      : topHits[0] && topHits[0]._id || undefined;
+    const sourceTitle =
+      localAnswer && localAnswer.sourceTitle ? localAnswer.sourceTitle : (topHits[0] && topHits[0].title) || "";
+    const knowledgeBaseId =
+      localAnswer && localAnswer.sourceId && /^kb_/i.test(localAnswer.sourceId)
+        ? localAnswer.sourceId
+        : (topHits[0] && topHits[0]._id) || undefined;
 
-    await writeMessage(conversation._id, {
-      role: "user",
-      content: query,
-      fallback_used: false,
-      citations: [],
-      latency_ms: 0,
-      created_at: startedAt,
-    }, session);
-    await writeMessage(conversation._id, {
-      role: "assistant",
-      content: answer,
-      model: "local-keyword-kb",
-      citations: answerCitations,
-      fallback_used: true,
-      latency_ms: latencyMs,
-      created_at: Date.now(),
-    }, session);
+    await writeMessage(
+      conversation._id,
+      {
+        role: "user",
+        content: query,
+        fallback_used: false,
+        citations: [],
+        latency_ms: 0,
+        created_at: startedAt
+      },
+      session
+    );
+    await writeMessage(
+      conversation._id,
+      {
+        role: "assistant",
+        content: answer,
+        model: "local-keyword-kb",
+        citations: answerCitations,
+        fallback_used: true,
+        latency_ms: latencyMs,
+        created_at: Date.now()
+      },
+      session
+    );
     await updateConversation(conversation, query, startedAt, session);
     await writeAudit("ask_assistant", session, {
       query,
@@ -145,7 +148,7 @@ exports.main = async (event = {}) => {
       context_turns: Array.isArray(event.history) ? Math.min(event.history.length, 5) : 0,
       conversation_id: conversation._id,
       latency_ms: latencyMs,
-      fallback_reason: "missing_api_key",
+      fallback_reason: "missing_api_key"
     });
 
     return {
@@ -157,43 +160,44 @@ exports.main = async (event = {}) => {
         grounded,
         fallbackUsed: true,
         knowledgeBaseId,
-        conversationId: conversation._id,
-      },
+        conversationId: conversation._id
+      }
     };
   }
 
   let answer;
 
   try {
-    const result = await uniCloud.httpclient.request(
-      `${baseUrl}/chat/completions`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        data: {
-          model,
-          messages,
-          temperature,
-          max_tokens: maxTokens,
-        },
-        dataType: "json",
-        timeout: DEEPSEEK_TIMEOUT,
+    const result = await uniCloud.httpclient.request(`${baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`
       },
-    );
+      data: {
+        model,
+        messages,
+        temperature,
+        max_tokens: maxTokens
+      },
+      dataType: "json",
+      timeout: DEEPSEEK_TIMEOUT
+    });
     answer = result.data.choices[0].message.content;
   } catch (error) {
     const latencyMs = Date.now() - startedAt;
-    await writeMessage(conversation._id, {
-      role: "user",
-      content: query,
-      fallback_used: false,
-      citations: [],
-      latency_ms: 0,
-      created_at: startedAt,
-    }, session);
+    await writeMessage(
+      conversation._id,
+      {
+        role: "user",
+        content: query,
+        fallback_used: false,
+        citations: [],
+        latency_ms: 0,
+        created_at: startedAt
+      },
+      session
+    );
     await writeAudit("ask_assistant", session, {
       query,
       grounded: false,
@@ -201,34 +205,42 @@ exports.main = async (event = {}) => {
       context_turns: Array.isArray(event.history) ? Math.min(event.history.length, 5) : 0,
       conversation_id: conversation._id,
       latency_ms: latencyMs,
-      error: String(error.message || error),
+      error: String(error.message || error)
     });
     return {
       ok: false,
-      message: `AI service error: ${error.message || "Unknown error"}. Please try again later.`,
+      message: `AI service error: ${error.message || "Unknown error"}. Please try again later.`
     };
   }
 
   const latencyMs = Date.now() - startedAt;
   const grounded = topHits.length > 0;
 
-  await writeMessage(conversation._id, {
-    role: "user",
-    content: query,
-    fallback_used: false,
-    citations: [],
-    latency_ms: 0,
-    created_at: startedAt,
-  }, session);
-  await writeMessage(conversation._id, {
-    role: "assistant",
-    content: answer,
-    model,
-    citations,
-    fallback_used: false,
-    latency_ms: latencyMs,
-    created_at: Date.now(),
-  }, session);
+  await writeMessage(
+    conversation._id,
+    {
+      role: "user",
+      content: query,
+      fallback_used: false,
+      citations: [],
+      latency_ms: 0,
+      created_at: startedAt
+    },
+    session
+  );
+  await writeMessage(
+    conversation._id,
+    {
+      role: "assistant",
+      content: answer,
+      model,
+      citations,
+      fallback_used: false,
+      latency_ms: latencyMs,
+      created_at: Date.now()
+    },
+    session
+  );
   await updateConversation(conversation, query, startedAt, session);
 
   await writeAudit("ask_assistant", session, {
@@ -237,7 +249,7 @@ exports.main = async (event = {}) => {
     source_id: grounded ? topHits[0]._id : "",
     context_turns: Array.isArray(event.history) ? Math.min(event.history.length, 5) : 0,
     conversation_id: conversation._id,
-    latency_ms: latencyMs,
+    latency_ms: latencyMs
   });
 
   return {
@@ -249,8 +261,8 @@ exports.main = async (event = {}) => {
       grounded,
       fallbackUsed: false,
       knowledgeBaseId: grounded ? topHits[0]._id : undefined,
-      conversationId: conversation._id,
-    },
+      conversationId: conversation._id
+    }
   };
 };
 
@@ -266,19 +278,19 @@ function buildSystemPrompt(topHits, contextData, session) {
       prompt += `\n\nUser Profile:\n${contextData.userProfile}`;
     }
     if (contextData.courses && contextData.courses.length > 0) {
-      prompt += `\n\nCourses (${contextData.courses.length}):\n${contextData.courses.map((c) => `- ${c.code} ${c.name} (${c.credits} credits, ${c.teacher || ""}, semester ${c.semester || ""})`).join("\n")}`;
+      prompt += `\n\nCourses (${contextData.courses.length}):\n${contextData.courses.map(c => `- ${c.code} ${c.name} (${c.credits} credits, ${c.teacher || ""}, semester ${c.semester || ""})`).join("\n")}`;
     }
     if (contextData.attendance && contextData.attendance.length > 0) {
-      prompt += `\n\nRecent Attendance (${contextData.attendance.length} records):\n${contextData.attendance.map((a) => `- ${a.date} ${a.courseName}: ${a.status}`).join("\n")}`;
+      prompt += `\n\nRecent Attendance (${contextData.attendance.length} records):\n${contextData.attendance.map(a => `- ${a.date} ${a.courseName}: ${a.status}`).join("\n")}`;
     }
     if (contextData.leaves && contextData.leaves.length > 0) {
-      prompt += `\n\nLeave Requests (${contextData.leaves.length}):\n${contextData.leaves.map((l) => `- ${l.date} ${l.courseName}: ${l.status} (${l.type})`).join("\n")}`;
+      prompt += `\n\nLeave Requests (${contextData.leaves.length}):\n${contextData.leaves.map(l => `- ${l.date} ${l.courseName}: ${l.status} (${l.type})`).join("\n")}`;
     }
     if (contextData.grades) {
       prompt += `\n\nGPA / Grades:\n${contextData.grades}`;
     }
     if (contextData.evaluations && contextData.evaluations.length > 0) {
-      prompt += `\n\nCourse Evaluations:\n${contextData.evaluations.map((e) => `- ${e.courseName}: avg ${e.avg}/5 (${e.count} responses), difficulty ${e.diffAvg}/5`).join("\n")}`;
+      prompt += `\n\nCourse Evaluations:\n${contextData.evaluations.map(e => `- ${e.courseName}: avg ${e.avg}/5 (${e.count} responses), difficulty ${e.diffAvg}/5`).join("\n")}`;
     }
     if (contextData.courseParticipants && contextData.courseParticipants.length > 0) {
       prompt += `\n\nCourse Participants:\n${contextData.courseParticipants.map(formatCourseParticipantPromptLine).join("\n")}`;
@@ -287,7 +299,7 @@ function buildSystemPrompt(topHits, contextData, session) {
       prompt += `\n\nAnonymous Evaluation Insights:\n${contextData.evaluationInsights.map(formatEvaluationPromptLine).join("\n")}`;
     }
     if (contextData.teachers && contextData.teachers.length > 0) {
-      prompt += `\n\nTeachers:\n${contextData.teachers.map((t) => `- ${t.name} (${t.title || ""}): ${t.department || ""}, ${t.fields || ""}`).join("\n")}`;
+      prompt += `\n\nTeachers:\n${contextData.teachers.map(t => `- ${t.name} (${t.title || ""}): ${t.department || ""}, ${t.fields || ""}`).join("\n")}`;
     }
     if (contextData.graduation) {
       prompt += `\n\nGraduation Progress:\n${contextData.graduation}`;
@@ -310,10 +322,24 @@ function buildSystemPrompt(topHits, contextData, session) {
 }
 
 async function enrichContext(session, query) {
-  const result = { knowledgeRows: [], courses: [], attendance: [], leaves: [], evaluations: [], teachers: [], students: [], courseParticipants: [], evaluationInsights: [] };
+  const result = {
+    knowledgeRows: [],
+    courses: [],
+    attendance: [],
+    leaves: [],
+    evaluations: [],
+    teachers: [],
+    students: [],
+    courseParticipants: [],
+    evaluationInsights: []
+  };
 
   // Always load knowledge base
-  try { result.knowledgeRows = await readKnowledgeBase(); } catch (_) { /* ignore */ }
+  try {
+    result.knowledgeRows = await readKnowledgeBase();
+  } catch (_) {
+    /* ignore */
+  }
 
   try {
     const expandedKnowledge = await readExpandedKnowledgeContext(session, query);
@@ -339,33 +365,43 @@ async function enrichContext(session, query) {
     const allSemesters = await scanCollection("semesters", 20);
 
     const deptMap = {};
-    allDepts.forEach((d) => { deptMap[d._id] = d.name || ""; });
+    allDepts.forEach(d => {
+      deptMap[d._id] = d.name || "";
+    });
     const tMap = {};
-    allTeachers.forEach((t) => { tMap[t._id] = t; });
+    allTeachers.forEach(t => {
+      tMap[t._id] = t;
+    });
     const semMap = {};
-    allSemesters.forEach((s) => { semMap[s._id] = s.name || ""; });
+    allSemesters.forEach(s => {
+      semMap[s._id] = s.name || "";
+    });
 
-    const active = allCourses.filter((c) => c.status === "active");
-    result.courses = active.slice(0, 30).map((c) => {
-      const offering = allOfferings.find((o) => o.course_id === c._id && o.selection_status === "open");
-      const tNames = (offering && offering.teacher_ids || []).map((tid) => tMap[tid] ? tMap[tid].name : "").filter(Boolean);
+    const active = allCourses.filter(c => c.status === "active");
+    result.courses = active.slice(0, 30).map(c => {
+      const offering = allOfferings.find(o => o.course_id === c._id && o.selection_status === "open");
+      const tNames = ((offering && offering.teacher_ids) || [])
+        .map(tid => (tMap[tid] ? tMap[tid].name : ""))
+        .filter(Boolean);
       return {
         code: c.course_code || "",
         name: c.name || "",
         credits: c.credits || 0,
-        semester: offering && offering.semester_id ? (semMap[offering.semester_id] || "") : "",
+        semester: offering && offering.semester_id ? semMap[offering.semester_id] || "" : "",
         teacher: tNames.join(", "),
-        department: c.department_id ? (deptMap[c.department_id] || "") : "",
+        department: c.department_id ? deptMap[c.department_id] || "" : ""
       };
     });
 
-    result.teachers = allTeachers.slice(0, 20).map((t) => ({
+    result.teachers = allTeachers.slice(0, 20).map(t => ({
       name: t.name || "",
       title: t.title || "",
-      department: t.department_id ? (deptMap[t.department_id] || "") : "",
-      fields: (t.research_fields || []).join(", "),
+      department: t.department_id ? deptMap[t.department_id] || "" : "",
+      fields: (t.research_fields || []).join(", ")
     }));
-  } catch (_) { /* ignore */ }
+  } catch (_) {
+    /* ignore */
+  }
 
   // Role-specific data
   if (session.role === "student") {
@@ -375,7 +411,9 @@ async function enrichContext(session, query) {
       result.leaves = await readStudentLeaves(session.userId);
       result.grades = await buildGradeSummary(session.userId);
       result.graduation = await buildGraduationProgress(session.userId);
-    } catch (_) { /* ignore */ }
+    } catch (_) {
+      /* ignore */
+    }
   }
 
   if (session.role === "teacher") {
@@ -386,13 +424,17 @@ async function enrichContext(session, query) {
         result.attendance = await readTeacherAtRiskStudents(tProfile.teacherId);
         result.evaluations = await readTeacherEvaluationSummaries(tProfile.teacherId);
       }
-    } catch (_) { /* ignore */ }
+    } catch (_) {
+      /* ignore */
+    }
   }
 
   if (session.role === "admin") {
     try {
       result.students = await readAdminStudentRoster();
-    } catch (_) { /* ignore */ }
+    } catch (_) {
+      /* ignore */
+    }
     try {
       result.evaluations = await readAllEvaluationSummaries();
       try {
@@ -400,8 +442,12 @@ async function enrichContext(session, query) {
         const t = await db.collection("teachers").where({}).count();
         const c = await db.collection("courses").where({ status: "active" }).count();
         result.stats = { students: s.total || 0, teachers: t.total || 0, courses: c.total || 0 };
-      } catch (_) { /* ignore */ }
-    } catch (_) { /* ignore */ }
+      } catch (_) {
+        /* ignore */
+      }
+    } catch (_) {
+      /* ignore */
+    }
   }
 
   return result;
@@ -411,9 +457,7 @@ async function listModels(event) {
   const userSettings = normalizeApiSettings(event.apiSettings || {});
   const apiKey = userSettings.apiKey || getEnv("DEEPSEEK_API_KEY");
   const provider = userSettings.provider;
-  const baseUrl = provider === "openai"
-    ? "https://api.openai.com/v1"
-    : DEEPSEEK_BASE_URL;
+  const baseUrl = provider === "openai" ? "https://api.openai.com/v1" : DEEPSEEK_BASE_URL;
 
   if (!apiKey) {
     return { ok: false, message: "API key not configured." };
@@ -426,17 +470,22 @@ async function listModels(event) {
         method: "GET",
         headers: { Authorization: `Bearer ${apiKey}` },
         dataType: "json",
-        timeout: 10000,
+        timeout: 10000
       });
-      const ids = (result.data.data || result.data || []).map((m) => m.id).filter(Boolean).sort();
+      const ids = (result.data.data || result.data || [])
+        .map(m => m.id)
+        .filter(Boolean)
+        .sort();
       if (ids.length > 0) return { ok: true, data: { models: ids, provider, source: "live" } };
-    } catch (_) { /* try next */ }
+    } catch (_) {
+      /* try next */
+    }
   }
 
   // Fallback: known models per provider
   const fallback = {
     deepseek: ["deepseek-chat", "deepseek-reasoner"],
-    openai: ["gpt-4.1", "gpt-4o", "gpt-4o-mini", "o3-mini", "o1", "o1-mini", "o3", "o4-mini"],
+    openai: ["gpt-4.1", "gpt-4o", "gpt-4o-mini", "o3-mini", "o1", "o1-mini", "o3", "o4-mini"]
   };
   return { ok: true, data: { models: fallback[provider] || fallback.deepseek, provider, source: "fallback" } };
 }
@@ -452,18 +501,18 @@ function buildHistoryMessages(history) {
   if (!Array.isArray(history)) return [];
   return history
     .slice(-MAX_HISTORY_TURNS)
-    .filter((item) => item && (item.role === "user" || item.role === "assistant"))
-    .map((item) => ({
+    .filter(item => item && (item.role === "user" || item.role === "assistant"))
+    .map(item => ({
       role: item.role,
-      content: String(item.content || "").slice(0, MAX_HISTORY_CONTENT_LENGTH),
+      content: String(item.content || "").slice(0, MAX_HISTORY_CONTENT_LENGTH)
     }))
-    .filter((item) => item.content);
+    .filter(item => item.content);
 }
 
 function findTopMatches(rows, query, keywords, topK) {
   const cleanedQuery = query.toLowerCase();
   const scored = rows
-    .map((item) => {
+    .map(item => {
       const itemKeywords = Array.isArray(item.keywords) ? item.keywords : [];
       const hitCount = itemKeywords.reduce((sum, keyword) => {
         const normalized = singularize(String(keyword || "").toLowerCase());
@@ -472,7 +521,7 @@ function findTopMatches(rows, query, keywords, topK) {
       const titleHit = item.title && cleanedQuery.includes(String(item.title).toLowerCase()) ? 1 : 0;
       return { ...item, _score: hitCount + titleHit };
     })
-    .filter((item) => item._score > 0)
+    .filter(item => item._score > 0)
     .sort((a, b) => b._score - a._score);
   return scored.slice(0, topK);
 }
@@ -497,7 +546,7 @@ async function resolveConversation(session, event, query, now) {
     message_count: 0,
     status: "active",
     created_at: now,
-    updated_at: now,
+    updated_at: now
   };
   const result = await db.collection("ai_conversations").add(conversation);
   return { ...conversation, _id: result.id };
@@ -517,12 +566,14 @@ async function findActiveConversation(session, scenario) {
   try {
     const rows = [];
     for (const userId of session.userIds || [session.userId]) {
-      rows.push(...await readRows("ai_conversations", { user_id: userId, scenario, status: "active" }, 20));
-      rows.push(...await readRows("ai_conversations", { userId, scenario, status: "active" }, 20));
+      rows.push(...(await readRows("ai_conversations", { user_id: userId, scenario, status: "active" }, 20)));
+      rows.push(...(await readRows("ai_conversations", { userId, scenario, status: "active" }, 20)));
     }
-    return uniqueById(rows)
-      .filter((item) => conversationBelongsToSession(item, session))
-      .sort((a, b) => Number(b.updated_at || b.updatedAt || 0) - Number(a.updated_at || a.updatedAt || 0))[0] || null;
+    return (
+      uniqueById(rows)
+        .filter(item => conversationBelongsToSession(item, session))
+        .sort((a, b) => Number(b.updated_at || b.updatedAt || 0) - Number(a.updated_at || a.updatedAt || 0))[0] || null
+    );
   } catch (error) {
     console.warn("[ask-assistant] active conversation lookup skipped.", error);
     return null;
@@ -531,7 +582,11 @@ async function findActiveConversation(session, scenario) {
 
 async function readRows(collection, query, limit) {
   try {
-    const result = await db.collection(collection).where(query).limit(limit || 50).get();
+    const result = await db
+      .collection(collection)
+      .where(query)
+      .limit(limit || 50)
+      .get();
     return result.data || [];
   } catch (_) {
     return [];
@@ -542,9 +597,9 @@ async function writeMessage(conversationId, message, session) {
   try {
     await db.collection("ai_messages").add({
       conversation_id: conversationId,
-      user_id: session && session.userId || "",
-      role_owner: session && session.role || "",
-      ...message,
+      user_id: (session && session.userId) || "",
+      role_owner: (session && session.role) || "",
+      ...message
     });
   } catch (error) {
     console.warn("[ask-assistant] ai message write skipped.", error);
@@ -553,14 +608,17 @@ async function writeMessage(conversationId, message, session) {
 
 async function updateConversation(conversation, query, now, session) {
   try {
-    await db.collection("ai_conversations").doc(conversation._id).update({
-      title: conversation.title || query.slice(0, 40) || "AI Assistant Conversation",
-      user_id: session && session.userId || conversation.user_id || conversation.userId || "",
-      role: conversation.role || session && session.role || "",
-      context_summary: query.slice(0, 120),
-      message_count: Number(conversation.message_count || 0) + 2,
-      updated_at: now,
-    });
+    await db
+      .collection("ai_conversations")
+      .doc(conversation._id)
+      .update({
+        title: conversation.title || query.slice(0, 40) || "AI Assistant Conversation",
+        user_id: (session && session.userId) || conversation.user_id || conversation.userId || "",
+        role: conversation.role || (session && session.role) || "",
+        context_summary: query.slice(0, 120),
+        message_count: Number(conversation.message_count || 0) + 2,
+        updated_at: now
+      });
   } catch (error) {
     console.warn("[ask-assistant] conversation update skipped.", error);
   }
@@ -585,7 +643,7 @@ async function purgeExpiredAiHistory(now = Date.now()) {
 async function removeOldRows(collection, field, cutoff) {
   try {
     const result = await db.collection(collection).limit(500).get();
-    const rows = (result.data || []).filter((item) => Number(item[field] || 0) < cutoff);
+    const rows = (result.data || []).filter(item => Number(item[field] || 0) < cutoff);
     for (const row of rows) {
       if (row._id) {
         await db.collection(collection).doc(row._id).remove();
@@ -609,7 +667,7 @@ function resolveScenario(query) {
 async function readKnowledgeBase() {
   try {
     const result = await db.collection("knowledge_base").limit(300).get();
-    return (result.data || []).filter((item) => item.status !== "hidden" && item.is_public !== false);
+    return (result.data || []).filter(item => item.status !== "hidden" && item.is_public !== false);
   } catch (error) {
     console.warn("[ask-assistant] knowledge_base read failed.", error);
     return [];
@@ -667,7 +725,7 @@ function uniqueById(rows) {
   const seen = new Set();
   const result = [];
   for (const row of rows || []) {
-    const key = String(row && (row._id || row.id || JSON.stringify(row)) || "");
+    const key = String((row && (row._id || row.id || JSON.stringify(row))) || "");
     if (!key || seen.has(key)) continue;
     seen.add(key);
     result.push(row);
@@ -679,7 +737,10 @@ function normalizeApiSettings(settings) {
   const provider = ALLOWED_PROVIDERS.has(String(settings.provider || "").trim())
     ? String(settings.provider || "").trim()
     : "deepseek";
-  const model = String(settings.model || DEEPSEEK_MODEL).trim().slice(0, 80) || DEEPSEEK_MODEL;
+  const model =
+    String(settings.model || DEEPSEEK_MODEL)
+      .trim()
+      .slice(0, 80) || DEEPSEEK_MODEL;
   const rawTemperature = Number(settings.temperature ?? 0.7);
   const temperature = Number.isFinite(rawTemperature) ? Math.max(0, Math.min(2, rawTemperature)) : 0.7;
   const rawMaxTokens = Number(settings.maxTokens ?? 2048);
@@ -689,19 +750,24 @@ function normalizeApiSettings(settings) {
     model,
     temperature,
     maxTokens,
-    apiKey: String(settings.apiKey || "").trim(),
+    apiKey: String(settings.apiKey || "").trim()
   };
 }
 
 async function scanCollection(name, limit) {
   try {
-    const result = await db.collection(name).limit(limit || 50).get();
+    const result = await db
+      .collection(name)
+      .limit(limit || 50)
+      .get();
     return result.data || [];
-  } catch (_) { return []; }
+  } catch (_) {
+    return [];
+  }
 }
 
 function getById(list, id) {
-  return (list || []).find((item) => item._id === id) || null;
+  return (list || []).find(item => item._id === id) || null;
 }
 
 function formatDate(ts) {
@@ -714,16 +780,18 @@ function formatDate(ts) {
 async function buildStudentProfile(userId) {
   try {
     const users = await scanCollection("users", 50);
-    const user = users.find((u) => u._id === userId);
+    const user = users.find(u => u._id === userId);
     const students = await scanCollection("students", 50);
-    const student = students.find((s) => s.user_id === userId);
+    const student = students.find(s => s.user_id === userId);
     if (!student) return "";
     const majors = await scanCollection("majors", 30);
-    const major = majors.find((m) => m._id === student.major_id);
+    const major = majors.find(m => m._id === student.major_id);
     let profile = `Student ID: ${student.student_no || ""}, Name: ${user ? user.display_name || student.name : student.name}, Enrollment: ${student.enrollment_year || ""}`;
     if (major) profile += `, Major: ${major.name}`;
     return profile;
-  } catch (_) { return ""; }
+  } catch (_) {
+    return "";
+  }
 }
 
 async function readAdminStudentRoster(limit = 100) {
@@ -731,15 +799,15 @@ async function readAdminStudentRoster(limit = 100) {
     scanCollection("students", limit),
     scanCollection("majors", 100),
     scanCollection("admin_classes", 100),
-    scanCollection("users", 200),
+    scanCollection("users", 200)
   ]);
-  const majorMap = new Map(majors.map((item) => [item._id, item]));
-  const classMap = new Map(classes.map((item) => [item._id, item]));
-  const userMap = new Map(users.map((item) => [item._id, item]));
+  const majorMap = new Map(majors.map(item => [item._id, item]));
+  const classMap = new Map(classes.map(item => [item._id, item]));
+  const userMap = new Map(users.map(item => [item._id, item]));
 
   return students
     .slice(0, limit)
-    .map((student) => {
+    .map(student => {
       const userId = String(student.user_id || student.userId || "").trim();
       const user = userMap.get(userId) || {};
       const major = majorMap.get(student.major_id || student.majorId) || {};
@@ -751,39 +819,58 @@ async function readAdminStudentRoster(limit = 100) {
         major: String(student.major_name || student.majorName || major.name || "").trim(),
         adminClass: String(student.admin_class_name || student.adminClassName || adminClass.name || "").trim(),
         enrollmentYear: Number(student.enrollment_year || student.enrollmentYear || 0) || "",
-        status: String(student.status || "").trim(),
+        status: String(student.status || "").trim()
       };
     })
-    .filter((student) => student.studentNo || student.name || student.userId);
+    .filter(student => student.studentNo || student.name || student.userId);
 }
 
 function buildLocalContextAnswer(session, query, contextData) {
-  if (session.role === "admin" && isStudentRosterQuery(query) && contextData && Array.isArray(contextData.students) && contextData.students.length > 0 && extractCourseCodes(query).length === 0) {
+  if (
+    session.role === "admin" &&
+    isStudentRosterQuery(query) &&
+    contextData &&
+    Array.isArray(contextData.students) &&
+    contextData.students.length > 0 &&
+    extractCourseCodes(query).length === 0
+  ) {
     return {
       answer: formatAdminStudentRosterAnswer(contextData.students),
       sourceTitle: "Student roster",
-      sourceId: "student_roster",
+      sourceId: "student_roster"
     };
   }
 
-  if (session.role !== "student" && isStudentRosterQuery(query) && contextData && Array.isArray(contextData.courseParticipants) && contextData.courseParticipants.length > 0) {
+  if (
+    session.role !== "student" &&
+    isStudentRosterQuery(query) &&
+    contextData &&
+    Array.isArray(contextData.courseParticipants) &&
+    contextData.courseParticipants.length > 0
+  ) {
     const rosterSections = filterCourseSectionsByQuery(contextData.courseParticipants, query);
     if (rosterSections.length > 0) {
       return {
         answer: formatCourseParticipantAnswer(rosterSections),
         sourceTitle: rosterSections.length === 1 ? rosterSections[0].courseLabel : "Student roster",
-        sourceId: rosterSections.length === 1 ? rosterSections[0].offeringId : "student_roster",
+        sourceId: rosterSections.length === 1 ? rosterSections[0].offeringId : "student_roster"
       };
     }
   }
 
-  if (isEvaluationQuestion(query) && contextData && Array.isArray(contextData.evaluationInsights) && contextData.evaluationInsights.length > 0) {
+  if (
+    isEvaluationQuestion(query) &&
+    contextData &&
+    Array.isArray(contextData.evaluationInsights) &&
+    contextData.evaluationInsights.length > 0
+  ) {
     const evaluationSections = filterEvaluationSectionsByQuery(contextData.evaluationInsights, query);
     if (evaluationSections.length > 0) {
       return {
         answer: formatEvaluationAnswer(evaluationSections),
-        sourceTitle: evaluationSections.length === 1 ? evaluationSections[0].courseLabel : "Anonymous course evaluations",
-        sourceId: evaluationSections.length === 1 ? evaluationSections[0].offeringId : "course_evaluations",
+        sourceTitle:
+          evaluationSections.length === 1 ? evaluationSections[0].courseLabel : "Anonymous course evaluations",
+        sourceId: evaluationSections.length === 1 ? evaluationSections[0].offeringId : "course_evaluations"
       };
     }
   }
@@ -793,7 +880,10 @@ function buildLocalContextAnswer(session, query, contextData) {
 function isStudentRosterQuery(query) {
   const value = String(query || "").toLowerCase();
   const mentionsStudent = /(student|students|\u5b66\u751f)/.test(value);
-  const asksList = /(list|roster|names?|who|\u540d\u5355|\u540d\u5b57|\u540d\u518c|\u5217\u51fa|\u5217\u8868|\u6709\u54ea\u4e9b|\u5177\u4f53|\u53c2\u4e0e|\u53c2\u52a0)/.test(value);
+  const asksList =
+    /(list|roster|names?|who|\u540d\u5355|\u540d\u5b57|\u540d\u518c|\u5217\u51fa|\u5217\u8868|\u6709\u54ea\u4e9b|\u5177\u4f53|\u53c2\u4e0e|\u53c2\u52a0)/.test(
+      value
+    );
   const mentionsCourse = /(course|课程|选课|JC\d{3,4}|[A-Z]{2,6}\d{3,4})/.test(value);
   return asksList && (mentionsStudent || mentionsCourse);
 }
@@ -805,9 +895,11 @@ function isEvaluationQuestion(query) {
 
 function formatCourseParticipantAnswer(sections) {
   const lines = ["参与学生名单："];
-  sections.forEach((section) => {
-    lines.push(`${section.courseLabel}${section.teacherLabel ? ` / ${section.teacherLabel}` : ""}（${section.studentCount}人）`);
-    section.students.forEach((student) => {
+  sections.forEach(section => {
+    lines.push(
+      `${section.courseLabel}${section.teacherLabel ? ` / ${section.teacherLabel}` : ""}（${section.studentCount}人）`
+    );
+    section.students.forEach(student => {
       lines.push(formatStudentPromptLine(student));
     });
   });
@@ -816,16 +908,18 @@ function formatCourseParticipantAnswer(sections) {
 
 function formatEvaluationAnswer(sections) {
   const lines = ["匿名课程评价："];
-  sections.forEach((section) => {
+  sections.forEach(section => {
     const metrics = [
       `平均 ${formatAverage(section.averageScores.overall)}/5`,
       `内容 ${formatAverage(section.averageScores.content)}/5`,
       `教学 ${formatAverage(section.averageScores.teaching_method)}/5`,
       `难度 ${formatAverage(section.averageScores.difficulty)}/5`,
       `工作量 ${formatAverage(section.averageScores.workload)}/5`,
-      `成效 ${formatAverage(section.averageScores.achievement)}/5`,
+      `成效 ${formatAverage(section.averageScores.achievement)}/5`
     ].join("，");
-    lines.push(`${section.courseLabel}${section.teacherLabel ? ` / ${section.teacherLabel}` : ""}：${section.evaluationCount}条，${metrics}`);
+    lines.push(
+      `${section.courseLabel}${section.teacherLabel ? ` / ${section.teacherLabel}` : ""}：${section.evaluationCount}条，${metrics}`
+    );
     if (section.feedbackSamples && section.feedbackSamples.length > 0) {
       lines.push(`- 反馈：${section.feedbackSamples.slice(0, 3).join("；")}`);
     }
@@ -844,11 +938,12 @@ function formatEvaluationPromptLine(section) {
     `teaching ${formatAverage(section.averageScores.teaching_method)}/5`,
     `difficulty ${formatAverage(section.averageScores.difficulty)}/5`,
     `workload ${formatAverage(section.averageScores.workload)}/5`,
-    `achievement ${formatAverage(section.averageScores.achievement)}/5`,
+    `achievement ${formatAverage(section.averageScores.achievement)}/5`
   ].join(", ");
-  const feedback = section.feedbackSamples && section.feedbackSamples.length > 0
-    ? `; feedback ${section.feedbackSamples.slice(0, 2).join(" | ")}`
-    : "";
+  const feedback =
+    section.feedbackSamples && section.feedbackSamples.length > 0
+      ? `; feedback ${section.feedbackSamples.slice(0, 2).join(" | ")}`
+      : "";
   return `- ${section.courseLabel}${section.teacherLabel ? ` / ${section.teacherLabel}` : ""}: ${section.evaluationCount} responses, ${metrics}${feedback}`;
 }
 
@@ -860,14 +955,16 @@ function formatAverage(value) {
 function filterCourseSectionsByQuery(sections, query) {
   const value = String(query || "").toLowerCase();
   const codes = extractCourseCodes(query);
-  const matched = sections.filter((section) => {
+  const matched = sections.filter(section => {
     const courseCode = String(section.courseCode || "").toLowerCase();
     const courseLabel = String(section.courseLabel || "").toLowerCase();
     const teacherLabel = String(section.teacherLabel || "").toLowerCase();
-    return codes.some((code) => code === String(section.courseCode || "").toUpperCase()) ||
+    return (
+      codes.some(code => code === String(section.courseCode || "").toUpperCase()) ||
       (courseCode && value.includes(courseCode)) ||
       (courseLabel && value.includes(courseLabel)) ||
-      (teacherLabel && value.includes(teacherLabel));
+      (teacherLabel && value.includes(teacherLabel))
+    );
   });
   return matched.length > 0 ? matched : sections.slice(0, 5);
 }
@@ -875,34 +972,40 @@ function filterCourseSectionsByQuery(sections, query) {
 function filterEvaluationSectionsByQuery(sections, query) {
   const value = String(query || "").toLowerCase();
   const codes = extractCourseCodes(query);
-  const matched = sections.filter((section) => {
+  const matched = sections.filter(section => {
     const courseCode = String(section.courseCode || "").toLowerCase();
     const courseLabel = String(section.courseLabel || "").toLowerCase();
     const teacherLabel = String(section.teacherLabel || "").toLowerCase();
-    return codes.some((code) => code === String(section.courseCode || "").toUpperCase()) ||
+    return (
+      codes.some(code => code === String(section.courseCode || "").toUpperCase()) ||
       (courseCode && value.includes(courseCode)) ||
       (courseLabel && value.includes(courseLabel)) ||
-      (teacherLabel && value.includes(teacherLabel));
+      (teacherLabel && value.includes(teacherLabel))
+    );
   });
   return matched.length > 0 ? matched : sections.slice(0, 5);
 }
 
 function extractCourseCodes(query) {
   const matches = String(query || "").match(/\b[A-Z]{2,6}\d{3,4}\b/gi) || [];
-  return Array.from(new Set(matches.map((value) => String(value || "").toUpperCase())));
+  return Array.from(new Set(matches.map(value => String(value || "").toUpperCase())));
 }
 
 async function readExpandedKnowledgeContext(session, query) {
   const tableData = await readKnowledgeSourceTables();
   const references = buildKnowledgeReferenceMaps(tableData);
   const knowledgeRows = buildKnowledgeRowsFromTables(tableData, references);
-  const courseParticipants = isStudentRosterQuery(query) ? buildCourseParticipantInsights(session, query, tableData, references) : [];
+  const courseParticipants = isStudentRosterQuery(query)
+    ? buildCourseParticipantInsights(session, query, tableData, references)
+    : [];
   const evaluationInsights = isEvaluationQuestion(query) ? buildEvaluationInsights(query, tableData, references) : [];
   return { knowledgeRows, courseParticipants, evaluationInsights };
 }
 
 async function readKnowledgeSourceTables() {
-  const entries = await Promise.all(AI_KNOWLEDGE_COLLECTIONS.map(async (spec) => [spec.name, await scanCollection(spec.name, spec.limit)]));
+  const entries = await Promise.all(
+    AI_KNOWLEDGE_COLLECTIONS.map(async spec => [spec.name, await scanCollection(spec.name, spec.limit)])
+  );
   return Object.fromEntries(entries);
 }
 
@@ -918,7 +1021,7 @@ function buildKnowledgeReferenceMaps(tableData) {
     adminClasses: mapRowsById(tableData.admin_classes),
     semesters: mapRowsById(tableData.semesters),
     classrooms: mapRowsById(tableData.classrooms),
-    users: mapRowsById(tableData.users),
+    users: mapRowsById(tableData.users)
   };
 }
 
@@ -951,7 +1054,7 @@ function createKnowledgeRow(collectionName, row, references) {
     keywords,
     category: inferKnowledgeCategory(collectionName),
     sourceTable: collectionName,
-    sourceId: String(row._id || row.id || "").trim(),
+    sourceId: String(row._id || row.id || "").trim()
   };
 }
 
@@ -982,23 +1085,30 @@ function enrichKnowledgeRow(collectionName, row, references) {
       break;
     case "enrollments": {
       const student = references.students.get(String(row.student_id || row.studentId || "").trim()) || null;
-      const offering = references.courseOfferings.get(String(row.course_offering_id || row.courseOfferingId || "").trim()) || null;
+      const offering =
+        references.courseOfferings.get(String(row.course_offering_id || row.courseOfferingId || "").trim()) || null;
       const course = offering ? references.courses.get(String(offering.course_id || "").trim()) || null : null;
       copy.studentLabel = buildStudentLabel(student || row, references);
       copy.courseLabel = buildCourseLabel(course || offering || row, references);
-      copy.teacherNames = offering ? resolveTeacherNames(references, offering.teacher_ids || offering.teacherIds || []) : [];
+      copy.teacherNames = offering
+        ? resolveTeacherNames(references, offering.teacher_ids || offering.teacherIds || [])
+        : [];
       break;
     }
     case "course_evaluations": {
       const course = references.courses.get(String(row.course_id || row.courseId || "").trim()) || null;
-      const offering = references.courseOfferings.get(String(row.course_offering_id || row.courseOfferingId || "").trim()) || null;
+      const offering =
+        references.courseOfferings.get(String(row.course_offering_id || row.courseOfferingId || "").trim()) || null;
       copy.courseLabel = buildCourseLabel(course || offering || row, references);
       copy.teacherNames = resolveEvaluationTeacherNames(row, offering, references);
       copy.feedbackPreview = String(row.feedback_text || row.feedback || "").slice(0, 180);
       break;
     }
     case "course_evaluation_summaries":
-      copy.courseLabel = buildCourseLabel(references.courses.get(String(row.course_id || row.courseId || "").trim()) || row, references);
+      copy.courseLabel = buildCourseLabel(
+        references.courses.get(String(row.course_id || row.courseId || "").trim()) || row,
+        references
+      );
       break;
     case "grades": {
       const student = references.students.get(String(row.student_id || row.studentId || "").trim()) || null;
@@ -1009,7 +1119,8 @@ function enrichKnowledgeRow(collectionName, row, references) {
     }
     case "attendance_records": {
       const student = references.students.get(String(row.student_id || row.studentId || "").trim()) || null;
-      const offering = references.courseOfferings.get(String(row.course_offering_id || row.courseOfferingId || "").trim()) || null;
+      const offering =
+        references.courseOfferings.get(String(row.course_offering_id || row.courseOfferingId || "").trim()) || null;
       const course = offering ? references.courses.get(String(offering.course_id || "").trim()) || null : null;
       copy.studentLabel = buildStudentLabel(student || row, references);
       copy.courseLabel = buildCourseLabel(course || offering || row, references);
@@ -1017,7 +1128,8 @@ function enrichKnowledgeRow(collectionName, row, references) {
     }
     case "leave_requests": {
       const student = references.students.get(String(row.student_id || row.studentId || "").trim()) || null;
-      const offering = references.courseOfferings.get(String(row.course_offering_id || row.courseOfferingId || "").trim()) || null;
+      const offering =
+        references.courseOfferings.get(String(row.course_offering_id || row.courseOfferingId || "").trim()) || null;
       const course = offering ? references.courses.get(String(offering.course_id || "").trim()) || null : null;
       copy.studentLabel = buildStudentLabel(student || row, references);
       copy.courseLabel = buildCourseLabel(course || offering || row, references);
@@ -1046,9 +1158,9 @@ function pickKnowledgeTitle(collectionName, row, originalRow, references) {
     row.course_code,
     row.alert_type,
     row.path_name,
-    row.pathName,
+    row.pathName
   ];
-  const title = candidates.map((value) => String(value || "").trim()).find(Boolean);
+  const title = candidates.map(value => String(value || "").trim()).find(Boolean);
   if (title) {
     return title;
   }
@@ -1061,31 +1173,42 @@ function buildCourseParticipantInsights(session, query, tableData, references) {
   }
   const rosterCourses = resolveRosterCourseOfferings(session, query, tableData, references);
   const enrollments = tableData.enrollments || [];
-  return rosterCourses.map((offering) => {
+  return rosterCourses.map(offering => {
     const course = references.courses.get(String(offering.course_id || "").trim()) || null;
     const courseLabel = buildCourseLabel(course || offering, references);
     const teacherNames = resolveTeacherNames(references, offering.teacher_ids || offering.teacherIds || []);
     const students = enrollments
-      .filter((item) => String(item.course_offering_id || item.courseOfferingId || "").trim() === String(offering._id || "").trim())
-      .filter((item) => String(item.status || "").toLowerCase() !== "dropped")
-      .map((item) => {
+      .filter(
+        item =>
+          String(item.course_offering_id || item.courseOfferingId || "").trim() === String(offering._id || "").trim()
+      )
+      .filter(item => String(item.status || "").toLowerCase() !== "dropped")
+      .map(item => {
         const student = references.students.get(String(item.student_id || item.studentId || "").trim()) || null;
         return {
           studentId: String(item.student_id || item.studentId || "").trim(),
-          studentNo: String(student && (student.student_no || student.studentNo) || "").trim(),
-          name: String(student && (student.name || student.display_name || student.username) || item.student_id || item.studentId || "").trim(),
-          major: resolveMajorName(references, student && (student.major_id || student.majorId) || ""),
-          adminClass: resolveAdminClassName(references, student && (student.admin_class_id || student.adminClassId) || ""),
+          studentNo: String((student && (student.student_no || student.studentNo)) || "").trim(),
+          name: String(
+            (student && (student.name || student.display_name || student.username)) ||
+              item.student_id ||
+              item.studentId ||
+              ""
+          ).trim(),
+          major: resolveMajorName(references, (student && (student.major_id || student.majorId)) || ""),
+          adminClass: resolveAdminClassName(
+            references,
+            (student && (student.admin_class_id || student.adminClassId)) || ""
+          )
         };
       });
     return {
       offeringId: String(offering._id || "").trim(),
-      courseCode: String(course && (course.course_code || course.code) || "").trim(),
-      courseName: String(course && course.name || "").trim(),
+      courseCode: String((course && (course.course_code || course.code)) || "").trim(),
+      courseName: String((course && course.name) || "").trim(),
       courseLabel,
       teacherLabel: teacherNames.length ? `教师：${teacherNames.join("、")}` : "",
       studentCount: students.length,
-      students,
+      students
     };
   });
 }
@@ -1096,15 +1219,20 @@ function buildEvaluationInsights(query, tableData, references) {
   const codes = extractCourseCodes(query);
   const normalizedQuery = String(query || "").toLowerCase();
 
-  evaluations.forEach((evaluation) => {
+  evaluations.forEach(evaluation => {
     const offeringId = String(evaluation.course_offering_id || evaluation.courseOfferingId || "").trim();
     const offering = references.courseOfferings.get(offeringId) || null;
-    const course = references.courses.get(String(evaluation.course_id || evaluation.courseId || offering && offering.course_id || "").trim()) || null;
+    const course =
+      references.courses.get(
+        String(evaluation.course_id || evaluation.courseId || (offering && offering.course_id) || "").trim()
+      ) || null;
     const courseLabel = buildCourseLabel(course || offering || evaluation, references);
     const teacherIds = resolveEvaluationTeacherIds(evaluation, offering);
-    const teacherNames = teacherIds.length ? teacherIds.map((teacherId) => resolveTeacherName(references, teacherId)).filter(Boolean) : [""];
+    const teacherNames = teacherIds.length
+      ? teacherIds.map(teacherId => resolveTeacherName(references, teacherId)).filter(Boolean)
+      : [""];
     const searchTarget = `${courseLabel} ${teacherNames.join(" ")}`.toLowerCase();
-    if (codes.length > 0 && !codes.some((code) => searchTarget.includes(code.toLowerCase()))) {
+    if (codes.length > 0 && !codes.some(code => searchTarget.includes(code.toLowerCase()))) {
       if (!normalizedQuery.includes(String(courseLabel || "").toLowerCase())) {
         return;
       }
@@ -1116,20 +1244,22 @@ function buildEvaluationInsights(query, tableData, references) {
       if (!grouped.has(key)) {
         grouped.set(key, {
           offeringId,
-          courseCode: String(course && (course.course_code || course.code) || "").trim(),
-          courseName: String(course && course.name || offering && offering.course_name || offering && offering.courseName || "").trim(),
+          courseCode: String((course && (course.course_code || course.code)) || "").trim(),
+          courseName: String(
+            (course && course.name) || (offering && offering.course_name) || (offering && offering.courseName) || ""
+          ).trim(),
           courseLabel,
           teacherId,
           teacherLabel: teacherName ? `教师：${teacherName}` : "",
           evaluationCount: 0,
-          scoreTotals: Object.fromEntries(EVALUATION_SCORE_KEYS.map((scoreKey) => [scoreKey, 0])),
-          feedbackSamples: [],
+          scoreTotals: Object.fromEntries(EVALUATION_SCORE_KEYS.map(scoreKey => [scoreKey, 0])),
+          feedbackSamples: []
         });
       }
       const group = grouped.get(key);
       group.evaluationCount += 1;
       const scores = evaluation.scores && typeof evaluation.scores === "object" ? evaluation.scores : {};
-      EVALUATION_SCORE_KEYS.forEach((scoreKey) => {
+      EVALUATION_SCORE_KEYS.forEach(scoreKey => {
         const value = Number(scores[scoreKey] || 0);
         if (Number.isFinite(value)) {
           group.scoreTotals[scoreKey] += value;
@@ -1142,68 +1272,112 @@ function buildEvaluationInsights(query, tableData, references) {
     });
   });
 
-  return Array.from(grouped.values()).map((group) => {
-    const averageScores = Object.fromEntries(EVALUATION_SCORE_KEYS.map((scoreKey) => [scoreKey, group.evaluationCount ? Number((group.scoreTotals[scoreKey] / group.evaluationCount).toFixed(1)) : 0]));
+  return Array.from(grouped.values()).map(group => {
+    const averageScores = Object.fromEntries(
+      EVALUATION_SCORE_KEYS.map(scoreKey => [
+        scoreKey,
+        group.evaluationCount ? Number((group.scoreTotals[scoreKey] / group.evaluationCount).toFixed(1)) : 0
+      ])
+    );
     return { ...group, averageScores };
   });
 }
 
 function resolveRosterCourseOfferings(session, query, tableData, references) {
   const offerings = tableData.course_offerings || [];
-  const teacher = session.role === "teacher" ? references.teachersByUserId.get(String(session.userId || "").trim()) || null : null;
+  const teacher =
+    session.role === "teacher" ? references.teachersByUserId.get(String(session.userId || "").trim()) || null : null;
   const queryCodes = extractCourseCodes(query);
   const normalizedQuery = String(query || "").toLowerCase();
-  const accessible = offerings.filter((offering) => {
+  const accessible = offerings.filter(offering => {
     if (session.role !== "teacher" || !teacher) {
       return true;
     }
-    const teacherIds = (offering.teacher_ids || offering.teacherIds || []).map((value) => String(value || "").trim());
+    const teacherIds = (offering.teacher_ids || offering.teacherIds || []).map(value => String(value || "").trim());
     return teacherIds.includes(String(teacher._id || "").trim());
   });
-  const matched = accessible.filter((offering) => {
+  const matched = accessible.filter(offering => {
     const course = references.courses.get(String(offering.course_id || "").trim()) || null;
-    const courseCode = String(course && (course.course_code || course.code) || "").toUpperCase();
-    const courseName = String(course && course.name || "").toLowerCase();
+    const courseCode = String((course && (course.course_code || course.code)) || "").toUpperCase();
+    const courseName = String((course && course.name) || "").toLowerCase();
     const teacherNames = resolveTeacherNames(references, offering.teacher_ids || offering.teacherIds || []);
-    return queryCodes.includes(courseCode) ||
+    return (
+      queryCodes.includes(courseCode) ||
       (courseCode && normalizedQuery.includes(courseCode.toLowerCase())) ||
       (courseName && normalizedQuery.includes(courseName)) ||
-      teacherNames.some((teacherName) => normalizedQuery.includes(String(teacherName || "").toLowerCase()));
+      teacherNames.some(teacherName => normalizedQuery.includes(String(teacherName || "").toLowerCase()))
+    );
   });
   return matched.length > 0 ? matched : accessible.slice(0, 5);
 }
 
 function buildCourseLabel(courseOrOffering, references) {
-  const course = courseOrOffering && courseOrOffering.course_code ? courseOrOffering : (courseOrOffering && courseOrOffering.course_id ? references.courses.get(String(courseOrOffering.course_id || "").trim()) || null : null);
+  const course =
+    courseOrOffering && courseOrOffering.course_code
+      ? courseOrOffering
+      : courseOrOffering && courseOrOffering.course_id
+        ? references.courses.get(String(courseOrOffering.course_id || "").trim()) || null
+        : null;
   if (!course) {
-    return String(courseOrOffering && (courseOrOffering.courseLabel || courseOrOffering.name || courseOrOffering.title || courseOrOffering._id) || "").trim();
+    return String(
+      (courseOrOffering &&
+        (courseOrOffering.courseLabel || courseOrOffering.name || courseOrOffering.title || courseOrOffering._id)) ||
+        ""
+    ).trim();
   }
   return [course.course_code || course.code, course.name].filter(Boolean).join(" ").trim();
 }
 
 function buildStudentLabel(studentOrRow, references) {
-  const student = studentOrRow && (studentOrRow.student_no || studentOrRow.studentNo || studentOrRow.name || studentOrRow.display_name)
-    ? studentOrRow
-    : (studentOrRow && studentOrRow._id ? references.students.get(String(studentOrRow._id).trim()) || studentOrRow : null);
+  const student =
+    studentOrRow &&
+    (studentOrRow.student_no || studentOrRow.studentNo || studentOrRow.name || studentOrRow.display_name)
+      ? studentOrRow
+      : studentOrRow && studentOrRow._id
+        ? references.students.get(String(studentOrRow._id).trim()) || studentOrRow
+        : null;
   if (!student) {
-    return String(studentOrRow && (studentOrRow.studentLabel || studentOrRow.student_no || studentOrRow.studentNo || studentOrRow.name || studentOrRow.username || studentOrRow._id) || "").trim();
+    return String(
+      (studentOrRow &&
+        (studentOrRow.studentLabel ||
+          studentOrRow.student_no ||
+          studentOrRow.studentNo ||
+          studentOrRow.name ||
+          studentOrRow.username ||
+          studentOrRow._id)) ||
+        ""
+    ).trim();
   }
-  return [student.student_no || student.studentNo, student.name || student.display_name || student.username].filter(Boolean).join(" ").trim();
+  return [student.student_no || student.studentNo, student.name || student.display_name || student.username]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
 }
 
 function buildTeacherLabel(teacherOrRow, references) {
-  const teacher = teacherOrRow && (teacherOrRow.teacher_no || teacherOrRow.teacherNo || teacherOrRow.name)
-    ? teacherOrRow
-    : (teacherOrRow && teacherOrRow._id ? references.teachers.get(String(teacherOrRow._id).trim()) || teacherOrRow : null);
+  const teacher =
+    teacherOrRow && (teacherOrRow.teacher_no || teacherOrRow.teacherNo || teacherOrRow.name)
+      ? teacherOrRow
+      : teacherOrRow && teacherOrRow._id
+        ? references.teachers.get(String(teacherOrRow._id).trim()) || teacherOrRow
+        : null;
   if (!teacher) {
-    return String(teacherOrRow && (teacherOrRow.teacherLabel || teacherOrRow.teacher_no || teacherOrRow.teacherNo || teacherOrRow.name || teacherOrRow._id) || "").trim();
+    return String(
+      (teacherOrRow &&
+        (teacherOrRow.teacherLabel ||
+          teacherOrRow.teacher_no ||
+          teacherOrRow.teacherNo ||
+          teacherOrRow.name ||
+          teacherOrRow._id)) ||
+        ""
+    ).trim();
   }
   return [teacher.teacher_no || teacher.teacherNo, teacher.name].filter(Boolean).join(" ").trim();
 }
 
 function resolveTeacherNames(references, teacherIds) {
   return (Array.isArray(teacherIds) ? teacherIds : [])
-    .map((teacherId) => resolveTeacherName(references, teacherId))
+    .map(teacherId => resolveTeacherName(references, teacherId))
     .filter(Boolean);
 }
 
@@ -1213,16 +1387,22 @@ function resolveTeacherName(references, teacherId) {
 }
 
 function resolveEvaluationTeacherNames(evaluation, offering, references) {
-  return resolveEvaluationTeacherIds(evaluation, offering).map((teacherId) => resolveTeacherName(references, teacherId)).filter(Boolean);
+  return resolveEvaluationTeacherIds(evaluation, offering)
+    .map(teacherId => resolveTeacherName(references, teacherId))
+    .filter(Boolean);
 }
 
 function resolveEvaluationTeacherIds(evaluation, offering) {
-  const explicit = Array.isArray(evaluation.teacher_ids || evaluation.teacherIds) ? (evaluation.teacher_ids || evaluation.teacherIds) : [];
+  const explicit = Array.isArray(evaluation.teacher_ids || evaluation.teacherIds)
+    ? evaluation.teacher_ids || evaluation.teacherIds
+    : [];
   if (explicit.length > 0) {
-    return explicit.map((value) => String(value || "").trim()).filter(Boolean);
+    return explicit.map(value => String(value || "").trim()).filter(Boolean);
   }
-  const fallback = Array.isArray(offering && (offering.teacher_ids || offering.teacherIds)) ? (offering.teacher_ids || offering.teacherIds) : [];
-  return fallback.map((value) => String(value || "").trim()).filter(Boolean);
+  const fallback = Array.isArray(offering && (offering.teacher_ids || offering.teacherIds))
+    ? offering.teacher_ids || offering.teacherIds
+    : [];
+  return fallback.map(value => String(value || "").trim()).filter(Boolean);
 }
 
 function resolveDepartmentName(references, departmentId) {
@@ -1250,12 +1430,15 @@ function resolveClassroomLabel(references, classroomId) {
   if (!classroom) {
     return String(classroomId || "").trim();
   }
-  return [classroom.name || classroom.building, classroom.room_no || classroom.roomNo].filter(Boolean).join(" ").trim() || String(classroomId || "").trim();
+  return (
+    [classroom.name || classroom.building, classroom.room_no || classroom.roomNo].filter(Boolean).join(" ").trim() ||
+    String(classroomId || "").trim()
+  );
 }
 
 function mapRowsById(rows) {
   const map = new Map();
-  (rows || []).forEach((row) => {
+  (rows || []).forEach(row => {
     if (row && row._id) {
       map.set(String(row._id).trim(), row);
     }
@@ -1265,9 +1448,9 @@ function mapRowsById(rows) {
 
 function mapRowsByUserId(rows, fields = ["user_id", "userId"]) {
   const map = new Map();
-  (rows || []).forEach((row) => {
-    fields.forEach((field) => {
-      const value = String(row && row[field] || "").trim();
+  (rows || []).forEach(row => {
+    fields.forEach(field => {
+      const value = String((row && row[field]) || "").trim();
       if (value) {
         map.set(value, row);
       }
@@ -1282,11 +1465,18 @@ function summarizeKnowledgeValue(value, depth) {
   if (typeof value === "number" || typeof value === "boolean") return String(value);
   if (depth > 2) return "[object]";
   if (Array.isArray(value)) {
-    return value.slice(0, 8).map((item) => summarizeKnowledgeValue(item, depth + 1)).filter(Boolean).join(", ");
+    return value
+      .slice(0, 8)
+      .map(item => summarizeKnowledgeValue(item, depth + 1))
+      .filter(Boolean)
+      .join(", ");
   }
   if (typeof value === "object") {
     return Object.entries(value)
-      .filter(([key, item]) => !isSensitiveKnowledgeField(key) && item !== undefined && item !== null && String(item).trim() !== "")
+      .filter(
+        ([key, item]) =>
+          !isSensitiveKnowledgeField(key) && item !== undefined && item !== null && String(item).trim() !== ""
+      )
       .map(([key, item]) => `${key}: ${summarizeKnowledgeValue(item, depth + 1)}`)
       .filter(Boolean)
       .join("; ");
@@ -1295,11 +1485,17 @@ function summarizeKnowledgeValue(value, depth) {
 }
 
 function isSensitiveKnowledgeField(fieldName) {
-  return /(password|secret|token|salt|hash|credential|api[_-]?key|client[_-]?key|provider_uid|vector_id|authorization)/i.test(String(fieldName || ""));
+  return /(password|secret|token|salt|hash|credential|api[_-]?key|client[_-]?key|provider_uid|vector_id|authorization)/i.test(
+    String(fieldName || "")
+  );
 }
 
 function inferKnowledgeCategory(collectionName) {
-  if (collectionName === "knowledge_base" || collectionName === "knowledge_documents" || collectionName === "knowledge_chunks") {
+  if (
+    collectionName === "knowledge_base" ||
+    collectionName === "knowledge_documents" ||
+    collectionName === "knowledge_chunks"
+  ) {
     return "common";
   }
   if (/(course|student|teacher|attendance|leave|evaluation|grade|recommendation|alert)/.test(collectionName)) {
@@ -1320,122 +1516,147 @@ function formatStudentPromptLine(student) {
     student.major ? `Major: ${student.major}` : "",
     student.adminClass ? `Class: ${student.adminClass}` : "",
     student.enrollmentYear ? `Enrollment: ${student.enrollmentYear}` : "",
-    student.status ? `Status: ${student.status}` : "",
-  ].filter(Boolean).join(", ");
+    student.status ? `Status: ${student.status}` : ""
+  ]
+    .filter(Boolean)
+    .join(", ");
   return `- ${title || student.userId}${details ? ` (${details})` : ""}`;
 }
 
 async function readStudentAttendance(userId) {
   try {
     const students = await scanCollection("students", 50);
-    const student = students.find((s) => s.user_id === userId);
+    const student = students.find(s => s.user_id === userId);
     if (!student) return [];
     const records = await scanCollection("attendance_records", 50);
-    const mine = records.filter((r) => r.student_id === student._id).slice(-20);
+    const mine = records.filter(r => r.student_id === student._id).slice(-20);
     const offerings = await scanCollection("course_offerings", 50);
     const courses = await scanCollection("courses", 50);
-    return mine.map((r) => {
+    return mine.map(r => {
       const o = getById(offerings, r.course_offering_id);
       const c = o ? getById(courses, o.course_id) : null;
-      return { date: formatDate(r.attendance_date), courseName: c ? `${c.course_code || ""} ${c.name || ""}`.trim() : (r.course_offering_id || ""), status: r.status };
+      return {
+        date: formatDate(r.attendance_date),
+        courseName: c ? `${c.course_code || ""} ${c.name || ""}`.trim() : r.course_offering_id || "",
+        status: r.status
+      };
     });
-  } catch (_) { return []; }
+  } catch (_) {
+    return [];
+  }
 }
 
 async function readStudentLeaves(userId) {
   try {
     const students = await scanCollection("students", 50);
-    const student = students.find((s) => s.user_id === userId);
+    const student = students.find(s => s.user_id === userId);
     if (!student) return [];
     const leaves = await scanCollection("leave_requests", 50);
-    const mine = leaves.filter((l) => l.student_id === student._id).slice(-20);
+    const mine = leaves.filter(l => l.student_id === student._id).slice(-20);
     const offerings = await scanCollection("course_offerings", 50);
     const courses = await scanCollection("courses", 50);
-    return mine.map((l) => {
+    return mine.map(l => {
       const o = getById(offerings, l.course_offering_id);
       const c = o ? getById(courses, o.course_id) : null;
-      return { date: formatDate(l.leave_date), courseName: c ? `${c.course_code || ""} ${c.name || ""}`.trim() : (l.course_offering_id || ""), status: l.status, type: l.reason_type };
+      return {
+        date: formatDate(l.leave_date),
+        courseName: c ? `${c.course_code || ""} ${c.name || ""}`.trim() : l.course_offering_id || "",
+        status: l.status,
+        type: l.reason_type
+      };
     });
-  } catch (_) { return []; }
+  } catch (_) {
+    return [];
+  }
 }
 
 async function buildGradeSummary(userId) {
   try {
     const students = await scanCollection("students", 50);
-    const student = students.find((s) => s.user_id === userId);
+    const student = students.find(s => s.user_id === userId);
     if (!student) return "";
     const grades = await scanCollection("grades", 100);
-    const mine = grades.filter((g) => g.student_id === student._id);
+    const mine = grades.filter(g => g.student_id === student._id);
     if (!mine.length) return "No grades on record.";
     const totalWeighted = mine.reduce((sum, r) => sum + (Number(r.grade_point) || 0) * (Number(r.credit) || 0), 0);
     const totalCredits = mine.reduce((sum, r) => sum + (Number(r.credit) || 0), 0);
-    const gpa = totalCredits ? (totalWeighted / totalCredits) : 0;
+    const gpa = totalCredits ? totalWeighted / totalCredits : 0;
     return `GPA: ${gpa.toFixed(2)}, Total Credits: ${totalCredits}`;
-  } catch (_) { return ""; }
+  } catch (_) {
+    return "";
+  }
 }
 
 async function buildGraduationProgress(userId) {
   try {
     const students = await scanCollection("students", 50);
-    const student = students.find((s) => s.user_id === userId);
+    const student = students.find(s => s.user_id === userId);
     if (!student || !student.training_plan_id) return "";
     const reqs = await scanCollection("plan_requirements", 30);
-    const myReqs = reqs.filter((r) => r.plan_id === student.training_plan_id);
+    const myReqs = reqs.filter(r => r.plan_id === student.training_plan_id);
     if (!myReqs.length) return "";
     const grades = await scanCollection("grades", 100);
-    const myGrades = grades.filter((g) => g.student_id === student._id);
+    const myGrades = grades.filter(g => g.student_id === student._id);
     const earned = myGrades.reduce((sum, g) => sum + (Number(g.credit) || 0), 0);
     const required = myReqs.reduce((sum, r) => sum + (Number(r.required_credits) || 0), 0);
-    const cats = myReqs.map((r) => `${r.category || r.name}: ${r.required_credits} credits`).join(", ");
+    const cats = myReqs.map(r => `${r.category || r.name}: ${r.required_credits} credits`).join(", ");
     return `${earned}/${required} credits. Requirements: ${cats}`;
-  } catch (_) { return ""; }
+  } catch (_) {
+    return "";
+  }
 }
 
 async function readTeacherProfile(userId) {
   try {
     const teachers = await scanCollection("teachers", 50);
-    const t = teachers.find((te) => te.user_id === userId);
+    const t = teachers.find(te => te.user_id === userId);
     if (!t) return "";
     const depts = await scanCollection("departments", 30);
-    const dept = depts.find((d) => d._id === t.department_id);
+    const dept = depts.find(d => d._id === t.department_id);
     let profile = `Name: ${t.name}, Title: ${t.title || ""}`;
     if (dept) profile += `, Department: ${dept.name}`;
     if (t.research_fields && t.research_fields.length) profile += `, Fields: ${t.research_fields.join(", ")}`;
     return { profile, teacherId: t._id };
-  } catch (_) { return ""; }
+  } catch (_) {
+    return "";
+  }
 }
 
 async function readTeacherAtRiskStudents(teacherId) {
   try {
     const offerings = await scanCollection("course_offerings", 50);
-    const myOfferings = offerings.filter((o) => (o.teacher_ids || []).includes(teacherId));
-    const offeringIds = myOfferings.map((o) => o._id);
+    const myOfferings = offerings.filter(o => (o.teacher_ids || []).includes(teacherId));
+    const offeringIds = myOfferings.map(o => o._id);
     const records = await scanCollection("attendance_records", 100);
-    const absent = records.filter((r) => offeringIds.includes(r.course_offering_id) && r.status === "absent");
+    const absent = records.filter(r => offeringIds.includes(r.course_offering_id) && r.status === "absent");
     const students = await scanCollection("students", 50);
     const counts = {};
-    absent.forEach((r) => { counts[r.student_id] = (counts[r.student_id] || 0) + 1; });
+    absent.forEach(r => {
+      counts[r.student_id] = (counts[r.student_id] || 0) + 1;
+    });
     return Object.entries(counts).map(([sid, c]) => {
       const s = getById(students, sid);
-      return { student: s ? (s.name || s.student_no) : sid, absences: c };
+      return { student: s ? s.name || s.student_no : sid, absences: c };
     });
-  } catch (_) { return []; }
+  } catch (_) {
+    return [];
+  }
 }
 
 async function readTeacherEvaluationSummaries(teacherId) {
   try {
     const offerings = await scanCollection("course_offerings", 50);
-    const myOfferings = offerings.filter((o) => (o.teacher_ids || []).includes(teacherId));
-    const offeringIds = myOfferings.map((o) => o._id);
+    const myOfferings = offerings.filter(o => (o.teacher_ids || []).includes(teacherId));
+    const offeringIds = myOfferings.map(o => o._id);
     const evals = await scanCollection("course_evaluations", 100);
-    const mine = evals.filter((e) => offeringIds.includes(e.course_offering_id));
+    const mine = evals.filter(e => offeringIds.includes(e.course_offering_id));
     const courses = await scanCollection("courses", 50);
     const groups = {};
-    mine.forEach((e) => {
+    mine.forEach(e => {
       const key = e.course_offering_id;
       if (!groups[key]) groups[key] = { total: 0, count: 0, diffTotal: 0 };
       const scores = e.scores || {};
-      const dims = Object.values(scores).filter((v) => typeof v === "number");
+      const dims = Object.values(scores).filter(v => typeof v === "number");
       groups[key].total += dims.reduce((s, v) => s + v, 0);
       groups[key].count += dims.length;
       groups[key].diffTotal += Number(scores.difficulty || 0);
@@ -1447,10 +1668,12 @@ async function readTeacherEvaluationSummaries(teacherId) {
         courseName: c ? `${c.course_code || ""} ${c.name || ""}`.trim() : oid,
         avg: g.count ? (g.total / g.count).toFixed(1) : "0",
         count: Math.round(g.count / 6),
-        diffAvg: g.count ? (g.diffTotal / Math.max(1, g.count / 6)).toFixed(1) : "0",
+        diffAvg: g.count ? (g.diffTotal / Math.max(1, g.count / 6)).toFixed(1) : "0"
       };
     });
-  } catch (_) { return []; }
+  } catch (_) {
+    return [];
+  }
 }
 
 async function readAllEvaluationSummaries() {
@@ -1459,11 +1682,16 @@ async function readAllEvaluationSummaries() {
     const offerings = await scanCollection("course_offerings", 50);
     const courses = await scanCollection("courses", 50);
     const groups = {};
-    evals.forEach((e) => {
+    evals.forEach(e => {
       const key = e.course_offering_id;
       if (!groups[key]) groups[key] = { total: 0, count: 0 };
       const scores = e.scores || {};
-      Object.values(scores).filter((v) => typeof v === "number").forEach((v) => { groups[key].total += v; groups[key].count++; });
+      Object.values(scores)
+        .filter(v => typeof v === "number")
+        .forEach(v => {
+          groups[key].total += v;
+          groups[key].count++;
+        });
     });
     return Object.entries(groups).map(([oid, g]) => {
       const o = getById(offerings, oid);
@@ -1472,10 +1700,12 @@ async function readAllEvaluationSummaries() {
         courseName: c ? `${c.course_code || ""} ${c.name || ""}`.trim() : oid,
         avg: g.count ? (g.total / g.count).toFixed(1) : "0",
         count: Math.round(g.count / 6),
-        diffAvg: "N/A",
+        diffAvg: "N/A"
       };
     });
-  } catch (_) { return []; }
+  } catch (_) {
+    return [];
+  }
 }
 
 function buildQueryKeywords(query) {
@@ -1485,7 +1715,7 @@ function buildQueryKeywords(query) {
     .replace(/\s+/g, " ")
     .trim();
   const words = cleaned ? cleaned.split(" ") : [];
-  return Array.from(new Set(words.flatMap((word) => [word, singularize(word)]).filter(Boolean)));
+  return Array.from(new Set(words.flatMap(word => [word, singularize(word)]).filter(Boolean)));
 }
 
 function singularize(value) {
@@ -1499,7 +1729,7 @@ async function writeAudit(action, session, data) {
       actor_user_id: session.userId,
       target_collection: "knowledge_base",
       after: data,
-      created_at: Date.now(),
+      created_at: Date.now()
     });
   } catch (error) {
     console.warn("[ask-assistant] audit write skipped.", error);

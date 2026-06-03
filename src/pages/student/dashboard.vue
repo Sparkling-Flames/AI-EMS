@@ -1,10 +1,6 @@
 <template>
   <view class="page">
-    <PageHeader
-      title="Student Dashboard"
-      :displayName="session.displayName"
-      :username="session.username"
-    >
+    <PageHeader title="Student Dashboard" :display-name="session.displayName" :username="session.username">
       <button class="secondary-btn refresh-btn" :loading="loading" @click="refresh">Refresh</button>
     </PageHeader>
 
@@ -23,11 +19,7 @@
         <StatCard :value="creditText" label="Credits" />
         <StatCard :value="attendanceRate + '%'" label="Attendance" />
       </view>
-      <ProgressBar
-        :current="profile.creditsEarned"
-        :total="profile.totalCredits"
-        label="Graduation Progress"
-      />
+      <ProgressBar :current="profile.creditsEarned" :total="profile.totalCredits" label="Graduation Progress" />
     </view>
 
     <view class="section">
@@ -71,35 +63,35 @@
       <view class="profile-summary-card">
         <view class="profile-summary-head">
           <view>
-            <text class="profile-name">{{ profile.name || session.displayName || 'Student' }}</text>
-            <text class="muted">{{ profile.studentNo || 'Student ID unavailable' }}</text>
+            <text class="profile-name">{{ profile.name || session.displayName || "Student" }}</text>
+            <text class="muted">{{ profile.studentNo || "Student ID unavailable" }}</text>
           </view>
           <StatusBadge :status="profile.status || 'present'" />
         </view>
         <view class="profile-summary-grid">
           <view class="profile-info-cell">
             <text class="label">Student ID</text>
-            <text class="value">{{ profile.studentNo || 'Not set' }}</text>
+            <text class="value">{{ profile.studentNo || "Not set" }}</text>
           </view>
           <view class="profile-info-cell">
             <text class="label">Major</text>
-            <text class="value">{{ profile.major || 'Not set' }}</text>
+            <text class="value">{{ profile.major || "Not set" }}</text>
           </view>
           <view class="profile-info-cell">
             <text class="label">Class</text>
-            <text class="value">{{ profile.adminClass || 'Not set' }}</text>
+            <text class="value">{{ profile.adminClass || "Not set" }}</text>
           </view>
           <view class="profile-info-cell">
             <text class="label">Email</text>
-            <text class="value">{{ profile.contact && profile.contact.email || 'Not set' }}</text>
+            <text class="value">{{ (profile.contact && profile.contact.email) || "Not set" }}</text>
           </view>
           <view class="profile-info-cell">
             <text class="label">Phone</text>
-            <text class="value">{{ profile.contact && profile.contact.phone || 'Not set' }}</text>
+            <text class="value">{{ (profile.contact && profile.contact.phone) || "Not set" }}</text>
           </view>
           <view class="profile-info-cell">
             <text class="label">Address</text>
-            <text class="value">{{ profile.contact && profile.contact.address || 'Not set' }}</text>
+            <text class="value">{{ (profile.contact && profile.contact.address) || "Not set" }}</text>
           </view>
         </view>
       </view>
@@ -118,18 +110,12 @@
             <input v-model="profileForm.contact.address" placeholder="Address" />
           </view>
         </view>
-        <button class="primary-btn full-btn" :loading="savingProfile" @click="submitProfileChange">
-          Save
-        </button>
+        <button class="primary-btn full-btn" :loading="savingProfile" @click="submitProfileChange">Save</button>
       </view>
       <template v-if="!visibleProfileChangeRequests.length">
         <text class="muted">No profile change requests.</text>
       </template>
-      <view
-        v-for="item in visibleProfileChangeRequests"
-        :key="item._id"
-        class="profile-request-card"
-      >
+      <view v-for="item in visibleProfileChangeRequests" :key="item._id" class="profile-request-card">
         <view class="profile-request-head">
           <view class="profile-request-title">
             <text class="request-name">{{ profileRequestTitle(item) }}</text>
@@ -138,16 +124,12 @@
           <StatusBadge :status="item.status" />
         </view>
         <view class="profile-change-grid">
-          <view
-            v-for="change in profileChangeItems(item)"
-            :key="change.key"
-            class="profile-change-cell"
-          >
+          <view v-for="change in profileChangeItems(item)" :key="change.key" class="profile-change-cell">
             <text class="label">{{ change.label }}</text>
             <view class="profile-change-values">
-              <text class="profile-change-old">{{ change.oldValue || 'Empty' }}</text>
+              <text class="profile-change-old">{{ change.oldValue || "Empty" }}</text>
               <text class="profile-change-arrow">to</text>
-              <text class="profile-change-new">{{ change.newValue || 'Empty' }}</text>
+              <text class="profile-change-new">{{ change.newValue || "Empty" }}</text>
             </view>
           </view>
         </view>
@@ -158,9 +140,13 @@
             :class="{ active: isProfileCommentVisible(item) }"
             @click="toggleProfileComment(item)"
           >
-            {{ isProfileCommentVisible(item) ? 'Hide comment' : 'Show comment' }}
+            {{ isProfileCommentVisible(item) ? "Hide comment" : "Show comment" }}
           </button>
-          <button v-if="isProfileChangeHistory(item)" class="profile-action-btn danger" @click="hideProfileChangeRequest(item)">
+          <button
+            v-if="isProfileChangeHistory(item)"
+            class="profile-action-btn danger"
+            @click="hideProfileChangeRequest(item)"
+          >
             Delete history
           </button>
         </view>
@@ -179,24 +165,30 @@
         class="course-entry"
         @click="openCourseMaterials(course)"
       >
-        <DataCard
-          :title="course.code + ' ' + course.name"
-          :subtitle="courseSubtitle(course)"
-        >
-          <view v-if="course.teacherOptions && course.teacherOptions.length > 1" class="teacher-select-panel" :class="{ locked: course.teacherSelected }" @click.stop>
+        <DataCard :title="course.code + ' ' + course.name" :subtitle="courseSubtitle(course)">
+          <view
+            v-if="course.teacherOptions && course.teacherOptions.length > 1"
+            class="teacher-select-panel"
+            :class="{ locked: course.teacherSelected }"
+            @click.stop
+          >
             <view class="teacher-select-head">
               <view>
                 <text class="label">Selected Teacher</text>
                 <text class="teacher-select-note">
-                  {{ course.teacherSelected ? 'Selection is locked after one choice.' : 'Choose once. You cannot change it later.' }}
+                  {{
+                    course.teacherSelected
+                      ? "Selection is locked after one choice."
+                      : "Choose once. You cannot change it later."
+                  }}
                 </text>
               </view>
               <text class="teacher-lock-pill" :class="{ locked: course.teacherSelected }">
-                {{ course.teacherSelected ? 'Locked' : 'One-time' }}
+                {{ course.teacherSelected ? "Locked" : "One-time" }}
               </text>
             </view>
             <view v-if="course.teacherSelected" class="teacher-final-choice">
-              <text class="teacher-final-name">{{ course.selectedTeacherName || 'Teacher selected' }}</text>
+              <text class="teacher-final-name">{{ course.selectedTeacherName || "Teacher selected" }}</text>
               <text class="teacher-final-meta">Final choice saved</text>
             </view>
             <view v-else class="teacher-choice-grid">
@@ -213,7 +205,9 @@
                 <text class="teacher-choice-action">Choose</text>
               </view>
             </view>
-            <text v-if="isCourseFull(course) && !course.teacherSelected" class="teacher-select-note warning">Course is full.</text>
+            <text v-if="isCourseFull(course) && !course.teacherSelected" class="teacher-select-note warning"
+              >Course is full.</text
+            >
           </view>
         </DataCard>
       </view>
@@ -252,14 +246,14 @@
 </template>
 
 <script>
-import PageHeader from '../../components/PageHeader.vue'
-import NavTabs from '../../components/NavTabs.vue'
-import DataCard from '../../components/DataCard.vue'
-import StatusBadge from '../../components/StatusBadge.vue'
-import ProgressBar from '../../components/ProgressBar.vue'
-import StatCard from '../../components/StatCard.vue'
-import { callAiemsFunction } from '../../common/api.js'
-import { getSession, requireRole } from '../../common/session.js'
+import PageHeader from "../../components/PageHeader.vue";
+import NavTabs from "../../components/NavTabs.vue";
+import DataCard from "../../components/DataCard.vue";
+import StatusBadge from "../../components/StatusBadge.vue";
+import ProgressBar from "../../components/ProgressBar.vue";
+import StatCard from "../../components/StatCard.vue";
+import { callAiemsFunction } from "../../common/api.js";
+import { getSession, requireRole } from "../../common/session.js";
 
 export default {
   components: { PageHeader, NavTabs, DataCard, StatusBadge, ProgressBar, StatCard },
@@ -272,18 +266,18 @@ export default {
       profileCommentVisibility: {},
       hiddenProfileRequestIds: {},
       profile: {
-        major: '',
-        gpa: '0.0',
+        major: "",
+        gpa: "0.0",
         creditsEarned: 0,
         totalCredits: 0,
-        enrollmentYear: '',
+        enrollmentYear: "",
         contact: {},
         familyInfo: {},
         moduleCredits: {},
         interestTags: []
       },
       profileForm: {
-        contact: { email: '', phone: '', address: '' }
+        contact: { email: "", phone: "", address: "" }
       },
       data: {
         courses: [],
@@ -294,82 +288,84 @@ export default {
         academicAlerts: [],
         profileChangeRequests: []
       }
-    }
+    };
   },
   computed: {
     attendanceRate() {
       if (this.profile.attendanceStats || this.profile.attendanceRate !== undefined) {
-        return Number(this.profile.attendanceRate || 0)
+        return Number(this.profile.attendanceRate || 0);
       }
-      const records = this.data.attendance
-      if (!records.length) return 0
-      const present = records.filter(r => ['present', 'on_leave', 'excused'].includes(r.status)).length
-      return Math.round(present / records.length * 100)
+      const records = this.data.attendance;
+      if (!records.length) return 0;
+      const present = records.filter(r => ["present", "on_leave", "excused"].includes(r.status)).length;
+      return Math.round((present / records.length) * 100);
     },
     creditText() {
-      return this.profile.creditsEarned + ' / ' + this.profile.totalCredits
+      return this.profile.creditsEarned + " / " + this.profile.totalCredits;
     },
     moduleItems() {
-      const modules = this.profile.moduleCredits || {}
+      const modules = this.profile.moduleCredits || {};
       const labels = {
-        general: 'General Education',
-        majorRequired: 'Major Required',
-        majorElective: 'Major Elective',
-        practice: 'Practice'
-      }
+        general: "General Education",
+        majorRequired: "Major Required",
+        majorElective: "Major Elective",
+        practice: "Practice"
+      };
       return Object.keys(labels).map(key => ({
         key,
         label: labels[key],
-        current: Number(modules[key] && modules[key].current || 0),
-        total: Number(modules[key] && modules[key].total || 0)
-      }))
+        current: Number((modules[key] && modules[key].current) || 0),
+        total: Number((modules[key] && modules[key].total) || 0)
+      }));
     },
     interestText() {
-      return (this.profile.interestTags || []).join(', ') || 'Not selected'
+      return (this.profile.interestTags || []).join(", ") || "Not selected";
     },
     lastUpdatedText() {
-      return this.lastUpdatedAt ? 'Updated ' + this.formatTime(this.lastUpdatedAt) : ''
+      return this.lastUpdatedAt ? "Updated " + this.formatTime(this.lastUpdatedAt) : "";
     },
     visibleProfileChangeRequests() {
-      return (this.data.profileChangeRequests || []).filter(item => !this.hiddenProfileRequestIds[this.profileRequestKey(item)])
+      return (this.data.profileChangeRequests || []).filter(
+        item => !this.hiddenProfileRequestIds[this.profileRequestKey(item)]
+      );
     }
   },
   onShow() {
-    const session = requireRole(['student'])
-    if (!session) return
-    this.session = session
-    this.loadHiddenProfileRequestIds()
-    const now = Date.now()
+    const session = requireRole(["student"]);
+    if (!session) return;
+    this.session = session;
+    this.loadHiddenProfileRequestIds();
+    const now = Date.now();
     if (!this.lastUpdatedAt || now - this.lastUpdatedAt > 30000) {
-      this.load()
+      this.load();
     }
   },
   methods: {
     emptyProfile() {
       return {
-        major: '',
-        gpa: '0.0',
+        major: "",
+        gpa: "0.0",
         creditsEarned: 0,
         totalCredits: 0,
-        enrollmentYear: '',
+        enrollmentYear: "",
         contact: {},
         familyInfo: {},
         moduleCredits: {},
         interestTags: []
-      }
+      };
     },
     emptyProfileForm() {
       return {
-        contact: { email: '', phone: '', address: '' }
-      }
+        contact: { email: "", phone: "", address: "" }
+      };
     },
     async load(forceRefresh = false) {
-      this.loading = true
-      const result = await callAiemsFunction('get-dashboard-data', {
+      this.loading = true;
+      const result = await callAiemsFunction("get-dashboard-data", {
         session: getSession(),
         forceRefresh
-      })
-      this.loading = false
+      });
+      this.loading = false;
       if (result.ok) {
         this.data = {
           ...this.data,
@@ -381,36 +377,36 @@ export default {
           recommendations: result.data.recommendations || [],
           academicAlerts: result.data.academicAlerts || [],
           profileChangeRequests: result.data.profileChangeRequests || []
-        }
-        this.profile = { ...this.emptyProfile(), ...(result.data.profile || {}) }
+        };
+        this.profile = { ...this.emptyProfile(), ...(result.data.profile || {}) };
         this.profileForm = {
           contact: {
-            email: this.profile.contact && this.profile.contact.email || '',
-            phone: this.profile.contact && this.profile.contact.phone || '',
-            address: this.profile.contact && this.profile.contact.address || ''
+            email: (this.profile.contact && this.profile.contact.email) || "",
+            phone: (this.profile.contact && this.profile.contact.phone) || "",
+            address: (this.profile.contact && this.profile.contact.address) || ""
           }
-        }
+        };
         if (!this.data.courses.length) {
-          console.warn('[AI-EMS] No courses returned for student dashboard.', {
+          console.warn("[AI-EMS] No courses returned for student dashboard.", {
             session: getSession(),
             dashboardMeta: result.data.meta || null
-          })
+          });
         }
-        this.lastUpdatedAt = Date.now()
+        this.lastUpdatedAt = Date.now();
       }
     },
     refresh() {
-      this.load(true)
+      this.load(true);
     },
     openCourseMaterials(course) {
-      if (!course || !course.courseOfferingId) return
+      if (!course || !course.courseOfferingId) return;
       uni.navigateTo({
         url: `/pages/materials/materials?courseOfferingId=${encodeURIComponent(course.courseOfferingId)}`
-      })
+      });
     },
     async submitProfileChange() {
-      this.savingProfile = true
-      const result = await callAiemsFunction('submit-profile-change', {
+      this.savingProfile = true;
+      const result = await callAiemsFunction("submit-profile-change", {
         session: getSession(),
         changes: {
           contact: {
@@ -419,148 +415,181 @@ export default {
             address: this.profileForm.contact.address
           }
         }
-      })
-      this.savingProfile = false
+      });
+      this.savingProfile = false;
       if (result.ok) {
-        uni.showToast({ title: 'Saved', icon: 'success' })
-        this.load(true)
-        return
+        uni.showToast({ title: "Saved", icon: "success" });
+        this.load(true);
+        return;
       }
-      uni.showToast({ title: result.message || 'Submit failed.', icon: 'none' })
+      uni.showToast({ title: result.message || "Submit failed.", icon: "none" });
     },
     courseLabel(courseId) {
-      const course = this.data.courses.find(c => c.courseOfferingId === courseId)
-      return course ? course.code + ' ' + course.name : courseId
+      const course = this.data.courses.find(c => c.courseOfferingId === courseId);
+      return course ? course.code + " " + course.name : courseId;
     },
     courseSubtitle(course) {
-      const teachers = Array.isArray(course.teacherNames) ? course.teacherNames.join(', ') : ''
-      const selected = course.selectedTeacherName ? 'Selected: ' + course.selectedTeacherName : ''
-      const capacity = course.capacity ? `${Number(course.enrolledCount || 0)} / ${Number(course.capacity || 0)} seats` : ''
-      const status = course.completed ? 'completed' : course.teacherSelected ? 'teacher locked' : this.isCourseFull(course) ? 'full' : course.teacherSelectionRequired ? 'teacher pending' : ''
-      return [selected || (teachers ? 'Teachers: ' + teachers : ''), course.schedule, course.credits ? course.credits + ' credits' : '', capacity, status].filter(Boolean).join(' - ')
+      const teachers = Array.isArray(course.teacherNames) ? course.teacherNames.join(", ") : "";
+      const selected = course.selectedTeacherName ? "Selected: " + course.selectedTeacherName : "";
+      const capacity = course.capacity
+        ? `${Number(course.enrolledCount || 0)} / ${Number(course.capacity || 0)} seats`
+        : "";
+      const status = course.completed
+        ? "completed"
+        : course.teacherSelected
+          ? "teacher locked"
+          : this.isCourseFull(course)
+            ? "full"
+            : course.teacherSelectionRequired
+              ? "teacher pending"
+              : "";
+      return [
+        selected || (teachers ? "Teachers: " + teachers : ""),
+        course.schedule,
+        course.credits ? course.credits + " credits" : "",
+        capacity,
+        status
+      ]
+        .filter(Boolean)
+        .join(" - ");
     },
     async selectTeacher(course, teacherId) {
       if (course.teacherSelected) {
-        uni.showToast({ title: 'Teacher choice is locked and cannot be changed.', icon: 'none' })
-        return
+        uni.showToast({ title: "Teacher choice is locked and cannot be changed.", icon: "none" });
+        return;
       }
       if (this.isCourseFull(course)) {
-        uni.showToast({ title: 'This course has reached capacity.', icon: 'none' })
-        return
+        uni.showToast({ title: "This course has reached capacity.", icon: "none" });
+        return;
       }
-      const result = await callAiemsFunction('select-course-teacher', {
+      const result = await callAiemsFunction("select-course-teacher", {
         session: getSession(),
         courseOfferingId: course.courseOfferingId,
         teacherId
-      })
+      });
       if (result.ok) {
-        uni.showToast({ title: 'Teacher selected', icon: 'success' })
-        this.load(true)
-        return
+        uni.showToast({ title: "Teacher selected", icon: "success" });
+        this.load(true);
+        return;
       }
-      uni.showToast({ title: result.message || 'Selection failed.', icon: 'none' })
+      uni.showToast({ title: result.message || "Selection failed.", icon: "none" });
     },
     isCourseFull(course) {
-      const capacity = Number(course && course.capacity || 0)
-      return Boolean(capacity && Number(course.enrolledCount || 0) >= capacity)
+      const capacity = Number((course && course.capacity) || 0);
+      return Boolean(capacity && Number(course.enrolledCount || 0) >= capacity);
     },
     attendanceSubtitle(item) {
-      return [item.source, item.distanceToClassroomM ? item.distanceToClassroomM + 'm' : ''].filter(Boolean).join(' - ')
+      return [item.source, item.distanceToClassroomM ? item.distanceToClassroomM + "m" : ""]
+        .filter(Boolean)
+        .join(" - ");
     },
     formatCourseLabel(course) {
-      const title = [course.code, course.name].filter(Boolean).join(' ').trim() || 'Unnamed course'
-      const teachers = Array.isArray(course.teacherNames) && course.teacherNames.length ? ` (${course.teacherNames.join(', ')})` : ''
-      return title + teachers
+      const title = [course.code, course.name].filter(Boolean).join(" ").trim() || "Unnamed course";
+      const teachers =
+        Array.isArray(course.teacherNames) && course.teacherNames.length ? ` (${course.teacherNames.join(", ")})` : "";
+      return title + teachers;
     },
     formatChangeRequest(item) {
-      const changes = item.changes || {}
-      return Object.keys(changes).map(key => {
-        const change = changes[key] || {}
-        return (change.label || change.field || key) + ': ' + change.newValue
-      }).join('; ')
+      const changes = item.changes || {};
+      return Object.keys(changes)
+        .map(key => {
+          const change = changes[key] || {};
+          return (change.label || change.field || key) + ": " + change.newValue;
+        })
+        .join("; ");
     },
     profileRequestTitle(item) {
-      return item.requesterName || item.requester_user_id || 'Profile change request'
+      return item.requesterName || item.requester_user_id || "Profile change request";
     },
     profileRequestMeta(item) {
-      return [item.status, this.formatDate(item.createdAt)].filter(Boolean).join(' - ')
+      return [item.status, this.formatDate(item.createdAt)].filter(Boolean).join(" - ");
     },
     profileRequestKey(item) {
-      return String(item && item._id || '')
+      return String((item && item._id) || "");
     },
     isProfileChangeHistory(item) {
-      return String(item && item.status || '').trim().toLowerCase() !== 'pending'
+      return (
+        String((item && item.status) || "")
+          .trim()
+          .toLowerCase() !== "pending"
+      );
     },
     hideProfileChangeRequest(item) {
-      const key = this.profileRequestKey(item)
+      const key = this.profileRequestKey(item);
       this.hiddenProfileRequestIds = {
         ...this.hiddenProfileRequestIds,
         [key]: true
-      }
-      this.saveHiddenProfileRequestIds()
+      };
+      this.saveHiddenProfileRequestIds();
     },
     hiddenProfileRequestStorageKey() {
-      return `ai_ems_hidden_profile_requests_${this.session.userId || 'student'}`
+      return `ai_ems_hidden_profile_requests_${this.session.userId || "student"}`;
     },
     loadHiddenProfileRequestIds() {
       try {
-        const stored = uni.getStorageSync(this.hiddenProfileRequestStorageKey())
-        this.hiddenProfileRequestIds = stored && typeof stored === 'object' ? stored : {}
+        const stored = uni.getStorageSync(this.hiddenProfileRequestStorageKey());
+        this.hiddenProfileRequestIds = stored && typeof stored === "object" ? stored : {};
       } catch (error) {
-        this.hiddenProfileRequestIds = {}
+        this.hiddenProfileRequestIds = {};
       }
     },
     saveHiddenProfileRequestIds() {
       try {
-        uni.setStorageSync(this.hiddenProfileRequestStorageKey(), this.hiddenProfileRequestIds)
-      } catch (error) {}
+        uni.setStorageSync(this.hiddenProfileRequestStorageKey(), this.hiddenProfileRequestIds);
+      } catch (error) {
+        // Best-effort persistence for local UI dismissal state.
+      }
     },
     profileChangeItems(item) {
-      const changes = item.changes || {}
+      const changes = item.changes || {};
       return Object.keys(changes).map(key => {
-        const change = changes[key] || {}
+        const change = changes[key] || {};
         return {
           key,
           label: this.profileChangeLabel(change, key),
-          oldValue: String(change.oldValue || ''),
-          newValue: String(change.newValue || '')
-        }
-      })
+          oldValue: String(change.oldValue || ""),
+          newValue: String(change.newValue || "")
+        };
+      });
     },
     profileChangeLabel(change, key) {
-      const field = String(change && change.field || key || '')
-      const label = String(change && change.label || '').trim()
-      if (field === 'familyInfo.guardianPhone' || field === 'family_info.guardianPhone' || field === 'family_info.guardian_phone') {
-        return 'Phone'
+      const field = String((change && change.field) || key || "");
+      const label = String((change && change.label) || "").trim();
+      if (
+        field === "familyInfo.guardianPhone" ||
+        field === "family_info.guardianPhone" ||
+        field === "family_info.guardian_phone"
+      ) {
+        return "Phone";
       }
-      if (label === 'Guardian Phone') {
-        return 'Phone'
+      if (label === "Guardian Phone") {
+        return "Phone";
       }
-      return label || field || key
+      return label || field || key;
     },
     profileCommentKey(item) {
-      return String(item && item._id || '')
+      return String((item && item._id) || "");
     },
     isProfileCommentVisible(item) {
-      return Boolean(this.profileCommentVisibility[this.profileCommentKey(item)])
+      return Boolean(this.profileCommentVisibility[this.profileCommentKey(item)]);
     },
     toggleProfileComment(item) {
-      const key = this.profileCommentKey(item)
+      const key = this.profileCommentKey(item);
       this.profileCommentVisibility = {
         ...this.profileCommentVisibility,
         [key]: !this.profileCommentVisibility[key]
-      }
+      };
     },
     formatDate(value) {
-      const timestamp = Number(value || 0)
-      return timestamp ? new Date(timestamp).toISOString().slice(0, 10) : ''
+      const timestamp = Number(value || 0);
+      return timestamp ? new Date(timestamp).toISOString().slice(0, 10) : "";
     },
     formatTime(value) {
-      const date = new Date(value)
-      return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+      const date = new Date(value);
+      return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
     }
   }
-}
+};
 </script>
 
 <style scoped>

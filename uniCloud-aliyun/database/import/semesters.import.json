@@ -1,1 +1,10 @@
-{"_id":"default","code":"default","name":"default","start_date":"default","end_date":"default","is_current":true,"created_at":1779595200000,"updated_at":1779595200000}
+{
+  "_id": "default",
+  "code": "default",
+  "name": "default",
+  "start_date": "default",
+  "end_date": "default",
+  "is_current": true,
+  "created_at": 1779595200000,
+  "updated_at": 1779595200000
+}

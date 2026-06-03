@@ -8,7 +8,7 @@ const EDITABLE_FIELDS = {
     "contact.phone": "Phone",
     "contact.address": "Address",
     "family_info.guardianName": "Guardian Name",
-    "familyInfo.guardianName": "Guardian Name",
+    "familyInfo.guardianName": "Guardian Name"
   },
   teacher: {
     office: "Office",
@@ -19,8 +19,8 @@ const EDITABLE_FIELDS = {
     "public_profile.officeHours": "Office Hours",
     "public_profile.homepage": "Homepage",
     "publicProfile.officeHours": "Office Hours",
-    "publicProfile.homepage": "Homepage",
-  },
+    "publicProfile.homepage": "Homepage"
+  }
 };
 
 exports.main = async (event = {}) => {
@@ -50,7 +50,7 @@ exports.main = async (event = {}) => {
     review_comment: "",
     reviewed_at: 0,
     created_at: now,
-    updated_at: now,
+    updated_at: now
   };
 
   const result = await db.collection("profile_change_requests").add(request);
@@ -61,9 +61,9 @@ exports.main = async (event = {}) => {
     data: {
       request: {
         _id: result.id,
-        ...request,
-      },
-    },
+        ...request
+      }
+    }
   };
 };
 
@@ -78,7 +78,11 @@ async function resolveTarget(session) {
   if (session.role === "student") {
     const seeded = {
       user_id: session.userId,
-      student_no: `TEMP-${String(session.userId || "").replace(/[^a-zA-Z0-9]/g, "").slice(-12) || now}`,
+      student_no: `TEMP-${
+        String(session.userId || "")
+          .replace(/[^a-zA-Z0-9]/g, "")
+          .slice(-12) || now
+      }`,
       name: session.displayName || session.username || "Unknown Student",
       major_id: "major_unknown",
       enrollment_year: new Date().getFullYear(),
@@ -88,12 +92,12 @@ async function resolveTarget(session) {
       contact: {
         email: session.email || "",
         phone: session.phone || "",
-        address: "",
+        address: ""
       },
       family_info: {
         guardianName: "",
-        guardianPhone: "",
-      },
+        guardianPhone: ""
+      }
     };
     const created = await db.collection("students").add(seeded);
     return { _id: created.id, ...seeded };
@@ -101,7 +105,11 @@ async function resolveTarget(session) {
 
   const seededTeacher = {
     user_id: session.userId,
-    teacher_no: `TEMP-${String(session.userId || "").replace(/[^a-zA-Z0-9]/g, "").slice(-12) || now}`,
+    teacher_no: `TEMP-${
+      String(session.userId || "")
+        .replace(/[^a-zA-Z0-9]/g, "")
+        .slice(-12) || now
+    }`,
     name: session.displayName || session.username || "Unknown Teacher",
     department_id: "dept_unknown",
     status: "active",
@@ -112,8 +120,8 @@ async function resolveTarget(session) {
     teaching_experience: "",
     public_profile: {
       officeHours: "",
-      homepage: "",
-    },
+      homepage: ""
+    }
   };
   const createdTeacher = await db.collection("teachers").add(seededTeacher);
   return { _id: createdTeacher.id, ...seededTeacher };
@@ -145,7 +153,7 @@ function normalizeChanges(role, target, raw) {
       field: canonicalField,
       oldValue: oldValue === undefined ? "" : oldValue,
       newValue: normalizedNewValue,
-      label,
+      label
     };
   }
 
@@ -161,9 +169,11 @@ function canonicalizeField(field) {
 }
 
 function safeChangeKey(field) {
-  return String(field || "")
-    .replace(/[^a-zA-Z0-9_]/g, "_")
-    .replace(/^_+|_+$/g, "") || "field";
+  return (
+    String(field || "")
+      .replace(/[^a-zA-Z0-9_]/g, "_")
+      .replace(/^_+|_+$/g, "") || "field"
+  );
 }
 
 function readInputValue(raw, field) {
@@ -188,7 +198,7 @@ function unwrapValue(value) {
 
 function normalizeValue(value) {
   if (Array.isArray(value)) {
-    return value.map((item) => String(item).trim()).filter(Boolean);
+    return value.map(item => String(item).trim()).filter(Boolean);
   }
   return String(value || "").trim();
 }
@@ -196,7 +206,10 @@ function normalizeValue(value) {
 function getByPath(object, path) {
   return String(path)
     .split(".")
-    .reduce((current, key) => (current && Object.prototype.hasOwnProperty.call(current, key) ? current[key] : undefined), object);
+    .reduce(
+      (current, key) => (current && Object.prototype.hasOwnProperty.call(current, key) ? current[key] : undefined),
+      object
+    );
 }
 
 function stableStringify(value) {
@@ -208,7 +221,7 @@ function stableStringify(value) {
   }
   return `{${Object.keys(value)
     .sort()
-    .map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`)
+    .map(key => `${JSON.stringify(key)}:${stableStringify(value[key])}`)
     .join(",")}}`;
 }
 
@@ -221,7 +234,7 @@ async function writeAudit(action, session, targetId, before, after) {
       target_id: targetId,
       before,
       after,
-      created_at: Date.now(),
+      created_at: Date.now()
     });
   } catch (error) {
     console.warn("[submit-profile-change] audit write skipped.", error);

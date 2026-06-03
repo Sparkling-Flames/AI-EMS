@@ -14,21 +14,21 @@
 </template>
 
 <script>
-import { clearSession } from '../common/session.js'
+import { clearSession } from "../common/session.js";
 
 export default {
   props: {
     title: { type: String, required: true },
-    displayName: { type: String, default: '' },
-    username: { type: String, default: '' }
+    displayName: { type: String, default: "" },
+    username: { type: String, default: "" }
   },
   methods: {
     handleLogout() {
-      clearSession()
-      uni.reLaunch({ url: '/pages/login/login' })
+      clearSession();
+      uni.reLaunch({ url: "/pages/login/login" });
     }
   }
-}
+};
 </script>
 
 <style scoped>

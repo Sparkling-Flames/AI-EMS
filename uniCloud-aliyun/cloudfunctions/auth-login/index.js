@@ -29,7 +29,8 @@ exports.main = async (event = {}) => {
   }
 
   const roles = await loadRoles(user.role_ids);
-  const role = resolvePrimaryRole(roles) || resolvePrimaryRoleByCodes(user.role_ids) || resolvePrimaryRoleByCodes([user.role]);
+  const role =
+    resolvePrimaryRole(roles) || resolvePrimaryRoleByCodes(user.role_ids) || resolvePrimaryRoleByCodes([user.role]);
   if (!role) {
     return { ok: false, message: "This account has no valid role." };
   }
@@ -44,10 +45,10 @@ exports.main = async (event = {}) => {
       userId: user._id,
       username,
       role,
-      roleCodes: roles.map((item) => item.code),
+      roleCodes: roles.map(item => item.code),
       displayName: user.display_name || user.displayName || user.username,
-      mustChangePassword: Boolean(user.must_change_password),
-    },
+      mustChangePassword: Boolean(user.must_change_password)
+    }
   };
 };
 
@@ -72,16 +73,14 @@ async function loadRoles(roleIds = []) {
 }
 
 function resolvePrimaryRole(roles) {
-  const codes = roles.map((item) => item.code);
+  const codes = roles.map(item => item.code);
   return resolvePrimaryRoleByCodes(codes);
 }
 
 function resolvePrimaryRoleByCodes(codes) {
-  const list = Array.isArray(codes)
-    ? codes.map((item) => String(item || "").trim()).filter(Boolean)
-    : [];
+  const list = Array.isArray(codes) ? codes.map(item => String(item || "").trim()).filter(Boolean) : [];
   const priority = ["admin", "academic_staff", "teacher", "counselor", "student", "guardian"];
-  const code = priority.find((item) => list.includes(item));
+  const code = priority.find(item => list.includes(item));
 
   if (code === "academic_staff") {
     return "admin";
@@ -136,7 +135,9 @@ function verifyPbkdf2Sha256(password, verifier) {
 }
 
 function decodeBase64(value) {
-  const normalized = String(value || "").replace(/-/g, "+").replace(/_/g, "/");
+  const normalized = String(value || "")
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
   const padding = normalized.length % 4 ? "=".repeat(4 - (normalized.length % 4)) : "";
   return Buffer.from(normalized + padding, "base64");
 }
@@ -159,7 +160,7 @@ async function writeAudit(action, userId, role, detail) {
       target_collection: "users",
       target_id: userId,
       after: { role, detail },
-      created_at: Date.now(),
+      created_at: Date.now()
     });
   } catch (error) {
     console.warn("[auth-login] audit write skipped.", error);

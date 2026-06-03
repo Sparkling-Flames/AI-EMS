@@ -7,7 +7,7 @@ const {
   createMockDb,
   loadCloudFunction,
   loadFrontendApiModule,
-  md5Hex,
+  md5Hex
 } = require("./test-utils.cjs");
 
 test("[Error Handling] auth-login rejects an invalid password", async () => {
@@ -28,7 +28,7 @@ test("[Error Handling] submit-leave rejects a non-student session", async () => 
     session: { role: "teacher", userId: "user_t_001" },
     courseOfferingId: "co_future",
     leaveDate: "2099-06-15",
-    reasonDetail: "Wrong role.",
+    reasonDetail: "Wrong role."
   });
 
   assert.equal(result.ok, false);
@@ -44,7 +44,7 @@ test("[Error Handling] review-leave rejects invalid decisions", async () => {
     leave_date: "2099-06-15",
     reason_type: "sick",
     reason_detail: "Medical appointment.",
-    status: "pending",
+    status: "pending"
   });
   const db = createMockDb(seed);
   const reviewLeave = loadCloudFunction("review-leave", db);
@@ -52,7 +52,7 @@ test("[Error Handling] review-leave rejects invalid decisions", async () => {
   const result = await reviewLeave({
     session: { role: "teacher", userId: "user_t_001" },
     leaveId: "leave_pending",
-    decision: "maybe",
+    decision: "maybe"
   });
 
   assert.equal(result.ok, false);
@@ -72,10 +72,10 @@ test("[Error Handling] submit-evaluation rejects duplicate submissions", async (
       difficulty: 4,
       workload: 4,
       achievement: 5,
-      overall: 5,
+      overall: 5
     },
     feedback_text: "Existing anonymous feedback.",
-    status: "submitted",
+    status: "submitted"
   });
   const db = createMockDb(seed);
   const submitEvaluation = loadCloudFunction("submit-evaluation", db);
@@ -92,8 +92,8 @@ test("[Error Handling] submit-evaluation rejects duplicate submissions", async (
       difficulty: 4,
       workload: 4,
       achievement: 5,
-      overall: 5,
-    },
+      overall: 5
+    }
   });
 
   assert.equal(result.code, 400);
@@ -105,18 +105,18 @@ test("[Error Handling] frontend API falls back for read failures and blocks stri
     uniCloud: {
       callFunction() {
         return Promise.reject(new Error("simulated cloud outage"));
-      },
-    },
+      }
+    }
   });
 
   const readResult = await api.callAiemsFunction("get-dashboard-data", {
-    session: { role: "admin", userId: "user_admin_001" },
+    session: { role: "admin", userId: "user_admin_001" }
   });
   const writeResult = await api.callAiemsFunction("submit-leave", {
     session: { role: "student", userId: "user_s_001" },
     courseOfferingId: "co_future",
     leaveDate: "2099-06-15",
-    reasonDetail: "Network failure path.",
+    reasonDetail: "Network failure path."
   });
 
   assert.equal(readResult.ok, true);

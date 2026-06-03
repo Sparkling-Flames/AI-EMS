@@ -13,10 +13,7 @@ exports.main = async (event = {}) => {
 
   const conversations = await readUserConversations(session);
   const requestedId = String(event.conversationId || "").trim();
-  const activeConversation =
-    conversations.find((item) => item._id === requestedId) ||
-    conversations[0] ||
-    null;
+  const activeConversation = conversations.find(item => item._id === requestedId) || conversations[0] || null;
   const messages = activeConversation ? await readMessages(activeConversation._id, session) : [];
 
   return {
@@ -27,8 +24,8 @@ exports.main = async (event = {}) => {
       conversations: conversations.map(toConversationView),
       activeConversationId: activeConversation ? activeConversation._id : "",
       messages: messages.map(toMessageView),
-      retentionDays: 60,
-    },
+      retentionDays: 60
+    }
   };
 };
 
@@ -36,14 +33,14 @@ async function readUserConversations(session) {
   try {
     const rows = [];
     for (const userId of session.userIds) {
-      rows.push(...await readRows("ai_conversations", { user_id: userId }, 50));
-      rows.push(...await readRows("ai_conversations", { userId }, 50));
+      rows.push(...(await readRows("ai_conversations", { user_id: userId }, 50)));
+      rows.push(...(await readRows("ai_conversations", { userId }, 50)));
     }
     if (!rows.length) {
-      rows.push(...await readRows("ai_conversations", {}, 200));
+      rows.push(...(await readRows("ai_conversations", {}, 200)));
     }
     return uniqueById(rows)
-      .filter((item) => conversationBelongsToSession(item, session))
+      .filter(item => conversationBelongsToSession(item, session))
       .sort((a, b) => Number(b.updated_at || b.updatedAt || 0) - Number(a.updated_at || a.updatedAt || 0))
       .slice(0, 20);
   } catch (error) {
@@ -55,11 +52,11 @@ async function readUserConversations(session) {
 async function readMessages(conversationId, session) {
   try {
     const rows = [
-      ...await readRows("ai_messages", { conversation_id: conversationId }, 100),
-      ...await readRows("ai_messages", { conversationId }, 100),
+      ...(await readRows("ai_messages", { conversation_id: conversationId }, 100)),
+      ...(await readRows("ai_messages", { conversationId }, 100))
     ];
     return uniqueById(rows)
-      .filter((item) => messageBelongsToSession(item, session))
+      .filter(item => messageBelongsToSession(item, session))
       .sort((a, b) => Number(a.created_at || a.createdAt || 0) - Number(b.created_at || b.createdAt || 0));
   } catch (error) {
     console.warn("[get-ai-history] message read skipped.", error);
@@ -91,7 +88,7 @@ function toConversationView(item) {
     messageCount: Number(item.message_count || item.messageCount || 0),
     status: item.status || "active",
     createdAt: Number(item.created_at || item.createdAt || 0),
-    updatedAt: Number(item.updated_at || item.updatedAt || 0),
+    updatedAt: Number(item.updated_at || item.updatedAt || 0)
   };
 }
 
@@ -107,7 +104,7 @@ function toMessageView(item) {
     citations: Array.isArray(item.citations) ? item.citations : [],
     fallbackUsed: item.fallback_used === true,
     latencyMs: Number(item.latency_ms || 0),
-    createdAt: Number(item.created_at || item.createdAt || 0),
+    createdAt: Number(item.created_at || item.createdAt || 0)
   };
 }
 
@@ -128,7 +125,7 @@ function normalizeSession(session) {
     userId,
     rawUserId,
     userIds: buildUserIdAliases(rawUserId || userId),
-    role: String(session.role || "").trim(),
+    role: String(session.role || "").trim()
   };
 }
 
@@ -184,7 +181,7 @@ function uniqueById(rows) {
   const seen = new Set();
   const result = [];
   for (const row of rows || []) {
-    const key = String(row && (row._id || row.id || JSON.stringify(row)) || "");
+    const key = String((row && (row._id || row.id || JSON.stringify(row))) || "");
     if (!key || seen.has(key)) continue;
     seen.add(key);
     result.push(row);
@@ -195,7 +192,7 @@ function uniqueById(rows) {
 async function removeOldRows(collection, field, cutoff) {
   try {
     const result = await db.collection(collection).limit(500).get();
-    const rows = (result.data || []).filter((item) => Number(item[field] || 0) < cutoff);
+    const rows = (result.data || []).filter(item => Number(item[field] || 0) < cutoff);
     for (const row of rows) {
       if (row._id) {
         await db.collection(collection).doc(row._id).remove();

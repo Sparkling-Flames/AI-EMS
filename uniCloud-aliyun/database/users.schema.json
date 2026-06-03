@@ -1,14 +1,6 @@
 {
   "bsonType": "object",
-  "required": [
-    "username",
-    "password_hash",
-    "role_ids",
-    "display_name",
-    "status",
-    "created_at",
-    "updated_at"
-  ],
+  "required": ["username", "password_hash", "role_ids", "display_name", "status", "created_at", "updated_at"],
   "permission": {
     "read": false,
     "create": false,
@@ -45,11 +37,7 @@
     },
     "status": {
       "bsonType": "string",
-      "enum": [
-        "active",
-        "disabled",
-        "pending"
-      ],
+      "enum": ["active", "disabled", "pending"],
       "defaultValue": "active"
     },
     "last_login_at": {

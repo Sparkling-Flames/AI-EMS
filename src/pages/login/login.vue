@@ -14,7 +14,7 @@
       <view class="field">
         <view class="field-head">
           <text class="label">Password</text>
-          <text class="toggle-link" @click="togglePassword">{{ showPassword ? 'Hide' : 'Show' }}</text>
+          <text class="toggle-link" @click="togglePassword">{{ showPassword ? "Hide" : "Show" }}</text>
         </view>
         <view class="password-row">
           <input v-model="password" class="password-input" :password="!showPassword" placeholder="Enter password" />
@@ -27,42 +27,42 @@
 </template>
 
 <script>
-import { callAiemsFunction } from '../../common/api.js'
-import { dashboardUrl, setSession } from '../../common/session.js'
+import { callAiemsFunction } from "../../common/api.js";
+import { dashboardUrl, setSession } from "../../common/session.js";
 
 export default {
   data() {
     return {
-      username: '',
-      password: '',
+      username: "",
+      password: "",
       showPassword: false,
       loading: false,
-      message: ''
-    }
+      message: ""
+    };
   },
   methods: {
     togglePassword() {
-      this.showPassword = !this.showPassword
+      this.showPassword = !this.showPassword;
     },
     async login() {
-      this.loading = true
-      this.message = ''
-      const result = await callAiemsFunction('auth-login', {
+      this.loading = true;
+      this.message = "";
+      const result = await callAiemsFunction("auth-login", {
         username: this.username.trim(),
         password: this.password
-      })
-      this.loading = false
+      });
+      this.loading = false;
 
       if (!result.ok) {
-        this.message = result.message || 'Login failed.'
-        return
+        this.message = result.message || "Login failed.";
+        return;
       }
 
-      setSession(result.user)
-      uni.reLaunch({ url: dashboardUrl(result.user.role) })
+      setSession(result.user);
+      uni.reLaunch({ url: dashboardUrl(result.user.role) });
     }
   }
-}
+};
 </script>
 
 <style scoped>
@@ -127,5 +127,4 @@ export default {
   color: #b91c1c;
   font-size: 24rpx;
 }
-
 </style>

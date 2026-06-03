@@ -22,25 +22,27 @@ export default {
   },
   computed: {
     tabs() {
-      const roleDashboard = `/pages/${this.role}/dashboard`
+      const roleDashboard = `/pages/${this.role}/dashboard`;
       const tabs = [
-        { key: 'dashboard', url: roleDashboard, label: 'Dashboard' },
-        ...(this.role === 'admin' ? [{ key: 'management', url: '/pages/admin/management', label: 'Management' }] : []),
-        { key: 'leave', url: '/pages/leave/leave', label: 'Leave' },
-        { key: 'evaluation', url: '/pages/evaluation/evaluation', label: 'Evaluation' },
-        ...(this.role === 'student' ? [] : [{ key: 'materials', url: '/pages/materials/materials', label: 'Materials' }]),
-        { key: 'assistant', url: '/pages/assistant/assistant', label: 'Assistant' }
-      ]
-      return tabs
+        { key: "dashboard", url: roleDashboard, label: "Dashboard" },
+        ...(this.role === "admin" ? [{ key: "management", url: "/pages/admin/management", label: "Management" }] : []),
+        { key: "leave", url: "/pages/leave/leave", label: "Leave" },
+        { key: "evaluation", url: "/pages/evaluation/evaluation", label: "Evaluation" },
+        ...(this.role === "student"
+          ? []
+          : [{ key: "materials", url: "/pages/materials/materials", label: "Materials" }]),
+        { key: "assistant", url: "/pages/assistant/assistant", label: "Assistant" }
+      ];
+      return tabs;
     }
   },
   methods: {
     go(tab) {
-      if (!tab || tab.key === this.current) return
-      uni.navigateTo({ url: tab.url })
+      if (!tab || tab.key === this.current) return;
+      uni.navigateTo({ url: tab.url });
     }
   }
-}
+};
 </script>
 
 <style scoped>

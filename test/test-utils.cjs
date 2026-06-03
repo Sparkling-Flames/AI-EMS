@@ -45,7 +45,7 @@ function recordPerformanceMetric(metric) {
     durationMs: round(metric.durationMs),
     thresholdMs: round(metric.thresholdMs),
     passed: metric.durationMs <= metric.thresholdMs,
-    details: metric.details || "",
+    details: metric.details || ""
   });
   fs.writeFileSync(performanceMetricsPath, JSON.stringify(existing, null, 2));
 }
@@ -94,7 +94,7 @@ function createMockDb(seed = {}) {
     let current = items.slice();
     return {
       where(query) {
-        current = current.filter((doc) => matchesQuery(doc, query));
+        current = current.filter(doc => matchesQuery(doc, query));
         return this;
       },
       orderBy(field, direction = "asc") {
@@ -120,7 +120,7 @@ function createMockDb(seed = {}) {
       },
       count() {
         return Promise.resolve({ total: current.length });
-      },
+      }
     };
   }
 
@@ -139,27 +139,27 @@ function createMockDb(seed = {}) {
         doc(id) {
           return {
             get() {
-              const item = docs.find((doc) => doc._id === id);
+              const item = docs.find(doc => doc._id === id);
               return Promise.resolve({ data: item ? [clone(item)] : [] });
             },
             update(updateDoc) {
-              const item = docs.find((doc) => doc._id === id);
+              const item = docs.find(doc => doc._id === id);
               if (item) {
                 Object.assign(item, clone(updateDoc));
               }
               return Promise.resolve({ updated: item ? 1 : 0 });
             },
             remove() {
-              const index = docs.findIndex((doc) => doc._id === id);
+              const index = docs.findIndex(doc => doc._id === id);
               if (index >= 0) {
                 docs.splice(index, 1);
               }
               return Promise.resolve({ deleted: index >= 0 ? 1 : 0 });
-            },
+            }
           };
         },
         where(query) {
-          return queryBuilder(docs.filter((doc) => matchesQuery(doc, query)));
+          return queryBuilder(docs.filter(doc => matchesQuery(doc, query)));
         },
         orderBy(field, direction) {
           return queryBuilder(docs).orderBy(field, direction);
@@ -172,12 +172,12 @@ function createMockDb(seed = {}) {
         },
         count() {
           return Promise.resolve({ total: docs.length });
-        },
+        }
       };
     },
     snapshot(name) {
       return ensureCollection(name).map(clone);
-    },
+    }
   };
 }
 
@@ -185,7 +185,7 @@ function createVmConsole() {
   return {
     ...console,
     warn() {},
-    error() {},
+    error() {}
   };
 }
 
@@ -203,8 +203,8 @@ function loadCloudFunction(functionName, mockDb) {
       httpclient: {
         request() {
           return Promise.reject(new Error("Network access is disabled in tests."));
-        },
-      },
+        }
+      }
     },
     console: createVmConsole(),
     Date,
@@ -225,7 +225,7 @@ function loadCloudFunction(functionName, mockDb) {
     setTimeout,
     clearTimeout,
     __dirname: path.dirname(filePath),
-    __filename: filePath,
+    __filename: filePath
   };
   vm.createContext(sandbox);
   vm.runInContext(code, sandbox, { filename: filePath });
@@ -252,7 +252,7 @@ function loadFrontendApiModule(options = {}) {
     Buffer,
     require,
     setTimeout,
-    clearTimeout,
+    clearTimeout
   };
   if (options.uniCloud) {
     sandbox.uniCloud = options.uniCloud;
@@ -271,7 +271,7 @@ function createAcademicSeed() {
     roles: [
       { _id: "role_student", code: "student" },
       { _id: "role_teacher", code: "teacher" },
-      { _id: "role_admin", code: "admin" },
+      { _id: "role_admin", code: "admin" }
     ],
     users: [
       {
@@ -281,7 +281,7 @@ function createAcademicSeed() {
         role_ids: ["role_student"],
         role: "student",
         status: "active",
-        display_name: "Alice Chen",
+        display_name: "Alice Chen"
       },
       {
         _id: "user_t_001",
@@ -290,7 +290,7 @@ function createAcademicSeed() {
         role_ids: ["role_teacher"],
         role: "teacher",
         status: "active",
-        display_name: "Dr. Zhang",
+        display_name: "Dr. Zhang"
       },
       {
         _id: "user_admin_001",
@@ -299,8 +299,8 @@ function createAcademicSeed() {
         role_ids: ["role_admin"],
         role: "admin",
         status: "active",
-        display_name: "Academic Admin",
-      },
+        display_name: "Academic Admin"
+      }
     ],
     students: [
       {
@@ -312,8 +312,8 @@ function createAcademicSeed() {
         admin_class_id: "class_se_1",
         training_plan_id: "tp_se_2024",
         enrollment_year: 2024,
-        status: "active",
-      },
+        status: "active"
+      }
     ],
     teachers: [
       {
@@ -322,8 +322,8 @@ function createAcademicSeed() {
         teacher_no: "T1001",
         name: "Dr. Zhang",
         title: "Associate Professor",
-        department_name: "Computer Science",
-      },
+        department_name: "Computer Science"
+      }
     ],
     courses: [
       {
@@ -333,8 +333,8 @@ function createAcademicSeed() {
         name: "Software Design and Implementation",
         credits: 15,
         course_type: "major_required",
-        status: "active",
-      },
+        status: "active"
+      }
     ],
     course_offerings: [
       {
@@ -349,7 +349,7 @@ function createAcademicSeed() {
         class_weekday: 1,
         class_start_time: "09:00",
         class_end_time: "11:00",
-        selection_status: "open",
+        selection_status: "open"
       },
       {
         _id: "co_completed",
@@ -363,8 +363,8 @@ function createAcademicSeed() {
         class_weekday: 3,
         class_start_time: "09:00",
         class_end_time: "11:00",
-        selection_status: "closed",
-      },
+        selection_status: "closed"
+      }
     ],
     enrollments: [
       {
@@ -374,7 +374,7 @@ function createAcademicSeed() {
         status: "enrolled",
         selected_teacher_id: "tea_001",
         selected_teacher_user_id: "user_t_001",
-        selected_teacher_name: "Dr. Zhang",
+        selected_teacher_name: "Dr. Zhang"
       },
       {
         _id: "enr_completed",
@@ -383,8 +383,8 @@ function createAcademicSeed() {
         status: "enrolled",
         selected_teacher_id: "tea_001",
         selected_teacher_user_id: "user_t_001",
-        selected_teacher_name: "Dr. Zhang",
-      },
+        selected_teacher_name: "Dr. Zhang"
+      }
     ],
     class_sessions: [
       {
@@ -395,7 +395,7 @@ function createAcademicSeed() {
         end_time: "11:00",
         session_start_at: Date.parse(`${futureDate}T09:00:00`),
         session_end_at: Date.parse(`${futureDate}T11:00:00`),
-        status: "scheduled",
+        status: "scheduled"
       },
       {
         _id: "cs_completed",
@@ -405,8 +405,8 @@ function createAcademicSeed() {
         end_time: "11:00",
         session_start_at: Date.parse(`${completedDate}T09:00:00`),
         session_end_at: completedEndAt,
-        status: "completed",
-      },
+        status: "completed"
+      }
     ],
     attendance_records: [
       {
@@ -418,8 +418,8 @@ function createAcademicSeed() {
         status: "absent",
         source: "location",
         created_at: 1,
-        updated_at: 1,
-      },
+        updated_at: 1
+      }
     ],
     course_evaluations: [],
     leave_requests: [],
@@ -436,13 +436,14 @@ function createAcademicSeed() {
         _id: "kb_graduation",
         title: "Graduation credit requirement",
         keywords: ["graduation", "credit", "credits"],
-        content: "Students should track total credits, module credits, GPA trend, and remaining required courses before graduation.",
+        content:
+          "Students should track total credits, module credits, GPA trend, and remaining required courses before graduation.",
         status: "active",
-        is_public: true,
-      },
+        is_public: true
+      }
     ],
     ai_conversations: [],
-    ai_messages: [],
+    ai_messages: []
   };
 }
 
@@ -459,7 +460,7 @@ function createLargeDashboardSeed(studentCount = 120, offeringCount = 8) {
     name: `Course ${index + 1}`,
     credits: 4,
     course_type: index % 2 ? "major_elective" : "major_required",
-    status: "active",
+    status: "active"
   }));
   seed.course_offerings = seed.courses.map((course, index) => ({
     _id: `co_${index + 1}`,
@@ -473,7 +474,7 @@ function createLargeDashboardSeed(studentCount = 120, offeringCount = 8) {
     class_weekday: (index % 5) + 1,
     class_start_time: "09:00",
     class_end_time: "11:00",
-    selection_status: "closed",
+    selection_status: "closed"
   }));
   seed.class_sessions = seed.course_offerings.flatMap((offering, offeringIndex) =>
     Array.from({ length: 4 }, (_, sessionIndex) => {
@@ -485,9 +486,9 @@ function createLargeDashboardSeed(studentCount = 120, offeringCount = 8) {
         start_time: "09:00",
         end_time: "11:00",
         session_end_at: Date.parse(`${date}T11:00:00`),
-        status: "completed",
+        status: "completed"
       };
-    }),
+    })
   );
 
   for (let index = 0; index < studentCount; index += 1) {
@@ -502,7 +503,7 @@ function createLargeDashboardSeed(studentCount = 120, offeringCount = 8) {
       admin_class_id: "class_se_1",
       training_plan_id: "tp_se_2024",
       enrollment_year: 2024,
-      status: "active",
+      status: "active"
     });
     for (const offering of seed.course_offerings) {
       seed.enrollments.push({
@@ -511,13 +512,15 @@ function createLargeDashboardSeed(studentCount = 120, offeringCount = 8) {
         course_offering_id: offering._id,
         status: "enrolled",
         selected_teacher_id: "tea_001",
-        selected_teacher_user_id: "user_t_001",
+        selected_teacher_user_id: "user_t_001"
       });
     }
   }
 
   for (const enrollment of seed.enrollments) {
-    for (const session of seed.class_sessions.filter((item) => item.course_offering_id === enrollment.course_offering_id)) {
+    for (const session of seed.class_sessions.filter(
+      item => item.course_offering_id === enrollment.course_offering_id
+    )) {
       seed.attendance_records.push({
         _id: `att_${enrollment.student_id}_${session._id}`,
         student_id: enrollment.student_id,
@@ -527,7 +530,7 @@ function createLargeDashboardSeed(studentCount = 120, offeringCount = 8) {
         status: Number(enrollment.student_id.slice(-1)) % 7 === 0 ? "absent" : "present",
         source: "system_import",
         created_at: 1,
-        updated_at: 1,
+        updated_at: 1
       });
     }
   }
@@ -549,5 +552,5 @@ module.exports = {
   recordPerformanceMetric,
   reportDir,
   resetPerformanceMetrics,
-  sha256Hex,
+  sha256Hex
 };

@@ -1,16 +1,18 @@
-'use strict';
+"use strict";
 
-const crypto = require('crypto');
+const crypto = require("crypto");
 const db = uniCloud.database();
 
-const SCORE_KEYS = ['content', 'teaching_method', 'difficulty', 'workload', 'achievement', 'overall'];
+const SCORE_KEYS = ["content", "teaching_method", "difficulty", "workload", "achievement", "overall"];
 
 function normalizeSession(event, context) {
   const session = event.session || {};
   const auth = context.auth || {};
   return {
-    userId: String(session.userId || session.uid || session.user_id || auth.uid || auth.user_id || auth.userId || '').trim(),
-    role: String(session.role || auth.role || '').trim()
+    userId: String(
+      session.userId || session.uid || session.user_id || auth.uid || auth.user_id || auth.userId || ""
+    ).trim(),
+    role: String(session.role || auth.role || "").trim()
   };
 }
 
@@ -19,19 +21,19 @@ exports.main = async (event = {}, context = {}) => {
   const uid = session.userId;
   const role = session.role;
 
-  if (!uid || role !== 'student') {
-    return { code: 403, message: 'Only students can submit course evaluations', data: null };
+  if (!uid || role !== "student") {
+    return { code: 403, message: "Only students can submit course evaluations", data: null };
   }
 
   const payload = normalizePayload(event);
   if (!payload.courseId || !payload.courseOfferingId) {
-    return { code: 400, message: 'Missing required parameters (course ID / course offering ID)', data: null };
+    return { code: 400, message: "Missing required parameters (course ID / course offering ID)", data: null };
   }
   if (!payload.feedbackText.trim()) {
-    return { code: 400, message: 'Missing required parameters (feedback text)', data: null };
+    return { code: 400, message: "Missing required parameters (feedback text)", data: null };
   }
   if (payload.feedbackText.length > 500) {
-    return { code: 400, message: 'Evaluation content cannot exceed 500 characters', data: null };
+    return { code: 400, message: "Evaluation content cannot exceed 500 characters", data: null };
   }
 
   const scores = buildScores(payload);
@@ -43,49 +45,47 @@ exports.main = async (event = {}, context = {}) => {
   try {
     const [courseMeta, students, enrollments, classSessions] = await Promise.all([
       loadCourseOffering(payload.courseOfferingId),
-      readCollection('students'),
-      readCollection('enrollments'),
+      readCollection("students"),
+      readCollection("enrollments"),
       loadClassSessions(payload.courseOfferingId)
     ]);
 
     if (!courseMeta) {
-      return { code: 404, message: 'Course offering was not found', data: null };
+      return { code: 404, message: "Course offering was not found", data: null };
     }
 
     const student = findByUserId(students, uid);
     if (!student) {
-      return { code: 400, message: 'Student profile was not found', data: null };
+      return { code: 400, message: "Student profile was not found", data: null };
     }
 
     const enrollment = findEnrollmentForCourse(enrollments, student, uid, payload.courseOfferingId);
     if (!enrollment) {
-      return { code: 400, message: 'You can evaluate only courses you have taken', data: null };
+      return { code: 400, message: "You can evaluate only courses you have taken", data: null };
     }
 
     if (!isCourseCompleted(courseMeta, classSessions)) {
-      return { code: 400, message: 'Course evaluations open only after the course has ended', data: null };
+      return { code: 400, message: "Course evaluations open only after the course has ended", data: null };
     }
     if (Array.isArray(courseMeta.teacher_ids) && courseMeta.teacher_ids.length > 1 && !hasSelectedTeacher(enrollment)) {
-      return { code: 400, message: 'Please select a teacher for this course before submitting an evaluation', data: null };
+      return {
+        code: 400,
+        message: "Please select a teacher for this course before submitting an evaluation",
+        data: null
+      };
     }
 
-    const tokenHash = crypto
-      .createHash('md5')
-      .update(`${uid}:${payload.courseOfferingId}`)
-      .digest('hex');
+    const tokenHash = crypto.createHash("md5").update(`${uid}:${payload.courseOfferingId}`).digest("hex");
 
-    const duplicateCheck = await db
-      .collection('course_evaluations')
-      .where({ token_hash: tokenHash })
-      .limit(1)
-      .get();
+    const duplicateCheck = await db.collection("course_evaluations").where({ token_hash: tokenHash }).limit(1).get();
 
     if (duplicateCheck.data && duplicateCheck.data.length > 0) {
-      return { code: 400, message: 'You have already submitted an evaluation for this course', data: null };
+      return { code: 400, message: "You have already submitted an evaluation for this course", data: null };
     }
 
-    const payloadCourseId = payload.courseId !== payload.courseOfferingId ? payload.courseId : '';
-    const resolvedCourseId = (courseMeta && (courseMeta.course_id || courseMeta.courseId)) || payloadCourseId || payload.courseOfferingId;
+    const payloadCourseId = payload.courseId !== payload.courseOfferingId ? payload.courseId : "";
+    const resolvedCourseId =
+      (courseMeta && (courseMeta.course_id || courseMeta.courseId)) || payloadCourseId || payload.courseOfferingId;
     const resolvedCourseName = payload.courseName || buildCourseTitle(courseMeta) || resolvedCourseId;
     const teacherIds = normalizeTeacherIds(payload.teacherIds, courseMeta, enrollment);
     const now = Date.now();
@@ -100,18 +100,18 @@ exports.main = async (event = {}, context = {}) => {
       difficulty_score: Number(scores.difficulty),
       workload_score: Number(scores.workload),
       feedback_text: payload.feedbackText,
-      status: 'submitted',
+      status: "submitted",
       submitted_at: now,
       created_at: now,
       updated_at: now
     };
 
-    const insertResult = await db.collection('course_evaluations').add(evaluation);
-    await writeAudit(uid, 'submit_evaluation', payload.courseOfferingId, null, evaluation);
+    const insertResult = await db.collection("course_evaluations").add(evaluation);
+    await writeAudit(uid, "submit_evaluation", payload.courseOfferingId, null, evaluation);
 
     return {
       code: 200,
-      message: 'Evaluation submitted successfully, automatically anonymized',
+      message: "Evaluation submitted successfully, automatically anonymized",
       data: {
         evaluation: {
           _id: insertResult.id,
@@ -129,16 +129,16 @@ exports.main = async (event = {}, context = {}) => {
       }
     };
   } catch (error) {
-    console.error('Failed to submit evaluation:', error);
-    return { code: 500, message: 'Server error, please try again later', data: null };
+    console.error("Failed to submit evaluation:", error);
+    return { code: 500, message: "Server error, please try again later", data: null };
   }
 };
 
 function normalizePayload(event) {
-  const courseId = String(event.course_id || event.courseId || '').trim();
-  const courseOfferingId = String(event.course_offering_id || event.courseOfferingId || courseId || '').trim();
-  const courseName = String(event.course_name || event.courseName || '').trim();
-  const feedbackText = String(event.feedback_text || event.content || event.feedback || '').trim();
+  const courseId = String(event.course_id || event.courseId || "").trim();
+  const courseOfferingId = String(event.course_offering_id || event.courseOfferingId || courseId || "").trim();
+  const courseName = String(event.course_name || event.courseName || "").trim();
+  const feedbackText = String(event.feedback_text || event.content || event.feedback || "").trim();
   const rating = toScoreNumber(event.rating);
 
   return {
@@ -148,7 +148,7 @@ function normalizePayload(event) {
     feedbackText,
     teacherIds: Array.isArray(event.teacher_ids) ? event.teacher_ids : [],
     rating,
-    scores: event.scores && typeof event.scores === 'object' ? event.scores : null
+    scores: event.scores && typeof event.scores === "object" ? event.scores : null
   };
 }
 
@@ -161,7 +161,7 @@ function buildScores(payload) {
   for (const key of SCORE_KEYS) {
     if (Object.prototype.hasOwnProperty.call(sourceScores, key)) {
       scores[key] = toScoreNumber(sourceScores[key]);
-    } else if (key === 'overall') {
+    } else if (key === "overall") {
       scores[key] = overall || baseScore;
     } else if (baseScore > 0) {
       scores[key] = baseScore;
@@ -197,7 +197,7 @@ function toScoreNumber(value) {
 
 async function loadCourseOffering(courseOfferingId) {
   try {
-    const result = await db.collection('course_offerings').doc(courseOfferingId).get();
+    const result = await db.collection("course_offerings").doc(courseOfferingId).get();
     const offering = firstRecord(result.data);
     if (!offering) return null;
     return await enrichCourseOffering(offering);
@@ -207,18 +207,25 @@ async function loadCourseOffering(courseOfferingId) {
 }
 
 async function enrichCourseOffering(offering) {
-  const courseId = String(offering.course_id || offering.courseId || '').trim();
+  const courseId = String(offering.course_id || offering.courseId || "").trim();
   if (!courseId) return offering;
 
   try {
-    const result = await db.collection('courses').doc(courseId).get();
+    const result = await db.collection("courses").doc(courseId).get();
     const course = firstRecord(result.data);
     if (!course) return offering;
     return {
       ...offering,
-      course_code: course.course_code || course.courseCode || course.code || offering.course_code || offering.courseCode || offering.code || '',
-      name: course.name || course.course_name || offering.name || offering.course_name || '',
-      course_name: buildCourseTitle(course) || offering.course_name || offering.name || ''
+      course_code:
+        course.course_code ||
+        course.courseCode ||
+        course.code ||
+        offering.course_code ||
+        offering.courseCode ||
+        offering.code ||
+        "",
+      name: course.name || course.course_name || offering.name || offering.course_name || "",
+      course_name: buildCourseTitle(course) || offering.course_name || offering.name || ""
     };
   } catch (error) {
     return offering;
@@ -230,9 +237,9 @@ function firstRecord(data) {
 }
 
 function buildCourseTitle(course = {}) {
-  const code = String(course.course_code || course.courseCode || course.code || '').trim();
-  const name = String(course.name || course.course_name || course.courseName || '').trim();
-  return [code, name].filter(Boolean).join(' ').trim();
+  const code = String(course.course_code || course.courseCode || course.code || "").trim();
+  const name = String(course.name || course.course_name || course.courseName || "").trim();
+  return [code, name].filter(Boolean).join(" ").trim();
 }
 
 async function readCollection(name, limit = 1000) {
@@ -248,13 +255,13 @@ async function readCollection(name, limit = 1000) {
 async function loadClassSessions(courseOfferingId) {
   try {
     const result = await db
-      .collection('class_sessions')
+      .collection("class_sessions")
       .where({ course_offering_id: courseOfferingId })
       .limit(500)
       .get();
     return result.data || [];
   } catch (error) {
-    console.warn('[submit-evaluation] class session lookup failed.', error);
+    console.warn("[submit-evaluation] class session lookup failed.", error);
     return [];
   }
 }
@@ -262,8 +269,8 @@ async function loadClassSessions(courseOfferingId) {
 function findByUserId(rows, userId) {
   const keys = buildUserKeys(userId);
   return (
-    rows.find((item) => {
-      const candidate = String(item.user_id || item.userId || '').trim();
+    rows.find(item => {
+      const candidate = String(item.user_id || item.userId || "").trim();
       return keys.has(candidate);
     }) || null
   );
@@ -272,10 +279,10 @@ function findByUserId(rows, userId) {
 function findEnrollmentForCourse(enrollments, student, userId, courseOfferingId) {
   const studentIds = buildStudentIdSet(student, userId);
   return (
-    enrollments.find((item) => {
-      const itemStudentId = String(item.student_id || item.studentId || '').trim();
-      const itemOfferingId = String(item.course_offering_id || item.courseOfferingId || '').trim();
-      return item.status !== 'dropped' && studentIds.has(itemStudentId) && itemOfferingId === courseOfferingId;
+    enrollments.find(item => {
+      const itemStudentId = String(item.student_id || item.studentId || "").trim();
+      const itemOfferingId = String(item.course_offering_id || item.courseOfferingId || "").trim();
+      return item.status !== "dropped" && studentIds.has(itemStudentId) && itemOfferingId === courseOfferingId;
     }) || null
   );
 }
@@ -283,8 +290,8 @@ function findEnrollmentForCourse(enrollments, student, userId, courseOfferingId)
 function buildStudentIdSet(student, userId) {
   const ids = buildUserKeys(userId);
   if (student) {
-    for (const key of ['_id', 'user_id', 'userId', 'student_no', 'studentNo']) {
-      const value = String(student[key] || '').trim();
+    for (const key of ["_id", "user_id", "userId", "student_no", "studentNo"]) {
+      const value = String(student[key] || "").trim();
       if (value) ids.add(value);
     }
   }
@@ -292,9 +299,9 @@ function buildStudentIdSet(student, userId) {
 }
 
 function buildUserKeys(userId) {
-  const value = String(userId || '').trim();
+  const value = String(userId || "").trim();
   const keys = new Set(value ? [value] : []);
-  addRoleAliases(keys, value, 'student', 's');
+  addRoleAliases(keys, value, "student", "s");
   return keys;
 }
 
@@ -303,7 +310,7 @@ function addRoleAliases(keys, value, roleName, roleCode) {
   const userPrefix = `user_${roleCode}_`;
   const entityPrefix = `${roleName}_`;
   const lower = value.toLowerCase();
-  let suffix = '';
+  let suffix = "";
 
   if (lower.startsWith(legacyPrefix)) {
     suffix = value.slice(legacyPrefix.length);
@@ -322,28 +329,31 @@ function addRoleAliases(keys, value, roleName, roleCode) {
 }
 
 function isCourseCompleted(courseMeta, sessions = [], now = Date.now()) {
-  const activeSessions = (sessions || []).filter((item) => item.status !== 'cancelled');
+  const activeSessions = (sessions || []).filter(item => item.status !== "cancelled");
   if (activeSessions.length) {
-    return activeSessions.every((item) => {
+    return activeSessions.every(item => {
       const sessionEndAt = getSessionEndAt(item);
       return Boolean(sessionEndAt && sessionEndAt < now);
     });
   }
-  const endAt = buildDateTime(courseMeta.course_end_date || courseMeta.endDate || '', courseMeta.class_end_time || courseMeta.classEndTime || '23:59');
+  const endAt = buildDateTime(
+    courseMeta.course_end_date || courseMeta.endDate || "",
+    courseMeta.class_end_time || courseMeta.classEndTime || "23:59"
+  );
   return Boolean(endAt && endAt < now);
 }
 
 function hasSelectedTeacher(enrollment) {
   return Boolean(
-    String(enrollment && (enrollment.selected_teacher_id || enrollment.selectedTeacherId) || '').trim() ||
-    String(enrollment && (enrollment.selected_teacher_user_id || enrollment.selectedTeacherUserId) || '').trim()
+    String((enrollment && (enrollment.selected_teacher_id || enrollment.selectedTeacherId)) || "").trim() ||
+    String((enrollment && (enrollment.selected_teacher_user_id || enrollment.selectedTeacherUserId)) || "").trim()
   );
 }
 
 function getSessionEndAt(item) {
   const explicit = Number(item.session_end_at || item.sessionEndAt || 0);
   if (explicit) return explicit;
-  return buildDateTime(item.session_date || item.sessionDate || '', item.end_time || item.endTime || '23:59');
+  return buildDateTime(item.session_date || item.sessionDate || "", item.end_time || item.endTime || "23:59");
 }
 
 function buildDateTime(date, time) {
@@ -352,7 +362,9 @@ function buildDateTime(date, time) {
 }
 
 function normalizeTeacherIds(explicitTeacherIds, courseMeta, enrollment) {
-  const selectedTeacherId = String(enrollment && (enrollment.selected_teacher_id || enrollment.selectedTeacherId) || '').trim();
+  const selectedTeacherId = String(
+    (enrollment && (enrollment.selected_teacher_id || enrollment.selectedTeacherId)) || ""
+  ).trim();
   if (selectedTeacherId) {
     return [selectedTeacherId];
   }
@@ -367,16 +379,16 @@ function normalizeTeacherIds(explicitTeacherIds, courseMeta, enrollment) {
 
 async function writeAudit(actorUserId, action, targetId, before, after) {
   try {
-    await db.collection('audit_logs').add({
+    await db.collection("audit_logs").add({
       actor_user_id: actorUserId,
       action,
-      target_collection: 'course_evaluations',
+      target_collection: "course_evaluations",
       target_id: targetId,
       before,
       after,
       created_at: Date.now()
     });
   } catch (error) {
-    console.warn('[submit-evaluation] audit write skipped.', error);
+    console.warn("[submit-evaluation] audit write skipped.", error);
   }
 }

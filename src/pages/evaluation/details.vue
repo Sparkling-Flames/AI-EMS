@@ -33,7 +33,9 @@
 
     <template v-if="!filteredGroups.length && !loading">
       <view class="section">
-        <text class="muted">{{ allGroups.length ? 'No evaluations match the selected filters.' : 'No evaluation reviews available.' }}</text>
+        <text class="muted">{{
+          allGroups.length ? "No evaluations match the selected filters." : "No evaluation reviews available."
+        }}</text>
       </view>
     </template>
 
@@ -41,7 +43,10 @@
       <view class="review-head">
         <view>
           <text class="section-title">{{ groupTitle(group) }}</text>
-          <text class="muted">Average {{ average(group) }} / 5 - {{ group.evaluation_count || group.total_evaluations || 0 }} review(s)</text>
+          <text class="muted"
+            >Average {{ average(group) }} / 5 -
+            {{ group.evaluation_count || group.total_evaluations || 0 }} review(s)</text
+          >
         </view>
         <text class="score-badge">{{ average(group) }}</text>
       </view>
@@ -68,166 +73,172 @@
             <text class="score-text">{{ formatScore((review.scores || {})[field.key]) }}</text>
           </view>
         </view>
-        <text class="feedback-text">{{ review.feedback_text || review.content || 'No written feedback.' }}</text>
+        <text class="feedback-text">{{ review.feedback_text || review.content || "No written feedback." }}</text>
       </view>
     </view>
   </view>
 </template>
 
 <script>
-import { callAiemsFunction } from '../../common/api.js'
-import { getSession, requireRole } from '../../common/session.js'
+import { callAiemsFunction } from "../../common/api.js";
+import { getSession, requireRole } from "../../common/session.js";
 
 export default {
   data() {
     return {
       loading: false,
-      teacherId: '',
-      courseOfferingId: '',
+      teacherId: "",
+      courseOfferingId: "",
       teacherIndex: 0,
       courseIndex: 0,
       filtersInitialized: false,
       courses: [],
       allGroups: [],
       scoreFields: [
-        { key: 'content', label: 'Content' },
-        { key: 'teaching_method', label: 'Teaching' },
-        { key: 'difficulty', label: 'Difficulty' },
-        { key: 'workload', label: 'Workload' },
-        { key: 'achievement', label: 'Achievement' },
-        { key: 'overall', label: 'Overall' }
+        { key: "content", label: "Content" },
+        { key: "teaching_method", label: "Teaching" },
+        { key: "difficulty", label: "Difficulty" },
+        { key: "workload", label: "Workload" },
+        { key: "achievement", label: "Achievement" },
+        { key: "overall", label: "Overall" }
       ]
-    }
+    };
   },
   onLoad(options = {}) {
-    this.teacherId = String(options.teacherId || options.teacher_id || '').trim()
-    this.courseOfferingId = String(options.courseOfferingId || options.course_offering_id || '').trim()
-    this.filtersInitialized = false
+    this.teacherId = String(options.teacherId || options.teacher_id || "").trim();
+    this.courseOfferingId = String(options.courseOfferingId || options.course_offering_id || "").trim();
+    this.filtersInitialized = false;
   },
   onShow() {
-    const session = requireRole(['student', 'teacher', 'admin'])
-    if (!session) return
-    this.load()
+    const session = requireRole(["student", "teacher", "admin"]);
+    if (!session) return;
+    this.load();
   },
   computed: {
     teacherOptions() {
-      return this.buildUniqueOptions(this.allGroups, this.teacherValue, this.teacherLabel, 'All Teachers')
+      return this.buildUniqueOptions(this.allGroups, this.teacherValue, this.teacherLabel, "All Teachers");
     },
     teacherNames() {
-      return this.teacherOptions.map(item => item.label)
+      return this.teacherOptions.map(item => item.label);
     },
     courseOptions() {
-      return this.buildUniqueOptions(this.allGroups, this.courseValue, this.courseLabel, 'All Courses')
+      return this.buildUniqueOptions(this.allGroups, this.courseValue, this.courseLabel, "All Courses");
     },
     courseNames() {
-      return this.courseOptions.map(item => item.label)
+      return this.courseOptions.map(item => item.label);
     },
     selectedTeacherName() {
-      return (this.teacherOptions[this.teacherIndex] || this.teacherOptions[0] || {}).label || 'All Teachers'
+      return (this.teacherOptions[this.teacherIndex] || this.teacherOptions[0] || {}).label || "All Teachers";
     },
     selectedCourseName() {
-      return (this.courseOptions[this.courseIndex] || this.courseOptions[0] || {}).label || 'All Courses'
+      return (this.courseOptions[this.courseIndex] || this.courseOptions[0] || {}).label || "All Courses";
     },
     selectedTeacherId() {
-      return (this.teacherOptions[this.teacherIndex] || this.teacherOptions[0] || {}).value || ''
+      return (this.teacherOptions[this.teacherIndex] || this.teacherOptions[0] || {}).value || "";
     },
     selectedCourseId() {
-      return (this.courseOptions[this.courseIndex] || this.courseOptions[0] || {}).value || ''
+      return (this.courseOptions[this.courseIndex] || this.courseOptions[0] || {}).value || "";
     },
     filteredGroups() {
       return this.allGroups.filter(item => {
-        const teacherMatches = !this.selectedTeacherId || this.teacherValue(item) === this.selectedTeacherId
-        const courseMatches = !this.selectedCourseId || this.courseValue(item) === this.selectedCourseId
-        return teacherMatches && courseMatches
-      })
+        const teacherMatches = !this.selectedTeacherId || this.teacherValue(item) === this.selectedTeacherId;
+        const courseMatches = !this.selectedCourseId || this.courseValue(item) === this.selectedCourseId;
+        return teacherMatches && courseMatches;
+      });
     }
   },
   methods: {
     async load(forceRefresh = false) {
-      this.loading = true
-      const session = getSession()
+      this.loading = true;
+      const session = getSession();
       const [dashboard, result] = await Promise.all([
-        callAiemsFunction('get-dashboard-data', { session, forceRefresh }),
-        callAiemsFunction('get-evaluation-summary', { session, forceRefresh })
-      ])
-      this.loading = false
+        callAiemsFunction("get-dashboard-data", { session, forceRefresh }),
+        callAiemsFunction("get-evaluation-summary", { session, forceRefresh })
+      ]);
+      this.loading = false;
       if (dashboard.ok) {
-        this.courses = dashboard.data.courses || []
+        this.courses = dashboard.data.courses || [];
       }
       if (!result.ok) {
-        uni.showToast({ title: result.message || 'Failed to load evaluations.', icon: 'none' })
-        return
+        uni.showToast({ title: result.message || "Failed to load evaluations.", icon: "none" });
+        return;
       }
-      const payload = result.data || {}
-      this.allGroups = result.teacherCourseReviews || payload.teacher_course_reviews || payload.teacherCourseReviews || []
-      this.initializeFilters()
+      const payload = result.data || {};
+      this.allGroups =
+        result.teacherCourseReviews || payload.teacher_course_reviews || payload.teacherCourseReviews || [];
+      this.initializeFilters();
     },
     refresh() {
-      this.load(true)
+      this.load(true);
     },
     groupKey(group) {
-      return [group.teacher_id || group.teacherId || '', group.course_offering_id || group.courseOfferingId || group.course_id || group.courseId || ''].join('-')
+      return [
+        group.teacher_id || group.teacherId || "",
+        group.course_offering_id || group.courseOfferingId || group.course_id || group.courseId || ""
+      ].join("-");
     },
     reviewKey(group, review, index) {
-      return [this.groupKey(group), review.submitted_at || review.create_time || index].join('-')
+      return [this.groupKey(group), review.submitted_at || review.create_time || index].join("-");
     },
     changeTeacher(event) {
-      this.teacherIndex = Number(event.detail.value)
+      this.teacherIndex = Number(event.detail.value);
     },
     changeCourse(event) {
-      this.courseIndex = Number(event.detail.value)
+      this.courseIndex = Number(event.detail.value);
     },
     resetFilters() {
-      this.teacherIndex = 0
-      this.courseIndex = 0
+      this.teacherIndex = 0;
+      this.courseIndex = 0;
     },
     initializeFilters() {
       if (!this.filtersInitialized) {
-        this.teacherIndex = this.findOptionIndex(this.teacherOptions, this.teacherId)
-        this.courseIndex = this.findOptionIndex(this.courseOptions, this.courseOfferingId)
-        this.filtersInitialized = true
-        return
+        this.teacherIndex = this.findOptionIndex(this.teacherOptions, this.teacherId);
+        this.courseIndex = this.findOptionIndex(this.courseOptions, this.courseOfferingId);
+        this.filtersInitialized = true;
+        return;
       }
-      if (this.teacherIndex >= this.teacherOptions.length) this.teacherIndex = 0
-      if (this.courseIndex >= this.courseOptions.length) this.courseIndex = 0
+      if (this.teacherIndex >= this.teacherOptions.length) this.teacherIndex = 0;
+      if (this.courseIndex >= this.courseOptions.length) this.courseIndex = 0;
     },
     findOptionIndex(options, value) {
-      const normalized = String(value || '').trim()
-      if (!normalized) return 0
-      const index = options.findIndex(item => item.value === normalized)
-      return index >= 0 ? index : 0
+      const normalized = String(value || "").trim();
+      if (!normalized) return 0;
+      const index = options.findIndex(item => item.value === normalized);
+      return index >= 0 ? index : 0;
     },
     buildUniqueOptions(items, valueGetter, labelGetter, allLabel) {
-      const options = [{ value: '', label: allLabel }]
-      const seen = new Set()
+      const options = [{ value: "", label: allLabel }];
+      const seen = new Set();
       for (const item of items || []) {
-        const value = valueGetter(item)
-        if (!value || seen.has(value)) continue
-        seen.add(value)
-        options.push({ value, label: labelGetter(item) })
+        const value = valueGetter(item);
+        if (!value || seen.has(value)) continue;
+        seen.add(value);
+        options.push({ value, label: labelGetter(item) });
       }
-      return options
+      return options;
     },
     teacherValue(group) {
-      return String(group.teacher_id || group.teacherId || '').trim()
+      return String(group.teacher_id || group.teacherId || "").trim();
     },
     teacherLabel(group) {
-      return group.teacher_name || group.teacherName || this.teacherValue(group) || 'Unassigned Teacher'
+      return group.teacher_name || group.teacherName || this.teacherValue(group) || "Unassigned Teacher";
     },
     courseValue(group) {
-      return String(group.course_offering_id || group.courseOfferingId || group.course_id || group.courseId || '').trim()
+      return String(
+        group.course_offering_id || group.courseOfferingId || group.course_id || group.courseId || ""
+      ).trim();
     },
     courseLabel(group) {
-      return this.resolveGroupCourseLabel(group)
+      return this.resolveGroupCourseLabel(group);
     },
     groupTitle(group) {
-      const teacher = group.teacher_name || group.teacherName || 'Unassigned Teacher'
-      const course = this.resolveGroupCourseLabel(group)
-      return teacher + ' - ' + course
+      const teacher = group.teacher_name || group.teacherName || "Unassigned Teacher";
+      const course = this.resolveGroupCourseLabel(group);
+      return teacher + " - " + course;
     },
     resolveGroupCourseLabel(group) {
-      const courseId = String(group.course_id || group.courseId || '').trim()
-      const offeringId = String(group.course_offering_id || group.courseOfferingId || '').trim()
+      const courseId = String(group.course_id || group.courseId || "").trim();
+      const offeringId = String(group.course_offering_id || group.courseOfferingId || "").trim();
       const course = this.courses.find(course => {
         const ids = [
           course.courseOfferingId,
@@ -236,47 +247,54 @@ export default {
           course.id,
           course.courseId,
           course.course_id
-        ].map(value => String(value || '').trim())
-        return ids.includes(offeringId) || ids.includes(courseId)
-      })
-      const dashboardLabel = course ? this.formatCourseLabel(course) : ''
-      const storedLabel = group.course_name || group.courseName || ''
-      if (dashboardLabel) return dashboardLabel
-      if (this.isDisplayCourseName(storedLabel, courseId, offeringId)) return storedLabel
-      return courseId || offeringId || 'Unnamed Course'
+        ].map(value => String(value || "").trim());
+        return ids.includes(offeringId) || ids.includes(courseId);
+      });
+      const dashboardLabel = course ? this.formatCourseLabel(course) : "";
+      const storedLabel = group.course_name || group.courseName || "";
+      if (dashboardLabel) return dashboardLabel;
+      if (this.isDisplayCourseName(storedLabel, courseId, offeringId)) return storedLabel;
+      return courseId || offeringId || "Unnamed Course";
     },
     formatCourseLabel(course) {
-      return [course.code || course.courseCode || course.course_code, course.name || course.courseName || course.course_name].filter(Boolean).join(' ').trim()
+      return [
+        course.code || course.courseCode || course.course_code,
+        course.name || course.courseName || course.course_name
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
     },
     isDisplayCourseName(value, ...ids) {
-      const text = String(value || '').trim()
-      if (!text) return false
-      if (ids.some(id => String(id || '').trim() === text)) return false
-      return !/^[a-f0-9]{20,}$/i.test(text)
+      const text = String(value || "").trim();
+      if (!text) return false;
+      if (ids.some(id => String(id || "").trim() === text)) return false;
+      return !/^[a-f0-9]{20,}$/i.test(text);
     },
     average(group) {
-      const value = group.average_rating || group.averageRating || group.average_scores && group.average_scores.overall || 0
-      return Number(value || 0).toFixed(1)
+      const value =
+        group.average_rating || group.averageRating || (group.average_scores && group.average_scores.overall) || 0;
+      return Number(value || 0).toFixed(1);
     },
     formatScore(value) {
-      const numberValue = Number(value || 0)
-      return numberValue ? numberValue.toFixed(1) : '0.0'
+      const numberValue = Number(value || 0);
+      return numberValue ? numberValue.toFixed(1) : "0.0";
     },
     formatDate(value) {
-      const timestamp = Number(value || 0)
-      if (!timestamp) return ''
-      return new Date(timestamp).toISOString().slice(0, 16).replace('T', ' ')
+      const timestamp = Number(value || 0);
+      if (!timestamp) return "";
+      return new Date(timestamp).toISOString().slice(0, 16).replace("T", " ");
     },
     goBack() {
-      const pages = getCurrentPages()
+      const pages = getCurrentPages();
       if (pages.length > 1) {
-        uni.navigateBack()
-        return
+        uni.navigateBack();
+        return;
       }
-      uni.reLaunch({ url: '/pages/evaluation/evaluation' })
+      uni.reLaunch({ url: "/pages/evaluation/evaluation" });
     }
   }
-}
+};
 </script>
 
 <style scoped>

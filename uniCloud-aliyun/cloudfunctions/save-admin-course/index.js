@@ -9,8 +9,24 @@ exports.main = async (event = {}) => {
   }
 
   const payload = normalizePayload(event);
-  if (!payload.courseCode || !payload.courseName || !payload.majorId || !payload.sectionNo || !payload.teacherIds.length || !payload.capacity || !payload.gradeYear || !payload.courseStartDate || !payload.courseEndDate || !payload.totalSessions || !payload.scheduleSlots.length) {
-    return { ok: false, message: "Course code, major, cohort year, classroom, teachers, dates, class time, total sessions, and capacity are required." };
+  if (
+    !payload.courseCode ||
+    !payload.courseName ||
+    !payload.majorId ||
+    !payload.sectionNo ||
+    !payload.teacherIds.length ||
+    !payload.capacity ||
+    !payload.gradeYear ||
+    !payload.courseStartDate ||
+    !payload.courseEndDate ||
+    !payload.totalSessions ||
+    !payload.scheduleSlots.length
+  ) {
+    return {
+      ok: false,
+      message:
+        "Course code, major, cohort year, classroom, teachers, dates, class time, total sessions, and capacity are required."
+    };
   }
   if (!Number.isInteger(payload.capacity) || payload.capacity < 1) {
     return { ok: false, message: "Capacity must be a positive integer." };
@@ -20,7 +36,20 @@ exports.main = async (event = {}) => {
     return { ok: false, message: scheduleValidation.message };
   }
 
-  const [courses, offerings, teachers, departments, semesters, materials, trainingPlans, majors, students, enrollments, classSessions, classrooms] = await Promise.all([
+  const [
+    courses,
+    offerings,
+    teachers,
+    departments,
+    semesters,
+    materials,
+    trainingPlans,
+    majors,
+    students,
+    enrollments,
+    classSessions,
+    classrooms
+  ] = await Promise.all([
     readCollection("courses"),
     readCollection("course_offerings"),
     readCollection("teachers"),
@@ -32,7 +61,7 @@ exports.main = async (event = {}) => {
     readCollection("students"),
     readCollection("enrollments"),
     readCollection("class_sessions"),
-    readCollection("classrooms"),
+    readCollection("classrooms")
   ]);
 
   const courseMap = mapById(courses);
@@ -49,31 +78,42 @@ exports.main = async (event = {}) => {
     : currentOffering
       ? courseMap.get(currentOffering.course_id) || null
       : null;
-  const resolvedSemester = resolveSemester(semesters, currentOffering && currentOffering.semester_id ? currentOffering.semester_id : payload.semesterId);
+  const resolvedSemester = resolveSemester(
+    semesters,
+    currentOffering && currentOffering.semester_id ? currentOffering.semester_id : payload.semesterId
+  );
   const resolvedSemesterId = resolvedSemester ? String(resolvedSemester._id || "").trim() : "";
   if (!resolvedSemesterId) {
     return { ok: false, message: "No semester is available to assign the course." };
   }
 
   const compareCourseId = currentCourse ? currentCourse._id : currentOffering ? currentOffering.course_id : "";
-  const duplicateCourse = courses.find((item) => item.course_code === payload.courseCode && item._id !== compareCourseId);
+  const duplicateCourse = courses.find(item => item.course_code === payload.courseCode && item._id !== compareCourseId);
   if (duplicateCourse && !currentCourse) {
     return { ok: false, message: "Course code already exists." };
   }
 
   const compareOfferingId = currentOffering ? currentOffering._id : "";
-  const targetCourseId = currentCourse ? currentCourse._id : currentOffering ? currentOffering.course_id : payload.courseId || "";
-  const duplicateOffering = offerings.find((item) => {
+  const targetCourseId = currentCourse
+    ? currentCourse._id
+    : currentOffering
+      ? currentOffering.course_id
+      : payload.courseId || "";
+  const duplicateOffering = offerings.find(item => {
     if (item._id === compareOfferingId) {
       return false;
     }
-    return item.course_id === targetCourseId && item.semester_id === resolvedSemesterId && item.section_no === payload.sectionNo;
+    return (
+      item.course_id === targetCourseId &&
+      item.semester_id === resolvedSemesterId &&
+      item.section_no === payload.sectionNo
+    );
   });
   if (duplicateOffering && !currentOffering) {
     return { ok: false, message: "An offering for the same course, semester, and section already exists." };
   }
 
-  const invalidTeacher = payload.teacherIds.find((teacherId) => !teacherMap.get(teacherId));
+  const invalidTeacher = payload.teacherIds.find(teacherId => !teacherMap.get(teacherId));
   if (invalidTeacher) {
     return { ok: false, message: "One or more selected teachers are invalid." };
   }
@@ -85,13 +125,20 @@ exports.main = async (event = {}) => {
   if (!departmentId) {
     return { ok: false, message: "Selected major is missing a department." };
   }
-  const inferredTrainingPlan = trainingPlans.find((item) =>
-    item.major_id === payload.majorId &&
-    Number(item.grade_year || 0) === Number(payload.gradeYear || 0) &&
-    (!item.status || item.status === "active"),
-  ) || null;
+  const inferredTrainingPlan =
+    trainingPlans.find(
+      item =>
+        item.major_id === payload.majorId &&
+        Number(item.grade_year || 0) === Number(payload.gradeYear || 0) &&
+        (!item.status || item.status === "active")
+    ) || null;
   const trainingPlan = payload.trainingPlanId ? trainingPlanMap.get(payload.trainingPlanId) : inferredTrainingPlan;
-  if (payload.trainingPlanId && (!trainingPlan || trainingPlan.major_id !== payload.majorId || Number(trainingPlan.grade_year || 0) !== Number(payload.gradeYear || 0))) {
+  if (
+    payload.trainingPlanId &&
+    (!trainingPlan ||
+      trainingPlan.major_id !== payload.majorId ||
+      Number(trainingPlan.grade_year || 0) !== Number(payload.gradeYear || 0))
+  ) {
     return { ok: false, message: "Training plan must match the selected major and cohort year." };
   }
   const classroom = classroomMap.get(payload.classroomId);
@@ -99,7 +146,9 @@ exports.main = async (event = {}) => {
     return { ok: false, message: "Classroom was not found." };
   }
   if (currentOffering) {
-    const selectedCount = countSelectedEnrollments(enrollments.filter((item) => item.course_offering_id === currentOffering._id));
+    const selectedCount = countSelectedEnrollments(
+      enrollments.filter(item => item.course_offering_id === currentOffering._id)
+    );
     if (selectedCount > payload.capacity) {
       return { ok: false, message: `Capacity cannot be lower than current selected student count (${selectedCount}).` };
     }
@@ -112,17 +161,20 @@ exports.main = async (event = {}) => {
     course_start_date: payload.courseStartDate,
     course_end_date: payload.courseEndDate,
     schedule_slots: payload.scheduleSlots,
-    total_sessions: payload.totalSessions,
+    total_sessions: payload.totalSessions
   };
   const proposedSessions = generateClassSessions(proposedOfferingForValidation, Date.now());
   if (proposedSessions.length < payload.totalSessions) {
-    return { ok: false, message: `Date range and schedule slots can generate only ${proposedSessions.length} session(s), fewer than total sessions ${payload.totalSessions}.` };
+    return {
+      ok: false,
+      message: `Date range and schedule slots can generate only ${proposedSessions.length} session(s), fewer than total sessions ${payload.totalSessions}.`
+    };
   }
   const conflict = findScheduleConflict({
     proposedSessions,
     currentOfferingId: currentOffering ? currentOffering._id : "",
     classSessions,
-    offerings,
+    offerings
   });
   if (conflict) {
     return { ok: false, message: conflict };
@@ -135,7 +187,7 @@ exports.main = async (event = {}) => {
     ? clone(currentCourse)
     : {
         _id: "",
-        created_at: now,
+        created_at: now
       };
   savedCourse.course_code = payload.courseCode;
   savedCourse.name = payload.courseName;
@@ -157,7 +209,7 @@ exports.main = async (event = {}) => {
       difficulty_level: savedCourse.difficulty_level,
       description: savedCourse.description,
       status: savedCourse.status,
-      updated_at: savedCourse.updated_at,
+      updated_at: savedCourse.updated_at
     });
   } else {
     const addCourse = await db.collection("courses").add({
@@ -170,7 +222,7 @@ exports.main = async (event = {}) => {
       description: savedCourse.description,
       status: savedCourse.status,
       created_at: now,
-      updated_at: now,
+      updated_at: now
     });
     savedCourse._id = addCourse.id;
     savedCourse.created_at = now;
@@ -181,13 +233,13 @@ exports.main = async (event = {}) => {
     : {
         _id: "",
         created_at: now,
-        enrolled_count: 0,
+        enrolled_count: 0
       };
   savedOffering.course_id = savedCourse._id || targetCourseId;
   savedOffering.semester_id = resolvedSemesterId;
   savedOffering.major_id = payload.majorId;
   savedOffering.training_plan_id = trainingPlan ? trainingPlan._id : "";
-  savedOffering.grade_year = payload.gradeYear || Number(trainingPlan && trainingPlan.grade_year || 0);
+  savedOffering.grade_year = payload.gradeYear || Number((trainingPlan && trainingPlan.grade_year) || 0);
   savedOffering.classroom_id = payload.scheduleSlots[0].classroomId;
   savedOffering.section_no = payload.sectionNo;
   savedOffering.teacher_ids = payload.teacherIds.slice();
@@ -196,7 +248,7 @@ exports.main = async (event = {}) => {
   savedOffering.syllabus_url = payload.syllabusUrl;
   savedOffering.course_start_date = payload.courseStartDate;
   savedOffering.course_end_date = payload.courseEndDate;
-  savedOffering.schedule_slots = payload.scheduleSlots.map((slot) => ({ ...slot }));
+  savedOffering.schedule_slots = payload.scheduleSlots.map(slot => ({ ...slot }));
   savedOffering.weekly_sessions_count = payload.scheduleSlots.length;
   savedOffering.class_weekday = payload.scheduleSlots[0].weekday;
   savedOffering.class_start_time = payload.scheduleSlots[0].startTime;
@@ -227,7 +279,7 @@ exports.main = async (event = {}) => {
       class_end_time: savedOffering.class_end_time,
       total_sessions: savedOffering.total_sessions,
       material_upload_deadline_at: savedOffering.material_upload_deadline_at,
-      updated_at: savedOffering.updated_at,
+      updated_at: savedOffering.updated_at
     });
   } else {
     const addOffering = await db.collection("course_offerings").add({
@@ -253,7 +305,7 @@ exports.main = async (event = {}) => {
       total_sessions: savedOffering.total_sessions,
       material_upload_deadline_at: savedOffering.material_upload_deadline_at,
       created_at: now,
-      updated_at: now,
+      updated_at: now
     });
     savedOffering._id = addOffering.id;
     savedOffering.created_at = now;
@@ -265,7 +317,7 @@ exports.main = async (event = {}) => {
   savedOffering.enrolled_count = enrollmentCount;
   await db.collection("course_offerings").doc(savedOffering._id).update({
     enrolled_count: enrollmentCount,
-    updated_at: now,
+    updated_at: now
   });
 
   const course = buildCourseView({
@@ -276,15 +328,21 @@ exports.main = async (event = {}) => {
     semesters,
     majors,
     materials,
-    classrooms,
+    classrooms
   });
-  await writeAudit(currentOffering || currentCourse ? "admin.course.update" : "admin.course.create", session, savedOffering._id, before, course);
+  await writeAudit(
+    currentOffering || currentCourse ? "admin.course.update" : "admin.course.create",
+    session,
+    savedOffering._id,
+    before,
+    course
+  );
 
   return {
     ok: true,
     data: {
-      course,
-    },
+      course
+    }
   };
 };
 
@@ -328,26 +386,34 @@ function normalizePayload(event) {
     classStartTime: String(event.classStartTime || event.startTime || "").trim(),
     classEndTime: String(event.classEndTime || event.endTime || "").trim(),
     scheduleSlots,
-    totalSessions: Number(event.totalSessions || 0),
+    totalSessions: Number(event.totalSessions || 0)
   };
 }
 
 function normalizeScheduleSlots(event) {
-  const explicit = Array.isArray(event.scheduleSlots) ? event.scheduleSlots : Array.isArray(event.schedule_slots) ? event.schedule_slots : [];
-  const source = explicit.length ? explicit : [{
-    weekday: event.classWeekday || event.weekday,
-    startTime: event.classStartTime || event.startTime,
-    endTime: event.classEndTime || event.endTime,
-    classroomId: event.classroomId || event.classroom_id,
-  }];
+  const explicit = Array.isArray(event.scheduleSlots)
+    ? event.scheduleSlots
+    : Array.isArray(event.schedule_slots)
+      ? event.schedule_slots
+      : [];
+  const source = explicit.length
+    ? explicit
+    : [
+        {
+          weekday: event.classWeekday || event.weekday,
+          startTime: event.classStartTime || event.startTime,
+          endTime: event.classEndTime || event.endTime,
+          classroomId: event.classroomId || event.classroom_id
+        }
+      ];
   return source
-    .map((slot) => ({
+    .map(slot => ({
       weekday: normalizeWeekday(slot.weekday || slot.class_weekday),
       startTime: String(slot.startTime || slot.start_time || "").trim(),
       endTime: String(slot.endTime || slot.end_time || "").trim(),
-      classroomId: String(slot.classroomId || slot.classroom_id || "").trim(),
+      classroomId: String(slot.classroomId || slot.classroom_id || "").trim()
     }))
-    .filter((slot) => slot.weekday && slot.startTime && slot.endTime && slot.classroomId);
+    .filter(slot => slot.weekday && slot.startTime && slot.endTime && slot.classroomId);
 }
 
 function validateSchedulePayload(payload) {
@@ -374,7 +440,10 @@ function validateSchedulePayload(payload) {
     for (let rightIndex = leftIndex + 1; rightIndex < payload.scheduleSlots.length; rightIndex += 1) {
       const left = payload.scheduleSlots[leftIndex];
       const right = payload.scheduleSlots[rightIndex];
-      if (left.weekday === right.weekday && timeRangesOverlap(left.startTime, left.endTime, right.startTime, right.endTime)) {
+      if (
+        left.weekday === right.weekday &&
+        timeRangesOverlap(left.startTime, left.endTime, right.startTime, right.endTime)
+      ) {
         return { ok: false, message: "Schedule slots in the same course cannot overlap." };
       }
     }
@@ -396,13 +465,13 @@ function buildCourseView(input) {
   const major = offering.major_id ? findById(majors, offering.major_id) : null;
   const classroom = offering.classroom_id ? findById(classrooms, offering.classroom_id) : null;
   const teacherNames = (offering.teacher_ids || [])
-    .map((teacherId) => findById(teachers, teacherId))
+    .map(teacherId => findById(teachers, teacherId))
     .filter(Boolean)
-    .map((teacher) => {
+    .map(teacher => {
       const user = teacher.user_id ? null : null;
       return teacher.name || teacher.teacher_no || teacher._id;
     });
-  const materialCount = materials.filter((item) => item.course_offering_id === offering._id).length;
+  const materialCount = materials.filter(item => item.course_offering_id === offering._id).length;
 
   return {
     _id: offering._id || course._id || "",
@@ -424,7 +493,9 @@ function buildCourseView(input) {
     trainingPlanId: offering.training_plan_id || "",
     gradeYear: Number(offering.grade_year || 0),
     classroomId: offering.classroom_id || "",
-    classroomName: classroom ? classroom.name || [classroom.building, classroom.room_no].filter(Boolean).join("-") || classroom._id : "",
+    classroomName: classroom
+      ? classroom.name || [classroom.building, classroom.room_no].filter(Boolean).join("-") || classroom._id
+      : "",
     sectionNo: offering.section_no || "",
     teacherIds: Array.isArray(offering.teacher_ids) ? offering.teacher_ids.slice() : [],
     teacherNames,
@@ -433,7 +504,9 @@ function buildCourseView(input) {
     selectionStatus: offering.selection_status || "not_started",
     syllabusUrl: offering.syllabus_url || "",
     scheduleSlots: normalizeScheduleSlotsFromOffering(offering),
-    weeklySessionsCount: Number(offering.weekly_sessions_count || normalizeScheduleSlotsFromOffering(offering).length || 0),
+    weeklySessionsCount: Number(
+      offering.weekly_sessions_count || normalizeScheduleSlotsFromOffering(offering).length || 0
+    ),
     startDate: offering.course_start_date || "",
     endDate: offering.course_end_date || "",
     classWeekday: Number(offering.class_weekday || 0),
@@ -443,7 +516,7 @@ function buildCourseView(input) {
     materialUploadDeadlineAt: Number(offering.material_upload_deadline_at || 0),
     materialCount,
     createdAt: Number(offering.created_at || 0),
-    updatedAt: Number(offering.updated_at || 0),
+    updatedAt: Number(offering.updated_at || 0)
   };
 }
 
@@ -491,7 +564,9 @@ function formatLocalDate(date) {
 }
 
 function timeToMinutes(value) {
-  const parts = String(value || "").split(":").map(Number);
+  const parts = String(value || "")
+    .split(":")
+    .map(Number);
   if (parts.length < 2 || !Number.isFinite(parts[0]) || !Number.isFinite(parts[1])) {
     return -1;
   }
@@ -505,19 +580,19 @@ function timeRangesOverlap(leftStart, leftEnd, rightStart, rightEnd) {
 function resolveSemester(semesters, preferredSemesterId) {
   const preferredId = String(preferredSemesterId || "").trim();
   if (preferredId) {
-    const preferredSemester = semesters.find((item) => String(item._id || "") === preferredId);
+    const preferredSemester = semesters.find(item => String(item._id || "") === preferredId);
     if (preferredSemester) {
       return preferredSemester;
     }
   }
 
-  const currentSemester = semesters.find((item) => item.is_current || item.isCurrent);
+  const currentSemester = semesters.find(item => item.is_current || item.isCurrent);
   if (currentSemester) {
     return currentSemester;
   }
 
   const now = Date.now();
-  const activeSemester = semesters.find((item) => {
+  const activeSemester = semesters.find(item => {
     const start = Date.parse(`${item.start_date || item.startDate || ""}T00:00:00`);
     const end = Date.parse(`${item.end_date || item.endDate || ""}T23:59:59`);
     return Number.isFinite(start) && Number.isFinite(end) && start <= now && now <= end;
@@ -530,7 +605,7 @@ function resolveSemester(semesters, preferredSemesterId) {
 }
 
 async function replaceClassSessions(offering, existingSessions, now) {
-  const oldSessions = existingSessions.filter((item) => item.course_offering_id === offering._id);
+  const oldSessions = existingSessions.filter(item => item.course_offering_id === offering._id);
   for (const session of oldSessions) {
     await db.collection("class_sessions").doc(session._id).remove();
   }
@@ -549,7 +624,11 @@ function generateClassSessions(offering, now) {
   }
   const slots = normalizeScheduleSlotsFromOffering(offering);
   const sessions = [];
-  for (let cursor = new Date(first.getTime()); cursor.getTime() <= end.getTime(); cursor.setDate(cursor.getDate() + 1)) {
+  for (
+    let cursor = new Date(first.getTime());
+    cursor.getTime() <= end.getTime();
+    cursor.setDate(cursor.getDate() + 1)
+  ) {
     const uniWeekday = cursor.getDay() === 0 ? 7 : cursor.getDay();
     for (const slot of slots) {
       if (Number(slot.weekday) !== uniWeekday) {
@@ -572,7 +651,7 @@ function generateClassSessions(offering, now) {
         session_end_at: buildDateTime(sessionDate, slot.endTime),
         status: "scheduled",
         created_at: now,
-        updated_at: now,
+        updated_at: now
       });
     }
   }
@@ -584,20 +663,24 @@ function generateClassSessions(offering, now) {
 
 function normalizeScheduleSlotsFromOffering(offering) {
   const explicit = Array.isArray(offering.schedule_slots) ? offering.schedule_slots : [];
-  const slots = explicit.length ? explicit : [{
-    weekday: offering.class_weekday,
-    startTime: offering.class_start_time,
-    endTime: offering.class_end_time,
-    classroomId: offering.classroom_id,
-  }];
+  const slots = explicit.length
+    ? explicit
+    : [
+        {
+          weekday: offering.class_weekday,
+          startTime: offering.class_start_time,
+          endTime: offering.class_end_time,
+          classroomId: offering.classroom_id
+        }
+      ];
   return slots
-    .map((slot) => ({
+    .map(slot => ({
       weekday: Number(slot.weekday || slot.class_weekday || 0),
       startTime: slot.startTime || slot.start_time || "",
       endTime: slot.endTime || slot.end_time || "",
-      classroomId: slot.classroomId || slot.classroom_id || "",
+      classroomId: slot.classroomId || slot.classroom_id || ""
     }))
-    .filter((slot) => slot.weekday && slot.startTime && slot.endTime && slot.classroomId);
+    .filter(slot => slot.weekday && slot.startTime && slot.endTime && slot.classroomId);
 }
 
 function findScheduleConflict({ proposedSessions, currentOfferingId, classSessions, offerings }) {
@@ -610,10 +693,12 @@ function findScheduleConflict({ proposedSessions, currentOfferingId, classSessio
       if (existing.session_date !== proposed.session_date) continue;
       if (!timeRangesOverlap(proposed.start_time, proposed.end_time, existing.start_time, existing.end_time)) continue;
       const existingOffering = offeringMap.get(existingOfferingId) || {};
-      const sameCohort = existingOffering.major_id === proposed.major_id &&
+      const sameCohort =
+        existingOffering.major_id === proposed.major_id &&
         Number(existingOffering.grade_year || 0) === Number(proposed.grade_year || 0);
       const existingClassroomId = existing.classroom_id || existingOffering.classroom_id || "";
-      const classroomConflict = proposed.classroom_id && existingClassroomId && proposed.classroom_id === existingClassroomId;
+      const classroomConflict =
+        proposed.classroom_id && existingClassroomId && proposed.classroom_id === existingClassroomId;
       if (sameCohort || classroomConflict) {
         const reason = classroomConflict ? "classroom" : "cohort";
         return `Schedule conflict (${reason}) on ${proposed.session_date} ${proposed.start_time}-${proposed.end_time}.`;
@@ -624,10 +709,12 @@ function findScheduleConflict({ proposedSessions, currentOfferingId, classSessio
 }
 
 async function enrollCohortStudents(offering, students, enrollments, now) {
-  const cohortStudents = students.filter((student) => studentMatchesOffering(student, offering));
-  let count = countSelectedEnrollments(enrollments.filter((item) => item.course_offering_id === offering._id));
+  const cohortStudents = students.filter(student => studentMatchesOffering(student, offering));
+  let count = countSelectedEnrollments(enrollments.filter(item => item.course_offering_id === offering._id));
   for (const student of cohortStudents) {
-    const existing = enrollments.find((item) => item.student_id === student._id && item.course_offering_id === offering._id);
+    const existing = enrollments.find(
+      item => item.student_id === student._id && item.course_offering_id === offering._id
+    );
     if (existing) {
       if (existing.status === "dropped") {
         await db.collection("enrollments").doc(existing._id).update({ status: "selected", updated_at: now });
@@ -640,7 +727,7 @@ async function enrollCohortStudents(offering, students, enrollments, now) {
       status: "selected",
       selected_at: now,
       created_at: now,
-      updated_at: now,
+      updated_at: now
     });
   }
   return count;
@@ -653,39 +740,35 @@ function studentMatchesOffering(student, offering) {
   if (offering.major_id) {
     return Boolean(sameYear && sameMajor);
   }
-  return Boolean(
-    (offering.training_plan_id && student.training_plan_id === offering.training_plan_id) ||
-    sameYear,
-  );
+  return Boolean((offering.training_plan_id && student.training_plan_id === offering.training_plan_id) || sameYear);
 }
 
 function countSelectedEnrollments(enrollments) {
-  return (enrollments || []).filter((item) =>
-    item.status !== "dropped" &&
-    (
-      item.status === "enrolled" ||
-      String(item.selected_teacher_id || item.selectedTeacherId || "").trim() ||
-      String(item.selected_teacher_user_id || item.selectedTeacherUserId || "").trim()
-    ),
+  return (enrollments || []).filter(
+    item =>
+      item.status !== "dropped" &&
+      (item.status === "enrolled" ||
+        String(item.selected_teacher_id || item.selectedTeacherId || "").trim() ||
+        String(item.selected_teacher_user_id || item.selectedTeacherUserId || "").trim())
   ).length;
 }
 
 function normalizeTeacherIds(value) {
   if (Array.isArray(value)) {
-    return Array.from(new Set(value.map((item) => String(item || "").trim()).filter(Boolean)));
+    return Array.from(new Set(value.map(item => String(item || "").trim()).filter(Boolean)));
   }
   return Array.from(
     new Set(
       String(value || "")
         .split(/[;,\s]+/)
-        .map((item) => item.trim())
-        .filter(Boolean),
-    ),
+        .map(item => item.trim())
+        .filter(Boolean)
+    )
   );
 }
 
 function mapById(items) {
-  return new Map((items || []).filter((item) => item && item._id).map((item) => [item._id, item]));
+  return new Map((items || []).filter(item => item && item._id).map(item => [item._id, item]));
 }
 
 function findById(items, id) {
@@ -710,7 +793,7 @@ async function writeAudit(action, session, targetId, before, after) {
       target_id: targetId,
       before,
       after,
-      created_at: Date.now(),
+      created_at: Date.now()
     });
   } catch (error) {
     console.warn("[save-admin-course] audit write skipped.", error);

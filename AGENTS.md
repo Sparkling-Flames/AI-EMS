@@ -38,15 +38,15 @@ App.vue          # Global app shell + shared CSS classes
 
 Seven cloud functions, each with its own `index.js` and `package.json`:
 
-| Function | Role access | Purpose |
-|---|---|---|
-| `auth-login` | all | Authenticate against `users` collection or demo fallback |
-| `get-dashboard-data` | all | Load user-specific courses, attendance, leaves, evaluation summary |
-| `submit-leave` | student | Create a leave request; writes to `leave_requests` |
-| `review-leave` | teacher, admin | Approve/reject leave; syncs attendance to `on_leave` on approval |
-| `submit-evaluation` | student | Submit anonymous course evaluation; writes to `course_evaluations` |
-| `get-evaluation-summary` | all | Aggregated ratings and feedback per course (anonymous) |
-| `ask-assistant` | all | Keyword-match question against `knowledge_base` collection; safe fallback on no match |
+| Function                 | Role access    | Purpose                                                                               |
+| ------------------------ | -------------- | ------------------------------------------------------------------------------------- |
+| `auth-login`             | all            | Authenticate against `users` collection or demo fallback                              |
+| `get-dashboard-data`     | all            | Load user-specific courses, attendance, leaves, evaluation summary                    |
+| `submit-leave`           | student        | Create a leave request; writes to `leave_requests`                                    |
+| `review-leave`           | teacher, admin | Approve/reject leave; syncs attendance to `on_leave` on approval                      |
+| `submit-evaluation`      | student        | Submit anonymous course evaluation; writes to `course_evaluations`                    |
+| `get-evaluation-summary` | all            | Aggregated ratings and feedback per course (anonymous)                                |
+| `ask-assistant`          | all            | Keyword-match question against `knowledge_base` collection; safe fallback on no match |
 
 ### Dual-mode fallback pattern
 

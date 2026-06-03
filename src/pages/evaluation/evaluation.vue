@@ -66,11 +66,19 @@
           <text class="muted">No evaluations match the selected filters.</text>
         </view>
       </template>
-      <view v-for="item in visibleReviewGroups" :key="reviewGroupKey(item)" class="card review-link-card" @click="openReviewGroup(item)">
+      <view
+        v-for="item in visibleReviewGroups"
+        :key="reviewGroupKey(item)"
+        class="card review-link-card"
+        @click="openReviewGroup(item)"
+      >
         <view class="summary-head">
           <view class="summary-title-block">
             <text class="review-title">{{ reviewGroupTitle(item) }}</text>
-            <text class="review-meta">Average {{ reviewAverage(item) }} / 5 - {{ item.evaluation_count || item.total_evaluations || 0 }} review(s)</text>
+            <text class="review-meta"
+              >Average {{ reviewAverage(item) }} / 5 -
+              {{ item.evaluation_count || item.total_evaluations || 0 }} review(s)</text
+            >
           </view>
           <StatusBadge :status="Number(reviewAverage(item)) < 3 ? 'high' : 'present'" />
         </view>
@@ -93,9 +101,9 @@
 </template>
 
 <script>
-import StatusBadge from '../../components/StatusBadge.vue'
-import { callAiemsFunction } from '../../common/api.js'
-import { dashboardUrl, getSession, requireRole } from '../../common/session.js'
+import StatusBadge from "../../components/StatusBadge.vue";
+import { callAiemsFunction } from "../../common/api.js";
+import { dashboardUrl, getSession, requireRole } from "../../common/session.js";
 
 export default {
   components: { StatusBadge },
@@ -110,7 +118,7 @@ export default {
       reviewCourseIndex: 0,
       loading: false,
       submitting: false,
-      feedback: '',
+      feedback: "",
       scores: {
         content: 5,
         teaching_method: 5,
@@ -120,64 +128,76 @@ export default {
         overall: 5
       },
       scoreFields: [
-        { key: 'content', label: 'Content' },
-        { key: 'teaching_method', label: 'Teaching' },
-        { key: 'difficulty', label: 'Difficulty' },
-        { key: 'workload', label: 'Workload' },
-        { key: 'achievement', label: 'Achievement' },
-        { key: 'overall', label: 'Overall' }
+        { key: "content", label: "Content" },
+        { key: "teaching_method", label: "Teaching" },
+        { key: "difficulty", label: "Difficulty" },
+        { key: "workload", label: "Workload" },
+        { key: "achievement", label: "Achievement" },
+        { key: "overall", label: "Overall" }
       ],
-      scoreOptions: ['1', '2', '3', '4', '5'],
+      scoreOptions: ["1", "2", "3", "4", "5"],
       lastLoadedAt: 0,
       loadTtlMs: 30000
-    }
+    };
   },
   computed: {
     courseNames() {
-      return this.courses.map(item => this.formatCourseLabel(item))
+      return this.courses.map(item => this.formatCourseLabel(item));
     },
     selectedCourseName() {
-      return this.courseNames[this.courseIndex] || 'No courses available'
+      return this.courseNames[this.courseIndex] || "No courses available";
     },
     reviewTeacherOptions() {
-      return this.buildUniqueOptions(this.reviewGroups, this.reviewTeacherValue, this.reviewTeacherLabel, 'All Teachers')
+      return this.buildUniqueOptions(
+        this.reviewGroups,
+        this.reviewTeacherValue,
+        this.reviewTeacherLabel,
+        "All Teachers"
+      );
     },
     reviewTeacherNames() {
-      return this.reviewTeacherOptions.map(item => item.label)
+      return this.reviewTeacherOptions.map(item => item.label);
     },
     reviewCourseOptions() {
-      return this.buildUniqueOptions(this.reviewGroups, this.reviewCourseValue, this.reviewCourseLabel, 'All Courses')
+      return this.buildUniqueOptions(this.reviewGroups, this.reviewCourseValue, this.reviewCourseLabel, "All Courses");
     },
     reviewCourseNames() {
-      return this.reviewCourseOptions.map(item => item.label)
+      return this.reviewCourseOptions.map(item => item.label);
     },
     selectedReviewTeacherName() {
-      return (this.reviewTeacherOptions[this.reviewTeacherIndex] || this.reviewTeacherOptions[0] || {}).label || 'All Teachers'
+      return (
+        (this.reviewTeacherOptions[this.reviewTeacherIndex] || this.reviewTeacherOptions[0] || {}).label ||
+        "All Teachers"
+      );
     },
     selectedReviewCourseName() {
-      return (this.reviewCourseOptions[this.reviewCourseIndex] || this.reviewCourseOptions[0] || {}).label || 'All Courses'
+      return (
+        (this.reviewCourseOptions[this.reviewCourseIndex] || this.reviewCourseOptions[0] || {}).label || "All Courses"
+      );
     },
     selectedReviewTeacherId() {
-      return (this.reviewTeacherOptions[this.reviewTeacherIndex] || this.reviewTeacherOptions[0] || {}).value || ''
+      return (this.reviewTeacherOptions[this.reviewTeacherIndex] || this.reviewTeacherOptions[0] || {}).value || "";
     },
     selectedReviewCourseId() {
-      return (this.reviewCourseOptions[this.reviewCourseIndex] || this.reviewCourseOptions[0] || {}).value || ''
+      return (this.reviewCourseOptions[this.reviewCourseIndex] || this.reviewCourseOptions[0] || {}).value || "";
     },
     visibleReviewGroups() {
       return this.reviewGroups.filter(item => {
-        const teacherMatches = !this.selectedReviewTeacherId || this.reviewTeacherValue(item) === this.selectedReviewTeacherId
-        const courseMatches = !this.selectedReviewCourseId || this.reviewCourseValue(item) === this.selectedReviewCourseId
-        return teacherMatches && courseMatches
-      })
+        const teacherMatches =
+          !this.selectedReviewTeacherId || this.reviewTeacherValue(item) === this.selectedReviewTeacherId;
+        const courseMatches =
+          !this.selectedReviewCourseId || this.reviewCourseValue(item) === this.selectedReviewCourseId;
+        return teacherMatches && courseMatches;
+      });
     }
   },
   onShow() {
-    const session = requireRole(['student', 'teacher', 'admin'])
-    if (!session) return
-    this.session = session
-    const now = Date.now()
+    const session = requireRole(["student", "teacher", "admin"]);
+    if (!session) return;
+    this.session = session;
+    const now = Date.now();
     if (!this.lastLoadedAt || now - this.lastLoadedAt > this.loadTtlMs) {
-      this.load()
+      this.load();
     }
   },
   methods: {
@@ -189,153 +209,163 @@ export default {
         workload: 3,
         achievement: 5,
         overall: 5
-      }
+      };
     },
     async load(forceRefresh = false) {
-      this.loading = true
-      const dashboard = await callAiemsFunction('get-dashboard-data', {
+      this.loading = true;
+      const dashboard = await callAiemsFunction("get-dashboard-data", {
         session: getSession(),
         forceRefresh
-      })
+      });
       if (dashboard.ok) {
-        this.courses = this.filterEvaluableCourses(dashboard.data.courses || [])
+        this.courses = this.filterEvaluableCourses(dashboard.data.courses || []);
       }
 
-      const result = await callAiemsFunction('get-evaluation-summary', {
+      const result = await callAiemsFunction("get-evaluation-summary", {
         session: getSession(),
         forceRefresh
-      })
-      this.loading = false
+      });
+      this.loading = false;
       if (result.ok) {
-        const payload = result.data || {}
-        this.summaries = result.summary || payload.summary || (Array.isArray(payload) ? payload : [])
-        this.reviewGroups = result.teacherCourseReviews || payload.teacher_course_reviews || payload.teacherCourseReviews || []
-        this.clampReviewFilters()
+        const payload = result.data || {};
+        this.summaries = result.summary || payload.summary || (Array.isArray(payload) ? payload : []);
+        this.reviewGroups =
+          result.teacherCourseReviews || payload.teacher_course_reviews || payload.teacherCourseReviews || [];
+        this.clampReviewFilters();
       }
-      this.lastLoadedAt = Date.now()
-      if (this.courseIndex >= this.courses.length) this.courseIndex = 0
+      this.lastLoadedAt = Date.now();
+      if (this.courseIndex >= this.courses.length) this.courseIndex = 0;
     },
     refresh() {
-      this.load(true)
+      this.load(true);
     },
     async submitEvaluation() {
-      const course = this.courses[this.courseIndex]
-      const scores = this.normalizedScores()
+      const course = this.courses[this.courseIndex];
+      const scores = this.normalizedScores();
       if (!course || !scores || !this.feedback.trim()) {
-        uni.showToast({ title: 'Valid course, scores and feedback are required.', icon: 'none' })
-        return
+        uni.showToast({ title: "Valid course, scores and feedback are required.", icon: "none" });
+        return;
       }
       if (!this.canEvaluateCourse(course)) {
-        uni.showToast({ title: 'Course evaluations open only after the course has ended.', icon: 'none' })
-        return
+        uni.showToast({ title: "Course evaluations open only after the course has ended.", icon: "none" });
+        return;
       }
 
-      this.submitting = true
-      const result = await callAiemsFunction('submit-evaluation', {
+      this.submitting = true;
+      const result = await callAiemsFunction("submit-evaluation", {
         session: getSession(),
         courseOfferingId: course.courseOfferingId || course._id,
         rating: scores.overall,
         scores,
         feedback: this.feedback.trim()
-      })
-      this.submitting = false
+      });
+      this.submitting = false;
 
       if (result.ok) {
-        this.feedback = ''
-        this.scores = this.defaultScores()
-        uni.showToast({ title: 'Submitted anonymously', icon: 'success' })
-        this.load(true)
-        return
+        this.feedback = "";
+        this.scores = this.defaultScores();
+        uni.showToast({ title: "Submitted anonymously", icon: "success" });
+        this.load(true);
+        return;
       }
 
-      uni.showToast({ title: result.message || 'Submit failed.', icon: 'none' })
+      uni.showToast({ title: result.message || "Submit failed.", icon: "none" });
     },
     normalizedScores() {
-      const next = {}
+      const next = {};
       for (const field of this.scoreFields) {
-        const value = Number(this.scores[field.key])
+        const value = Number(this.scores[field.key]);
         if (!Number.isFinite(value) || value < 1 || value > 5) {
-          return null
+          return null;
         }
-        next[field.key] = value
+        next[field.key] = value;
       }
-      return next
+      return next;
     },
     changeCourse(event) {
-      this.courseIndex = Number(event.detail.value)
+      this.courseIndex = Number(event.detail.value);
     },
     changeReviewTeacher(event) {
-      this.reviewTeacherIndex = Number(event.detail.value)
+      this.reviewTeacherIndex = Number(event.detail.value);
     },
     changeReviewCourse(event) {
-      this.reviewCourseIndex = Number(event.detail.value)
+      this.reviewCourseIndex = Number(event.detail.value);
     },
     resetReviewFilters() {
-      this.reviewTeacherIndex = 0
-      this.reviewCourseIndex = 0
+      this.reviewTeacherIndex = 0;
+      this.reviewCourseIndex = 0;
     },
     clampReviewFilters() {
-      if (this.reviewTeacherIndex >= this.reviewTeacherOptions.length) this.reviewTeacherIndex = 0
-      if (this.reviewCourseIndex >= this.reviewCourseOptions.length) this.reviewCourseIndex = 0
+      if (this.reviewTeacherIndex >= this.reviewTeacherOptions.length) this.reviewTeacherIndex = 0;
+      if (this.reviewCourseIndex >= this.reviewCourseOptions.length) this.reviewCourseIndex = 0;
     },
     buildUniqueOptions(items, valueGetter, labelGetter, allLabel) {
-      const options = [{ value: '', label: allLabel }]
-      const seen = new Set()
+      const options = [{ value: "", label: allLabel }];
+      const seen = new Set();
       for (const item of items || []) {
-        const value = valueGetter(item)
-        if (!value || seen.has(value)) continue
-        seen.add(value)
-        options.push({ value, label: labelGetter(item) })
+        const value = valueGetter(item);
+        if (!value || seen.has(value)) continue;
+        seen.add(value);
+        options.push({ value, label: labelGetter(item) });
       }
-      return options
+      return options;
     },
     reviewTeacherValue(item) {
-      return String(item.teacher_id || item.teacherId || '').trim()
+      return String(item.teacher_id || item.teacherId || "").trim();
     },
     reviewTeacherLabel(item) {
-      return item.teacher_name || item.teacherName || this.reviewTeacherValue(item) || 'Unassigned Teacher'
+      return item.teacher_name || item.teacherName || this.reviewTeacherValue(item) || "Unassigned Teacher";
     },
     reviewCourseValue(item) {
-      return String(item.course_offering_id || item.courseOfferingId || item.course_id || item.courseId || '').trim()
+      return String(item.course_offering_id || item.courseOfferingId || item.course_id || item.courseId || "").trim();
     },
     reviewCourseLabel(item) {
-      return this.resolveReviewCourseLabel(item)
+      return this.resolveReviewCourseLabel(item);
     },
     scoreIndex(key) {
-      const value = Number(this.scores[key] || 1)
-      return Math.max(0, Math.min(4, value - 1))
+      const value = Number(this.scores[key] || 1);
+      return Math.max(0, Math.min(4, value - 1));
     },
     changeScore(key, event) {
       this.scores = {
         ...this.scores,
         [key]: Number(event.detail.value) + 1
-      }
+      };
     },
     filterEvaluableCourses(courses) {
-      if (this.session.role !== 'student') return courses
-      return courses.filter(course => this.canEvaluateCourse(course))
+      if (this.session.role !== "student") return courses;
+      return courses.filter(course => this.canEvaluateCourse(course));
     },
     canEvaluateCourse(course) {
-      return Boolean(course && (course.completed === true || course.enrollmentStatus === 'completed'))
+      return Boolean(course && (course.completed === true || course.enrollmentStatus === "completed"));
     },
     formatCourseLabel(course) {
-      return [course.code || course.courseCode || course.course_code, course.name || course.courseName || course.course_name].filter(Boolean).join(' ').trim()
+      return [
+        course.code || course.courseCode || course.course_code,
+        course.name || course.courseName || course.course_name
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
     },
     formatScore(value) {
-      const numberValue = Number(value || 0)
-      return numberValue ? numberValue.toFixed(1) : '0.0'
+      const numberValue = Number(value || 0);
+      return numberValue ? numberValue.toFixed(1) : "0.0";
     },
     reviewGroupKey(item) {
-      return [item.teacher_id || item.teacherId || '', item.course_offering_id || item.courseOfferingId || item.course_id || item.courseId || ''].join('-')
+      return [
+        item.teacher_id || item.teacherId || "",
+        item.course_offering_id || item.courseOfferingId || item.course_id || item.courseId || ""
+      ].join("-");
     },
     reviewGroupTitle(item) {
-      const teacher = item.teacher_name || item.teacherName || 'Unassigned Teacher'
-      const course = this.resolveReviewCourseLabel(item)
-      return teacher + ' - ' + course
+      const teacher = item.teacher_name || item.teacherName || "Unassigned Teacher";
+      const course = this.resolveReviewCourseLabel(item);
+      return teacher + " - " + course;
     },
     resolveReviewCourseLabel(item) {
-      const courseId = String(item.course_id || item.courseId || '').trim()
-      const offeringId = String(item.course_offering_id || item.courseOfferingId || '').trim()
+      const courseId = String(item.course_id || item.courseId || "").trim();
+      const offeringId = String(item.course_offering_id || item.courseOfferingId || "").trim();
       const course = this.courses.find(course => {
         const ids = [
           course.courseOfferingId,
@@ -344,35 +374,41 @@ export default {
           course.id,
           course.courseId,
           course.course_id
-        ].map(value => String(value || '').trim())
-        return ids.includes(offeringId) || ids.includes(courseId)
-      })
-      const dashboardLabel = course ? this.formatCourseLabel(course) : ''
-      const storedLabel = item.course_name || item.courseName || ''
-      if (dashboardLabel) return dashboardLabel
-      if (this.isDisplayCourseName(storedLabel, courseId, offeringId)) return storedLabel
-      return courseId || offeringId || 'Unnamed Course'
+        ].map(value => String(value || "").trim());
+        return ids.includes(offeringId) || ids.includes(courseId);
+      });
+      const dashboardLabel = course ? this.formatCourseLabel(course) : "";
+      const storedLabel = item.course_name || item.courseName || "";
+      if (dashboardLabel) return dashboardLabel;
+      if (this.isDisplayCourseName(storedLabel, courseId, offeringId)) return storedLabel;
+      return courseId || offeringId || "Unnamed Course";
     },
     isDisplayCourseName(value, ...ids) {
-      const text = String(value || '').trim()
-      if (!text) return false
-      if (ids.some(id => String(id || '').trim() === text)) return false
-      return !/^[a-f0-9]{20,}$/i.test(text)
+      const text = String(value || "").trim();
+      if (!text) return false;
+      if (ids.some(id => String(id || "").trim() === text)) return false;
+      return !/^[a-f0-9]{20,}$/i.test(text);
     },
     reviewAverage(item) {
-      const value = item.average_rating || item.averageRating || item.average || item.average_scores && item.average_scores.overall || item.averageScores && item.averageScores.overall || 0
-      return Number(value || 0).toFixed(1)
+      const value =
+        item.average_rating ||
+        item.averageRating ||
+        item.average ||
+        (item.average_scores && item.average_scores.overall) ||
+        (item.averageScores && item.averageScores.overall) ||
+        0;
+      return Number(value || 0).toFixed(1);
     },
     openReviewGroup(item) {
-      const teacherId = encodeURIComponent(item.teacher_id || item.teacherId || '')
-      const courseOfferingId = encodeURIComponent(item.course_offering_id || item.courseOfferingId || '')
-      uni.navigateTo({ url: `/pages/evaluation/details?teacherId=${teacherId}&courseOfferingId=${courseOfferingId}` })
+      const teacherId = encodeURIComponent(item.teacher_id || item.teacherId || "");
+      const courseOfferingId = encodeURIComponent(item.course_offering_id || item.courseOfferingId || "");
+      uni.navigateTo({ url: `/pages/evaluation/details?teacherId=${teacherId}&courseOfferingId=${courseOfferingId}` });
     },
     backHome() {
-      uni.reLaunch({ url: dashboardUrl(this.session.role) })
+      uni.reLaunch({ url: dashboardUrl(this.session.role) });
     }
   }
-}
+};
 </script>
 
 <style scoped>

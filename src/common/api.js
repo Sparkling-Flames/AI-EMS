@@ -3,7 +3,7 @@ const CACHE_TTL_MS = {
   "get-admin-management-data": 30000,
   "get-evaluation-summary": 60000,
   "get-course-materials": 60000,
-  "get-ai-history": 0,
+  "get-ai-history": 0
 };
 
 const CLIENT_CACHE_VERSION = "course-session-v3";
@@ -24,7 +24,7 @@ const WRITE_FUNCTIONS = new Set([
   "review-profile-change",
   "submit-attendance-checkin",
   "save-attendance-records",
-  "ask-assistant",
+  "ask-assistant"
 ]);
 
 const CLOUD_STRICT_FUNCTIONS = new Set([
@@ -43,7 +43,7 @@ const CLOUD_STRICT_FUNCTIONS = new Set([
   "review-profile-change",
   "submit-attendance-checkin",
   "save-attendance-records",
-  "ask-assistant",
+  "ask-assistant"
 ]);
 
 const responseCache = new Map();
@@ -59,8 +59,8 @@ const fallbackState = {
       role: "admin",
       displayName: "Academic Admin",
       email: "admin001@ai-ems.test",
-      phone: "13800000001",
-    },
+      phone: "13800000001"
+    }
   ],
   students: [
     {
@@ -78,11 +78,11 @@ const fallbackState = {
       contact: {
         email: "alice.chen@ai-ems.test",
         phone: "13700001001",
-        address: "Student Apartment A-501",
+        address: "Student Apartment A-501"
       },
       familyInfo: {
         guardianName: "Mary Chen",
-        guardianPhone: "13600001001",
+        guardianPhone: "13600001001"
       },
       interestTags: ["Data Analysis", "Software Engineering"],
       totalCredits: 120,
@@ -91,19 +91,19 @@ const fallbackState = {
         general: { current: 22, total: 30 },
         majorRequired: { current: 32, total: 45 },
         majorElective: { current: 12, total: 30 },
-        practice: { current: 6, total: 15 },
+        practice: { current: 6, total: 15 }
       },
       grades: [
         { courseId: "c_programming", score: 88, credits: 15, gpaPoint: 3.7 },
         { courseId: "c_database", score: 84, credits: 12, gpaPoint: 3.5 },
-        { courseId: "c_software_design", score: 91, credits: 15, gpaPoint: 3.9 },
+        { courseId: "c_software_design", score: 91, credits: 15, gpaPoint: 3.9 }
       ],
       gpaTrend: [
         { term: "2025 Fall", gpa: 3.4 },
-        { term: "2026 Spring", gpa: 3.7 },
+        { term: "2026 Spring", gpa: 3.7 }
       ],
       percentileRank: 82,
-      gpa: "3.7",
+      gpa: "3.7"
     },
     {
       _id: "stu_002",
@@ -120,11 +120,11 @@ const fallbackState = {
       contact: {
         email: "ben.zhang@ai-ems.test",
         phone: "13700001002",
-        address: "Student Apartment B-406",
+        address: "Student Apartment B-406"
       },
       familyInfo: {
         guardianName: "Wei Zhang",
-        guardianPhone: "13600001002",
+        guardianPhone: "13600001002"
       },
       interestTags: ["Artificial Intelligence"],
       totalCredits: 120,
@@ -133,19 +133,19 @@ const fallbackState = {
         general: { current: 14, total: 30 },
         majorRequired: { current: 20, total: 45 },
         majorElective: { current: 6, total: 30 },
-        practice: { current: 4, total: 15 },
+        practice: { current: 4, total: 15 }
       },
       grades: [
         { courseId: "c_programming", score: 62, credits: 15, gpaPoint: 1.9 },
-        { courseId: "c_database", score: 58, credits: 0, gpaPoint: 0 },
+        { courseId: "c_database", score: 58, credits: 0, gpaPoint: 0 }
       ],
       gpaTrend: [
         { term: "2025 Fall", gpa: 2.6 },
-        { term: "2026 Spring", gpa: 2.1 },
+        { term: "2026 Spring", gpa: 2.1 }
       ],
       percentileRank: 31,
-      gpa: "2.1",
-    },
+      gpa: "2.1"
+    }
   ],
   teachers: [
     {
@@ -157,12 +157,11 @@ const fallbackState = {
       title: "Associate Professor",
       office: "Teaching Building 3-502",
       researchFields: ["Software Engineering", "Learning Analytics"],
-      teachingExperience:
-        "Ten years of software engineering teaching and capstone mentoring.",
+      teachingExperience: "Ten years of software engineering teaching and capstone mentoring.",
       publicProfile: {
         officeHours: "Tue 14:00-16:00",
-        homepage: "https://ai-ems.test/teachers/zhang",
-      },
+        homepage: "https://ai-ems.test/teachers/zhang"
+      }
     },
     {
       _id: "tea_002",
@@ -176,28 +175,52 @@ const fallbackState = {
       teachingExperience: "Project-based software engineering and database teaching.",
       publicProfile: {
         officeHours: "Thu 10:00-11:30",
-        homepage: "https://ai-ems.test/teachers/li",
-      },
-    },
+        homepage: "https://ai-ems.test/teachers/li"
+      }
+    }
   ],
-  departments: [
-    { _id: "dept_cs", code: "CS", name: "Computer Science" },
-  ],
-  majors: [
-    { _id: "major_se", code: "SE", name: "Software Engineering", departmentId: "dept_cs" },
-  ],
+  departments: [{ _id: "dept_cs", code: "CS", name: "Computer Science" }],
+  majors: [{ _id: "major_se", code: "SE", name: "Software Engineering", departmentId: "dept_cs" }],
   adminClasses: [
-    { _id: "class_se_2024_1", code: "SE2024-1", name: "Software Engineering 2024 Class 1", majorId: "major_se", gradeYear: 2024 },
+    {
+      _id: "class_se_2024_1",
+      code: "SE2024-1",
+      name: "Software Engineering 2024 Class 1",
+      majorId: "major_se",
+      gradeYear: 2024
+    }
   ],
-  semesters: [
-    { _id: "sem_2026_spring", name: "2026 Spring", startDate: "2026-02-23", endDate: "2026-06-26" },
-  ],
+  semesters: [{ _id: "sem_2026_spring", name: "2026 Spring", startDate: "2026-02-23", endDate: "2026-06-26" }],
   trainingPlans: [
-    { _id: "tp_se_2024", majorId: "major_se", gradeYear: 2024, name: "Software Engineering 2024 Training Plan", status: "active" },
+    {
+      _id: "tp_se_2024",
+      majorId: "major_se",
+      gradeYear: 2024,
+      name: "Software Engineering 2024 Training Plan",
+      status: "active"
+    }
   ],
   classrooms: [
-    { _id: "room_a101", building: "A", roomNo: "101", name: "A101", capacity: 60, latitude: 31.230416, longitude: 121.473701, geofenceRadiusM: 50 },
-    { _id: "room_b208", building: "B", roomNo: "208", name: "B208", capacity: 45, latitude: 31.2306, longitude: 121.4739, geofenceRadiusM: 50 },
+    {
+      _id: "room_a101",
+      building: "A",
+      roomNo: "101",
+      name: "A101",
+      capacity: 60,
+      latitude: 31.230416,
+      longitude: 121.473701,
+      geofenceRadiusM: 50
+    },
+    {
+      _id: "room_b208",
+      building: "B",
+      roomNo: "208",
+      name: "B208",
+      capacity: 45,
+      latitude: 31.2306,
+      longitude: 121.4739,
+      geofenceRadiusM: 50
+    }
   ],
   courses: [
     {
@@ -234,9 +257,9 @@ const fallbackState = {
         name: "A101",
         latitude: 31.230416,
         longitude: 121.473701,
-        radius: 50,
+        radius: 50
       },
-      keywords: ["software", "project", "engineering", "软件工程"],
+      keywords: ["software", "project", "engineering", "软件工程"]
     },
     {
       _id: "c_process_management",
@@ -272,9 +295,9 @@ const fallbackState = {
         name: "A103",
         latitude: 31.230416,
         longitude: 121.473701,
-        radius: 50,
+        radius: 50
       },
-      keywords: ["process", "scrum", "project management", "软件过程"],
+      keywords: ["process", "scrum", "project management", "软件过程"]
     },
     {
       _id: "c_data_analysis",
@@ -310,21 +333,49 @@ const fallbackState = {
         name: "B208",
         latitude: 31.230416,
         longitude: 121.473701,
-        radius: 50,
+        radius: 50
       },
-      keywords: ["data", "analysis", "analytics", "数据分析"],
-    },
+      keywords: ["data", "analysis", "analytics", "数据分析"]
+    }
   ],
   enrollments: [
-    { studentId: "u_student_001", courseOfferingId: "co_software_design", status: "enrolled", selectedTeacherId: "tea_001", selectedTeacherUserId: "u_teacher_001", selectedTeacherName: "Dr. Zhang" },
-    { studentId: "u_student_001", courseOfferingId: "co_process_management", status: "enrolled", selectedTeacherId: "tea_001", selectedTeacherUserId: "u_teacher_001", selectedTeacherName: "Dr. Zhang" },
-    { studentId: "u_student_002", courseOfferingId: "co_software_design", status: "enrolled", selectedTeacherId: "tea_002", selectedTeacherUserId: "u_teacher_002", selectedTeacherName: "Prof. Li" },
-    { studentId: "u_student_002", courseOfferingId: "co_process_management", status: "enrolled", selectedTeacherId: "tea_002", selectedTeacherUserId: "u_teacher_002", selectedTeacherName: "Prof. Li" },
+    {
+      studentId: "u_student_001",
+      courseOfferingId: "co_software_design",
+      status: "enrolled",
+      selectedTeacherId: "tea_001",
+      selectedTeacherUserId: "u_teacher_001",
+      selectedTeacherName: "Dr. Zhang"
+    },
+    {
+      studentId: "u_student_001",
+      courseOfferingId: "co_process_management",
+      status: "enrolled",
+      selectedTeacherId: "tea_001",
+      selectedTeacherUserId: "u_teacher_001",
+      selectedTeacherName: "Dr. Zhang"
+    },
+    {
+      studentId: "u_student_002",
+      courseOfferingId: "co_software_design",
+      status: "enrolled",
+      selectedTeacherId: "tea_002",
+      selectedTeacherUserId: "u_teacher_002",
+      selectedTeacherName: "Prof. Li"
+    },
+    {
+      studentId: "u_student_002",
+      courseOfferingId: "co_process_management",
+      status: "enrolled",
+      selectedTeacherId: "tea_002",
+      selectedTeacherUserId: "u_teacher_002",
+      selectedTeacherName: "Prof. Li"
+    }
   ],
   classSessions: [
     ...buildDemoSessions("co_software_design", "2026-05-25", 1, "10:00", "12:00", 6, "room_a101"),
     ...buildDemoSessions("co_process_management", "2026-05-27", 3, "14:00", "16:00", 6, "room_a101"),
-    ...buildDemoSessions("co_data_analysis", "2026-05-29", 5, "09:00", "11:00", 6, "room_b208"),
+    ...buildDemoSessions("co_data_analysis", "2026-05-29", 5, "09:00", "11:00", 6, "room_b208")
   ],
   attendance: [
     {
@@ -344,7 +395,7 @@ const fallbackState = {
       createdAt: 1,
       created_at: 1,
       updatedAt: 1,
-      updated_at: 1,
+      updated_at: 1
     },
     {
       _id: "a_002",
@@ -363,7 +414,7 @@ const fallbackState = {
       createdAt: 1,
       created_at: 1,
       updatedAt: 1,
-      updated_at: 1,
+      updated_at: 1
     },
     ...["2026-05-18", "2026-05-20", "2026-05-25"].map((date, index) => ({
       _id: `a_risk_${index + 1}`,
@@ -382,8 +433,8 @@ const fallbackState = {
       createdAt: index + 2,
       created_at: index + 2,
       updatedAt: index + 2,
-      updated_at: index + 2,
-    })),
+      updated_at: index + 2
+    }))
   ],
   leaves: [],
   leaveRequestSessions: [],
@@ -402,12 +453,12 @@ const fallbackState = {
         difficulty: 3,
         workload: 4,
         achievement: 5,
-        overall: 5,
+        overall: 5
       },
       feedback:
         "The course is practical and useful for project architecture, but it expects basic programming experience.",
       submittedAt: 1779595200000,
-      status: "submitted",
+      status: "submitted"
     },
     {
       _id: "e_002",
@@ -422,13 +473,12 @@ const fallbackState = {
         difficulty: 3,
         workload: 3,
         achievement: 4,
-        overall: 4,
+        overall: 4
       },
-      feedback:
-        "Good fit for students interested in data analysis and learning analytics.",
+      feedback: "Good fit for students interested in data analysis and learning analytics.",
       submittedAt: 1779596200000,
-      status: "submitted",
-    },
+      status: "submitted"
+    }
   ],
   materials: [
     {
@@ -445,8 +495,8 @@ const fallbackState = {
       isPublicToStudents: true,
       knowledgeDocumentId: "kb_syllabus_software_design",
       createdAt: 1779595200000,
-      updatedAt: 1779595200000,
-    },
+      updatedAt: 1779595200000
+    }
   ],
   profileChangeRequests: [
     {
@@ -460,16 +510,16 @@ const fallbackState = {
           field: "contact.phone",
           oldValue: "13700001001",
           newValue: "13700009999",
-          label: "Phone",
-        },
+          label: "Phone"
+        }
       },
       status: "pending",
       reviewerUserId: "",
       reviewComment: "",
       reviewedAt: 0,
       createdAt: 1779598000000,
-      updatedAt: 1779598000000,
-    },
+      updatedAt: 1779598000000
+    }
   ],
   knowledge: [
     {
@@ -478,7 +528,7 @@ const fallbackState = {
       keywords: ["graduation", "credit", "credits", "学分", "毕业"],
       answer:
         "Students should track total credits, module credits, GPA trend, and remaining required courses before graduation. This demo dashboard shows those progress indicators and recommended elective paths.",
-      category: "policy",
+      category: "policy"
     },
     {
       _id: "kb_leave",
@@ -486,7 +536,7 @@ const fallbackState = {
       keywords: ["leave", "absence", "请假", "缺勤", "attendance", "on leave"],
       answer:
         "Students submit a leave request for a specific course session. After approval by an authorised teacher or administrator, the attendance record for that date is updated to on_leave. Cancelling an approved leave restores the previous attendance status.",
-      category: "policy",
+      category: "policy"
     },
     {
       _id: "kb_evaluation",
@@ -494,8 +544,8 @@ const fallbackState = {
       keywords: ["evaluation", "feedback", "anonymous", "评价", "匿名", "course selection"],
       answer:
         "Course evaluations are aggregated before teachers and administrators see them. The assistant can use anonymous course feedback to support course-selection questions without exposing student identity.",
-      category: "course",
-    },
+      category: "course"
+    }
   ],
   aiConversations: [
     {
@@ -508,8 +558,8 @@ const fallbackState = {
       messageCount: 2,
       status: "active",
       createdAt: 1779595200000,
-      updatedAt: 1779595300000,
-    },
+      updatedAt: 1779595300000
+    }
   ],
   aiMessages: [
     {
@@ -521,7 +571,7 @@ const fallbackState = {
       content: "What should I check before graduation?",
       fallbackUsed: false,
       latencyMs: 0,
-      createdAt: 1779595200000,
+      createdAt: 1779595200000
     },
     {
       _id: "ai_msg_demo_002",
@@ -535,9 +585,9 @@ const fallbackState = {
       citations: [{ knowledgeBaseId: "kb_graduation", title: "Graduation credit requirement" }],
       fallbackUsed: false,
       latencyMs: 25,
-      createdAt: 1779595300000,
-    },
-  ],
+      createdAt: 1779595300000
+    }
+  ]
 };
 
 function buildDemoSessions(courseOfferingId, firstDate, weekday, startTime, endTime, totalSessions, classroomId = "") {
@@ -568,7 +618,7 @@ function buildDemoSessions(courseOfferingId, firstDate, weekday, startTime, endT
       createdAt: Date.parse(`${firstDate}T00:00:00`),
       created_at: Date.parse(`${firstDate}T00:00:00`),
       updatedAt: Date.parse(`${firstDate}T00:00:00`),
-      updated_at: Date.parse(`${firstDate}T00:00:00`),
+      updated_at: Date.parse(`${firstDate}T00:00:00`)
     };
   });
 }
@@ -589,12 +639,12 @@ export async function callAiemsFunction(name, data = {}, options = {}) {
     }
   }
 
-  const runner = runFunction(name, request).then((result) => {
+  const runner = runFunction(name, request).then(result => {
     const normalized = normalizeResult(result);
     if (normalized.ok && ttl) {
       responseCache.set(cacheKey, {
         createdAt: Date.now(),
-        result: clone(normalized),
+        result: clone(normalized)
       });
     }
     if (normalized.ok && WRITE_FUNCTIONS.has(name)) {
@@ -638,7 +688,7 @@ async function runFunction(name, data) {
     if (CLOUD_STRICT_FUNCTIONS.has(name)) {
       return {
         ok: false,
-        message: `Cloud function ${name} failed. ${error && error.message ? error.message : "Please try again."}`,
+        message: `Cloud function ${name} failed. ${error && error.message ? error.message : "Please try again."}`
       };
     }
     console.warn(`[AI-EMS] Falling back to local mode for ${name}.`);
@@ -717,10 +767,10 @@ function fallbackResult(name, data = {}) {
       data: {
         summary,
         teacher_course_reviews: teacherCourseReviews,
-        anonymous_evaluations: teacherCourseReviews.flatMap((group) => group.evaluations || []),
+        anonymous_evaluations: teacherCourseReviews.flatMap(group => group.evaluations || [])
       },
       summary,
-      teacherCourseReviews,
+      teacherCourseReviews
     };
   }
 
@@ -756,7 +806,7 @@ function loginFallback(data) {
     return { ok: false, message: "Local fallback login is disabled. Connect to the database to sign in." };
   }
 
-  const user = fallbackState.users.find((item) => item.username === data.username);
+  const user = fallbackState.users.find(item => item.username === data.username);
   if (!user) {
     return { ok: false, message: "Account not found." };
   }
@@ -775,8 +825,8 @@ function loginFallback(data) {
       role: user.role,
       displayName: user.displayName,
       email: user.email || "",
-      phone: user.phone || "",
-    },
+      phone: user.phone || ""
+    }
   };
 }
 
@@ -806,7 +856,7 @@ function dashboardFallback(session) {
         totalStudents: fallbackState.students.length,
         totalTeachers: fallbackState.teachers.length,
         activeCourses: fallbackState.courses.length,
-        activeOfferings: fallbackState.courses.length,
+        activeOfferings: fallbackState.courses.length
       },
       courses,
       attendance,
@@ -821,18 +871,19 @@ function dashboardFallback(session) {
       atRiskStudents,
       metrics: {
         courses: courses.length,
-        pendingLeaves: leaveRequests.filter((item) => item.status === "pending").length,
+        pendingLeaves: leaveRequests.filter(item => item.status === "pending").length,
         evaluations: evaluationSummary.reduce((sum, item) => sum + item.count, 0),
         attendance: attendance.length,
-        profileChanges: profileChangeRequests.filter((item) => normalizeProfileRequestStatus(item.status) === "pending").length,
-        riskStudents: atRiskStudents.length,
+        profileChanges: profileChangeRequests.filter(item => normalizeProfileRequestStatus(item.status) === "pending")
+          .length,
+        riskStudents: atRiskStudents.length
       },
       meta: {
         source: "local-fallback",
         cacheTtlMs: CACHE_TTL_MS["get-dashboard-data"],
-        generatedAt: Date.now(),
-      },
-    },
+        generatedAt: Date.now()
+      }
+    }
   };
 }
 
@@ -855,7 +906,10 @@ function submitLeaveFallback(session, data) {
     return { ok: false, message: "You are not enrolled in this course offering." };
   }
   const enrollment = findEnrollmentForStudentCourse(session.userId, courseOfferingId);
-  if ((course.teacherIds || []).length > 1 && !(enrollment && (enrollment.selectedTeacherId || enrollment.selected_teacher_id))) {
+  if (
+    (course.teacherIds || []).length > 1 &&
+    !(enrollment && (enrollment.selectedTeacherId || enrollment.selected_teacher_id))
+  ) {
     return { ok: false, message: "Please select a teacher for this course before submitting leave." };
   }
 
@@ -872,7 +926,11 @@ function submitLeaveFallback(session, data) {
     if (Date.now() >= sessionStartAt) {
       return { ok: false, message: "Leave requests must be submitted before the class starts." };
     }
-  } else if (fallbackState.classSessions.some((item) => item.courseOfferingId === courseOfferingId || item.course_offering_id === courseOfferingId)) {
+  } else if (
+    fallbackState.classSessions.some(
+      item => item.courseOfferingId === courseOfferingId || item.course_offering_id === courseOfferingId
+    )
+  ) {
     return { ok: false, message: "Leave can only be submitted for a scheduled class date." };
   }
 
@@ -913,7 +971,7 @@ function submitLeaveFallback(session, data) {
     createdAt: now,
     created_at: now,
     updatedAt: now,
-    updated_at: now,
+    updated_at: now
   });
 
   fallbackState.leaves.unshift(clone(leave));
@@ -931,7 +989,7 @@ function reviewLeaveFallback(session, data) {
     return { ok: false, message: 'Decision must be "approved" or "rejected".' };
   }
 
-  const leave = fallbackState.leaves.find((item) => item._id === data.leaveId);
+  const leave = fallbackState.leaves.find(item => item._id === data.leaveId);
   if (!leave) {
     return { ok: false, message: "Leave request not found." };
   }
@@ -943,7 +1001,10 @@ function reviewLeaveFallback(session, data) {
   if (session.role === "teacher") {
     const enrollment = findEnrollmentForStudentCourse(leave.studentId || leave.student_id, leave.courseOfferingId);
     const teacher = findTeacherBySession(session);
-    if (!canTeacherAccessCourse(session.userId, leave.courseOfferingId) || !enrollmentBelongsToTeacherFallback(enrollment, teacher, session.userId)) {
+    if (
+      !canTeacherAccessCourse(session.userId, leave.courseOfferingId) ||
+      !enrollmentBelongsToTeacherFallback(enrollment, teacher, session.userId)
+    ) {
       return { ok: false, message: "You do not have permission to review this leave request." };
     }
   }
@@ -976,7 +1037,7 @@ function cancelLeaveFallback(session, data) {
     return { ok: false, message: "Only students can cancel their leave requests." };
   }
 
-  const leave = fallbackState.leaves.find((item) => item._id === data.leaveId);
+  const leave = fallbackState.leaves.find(item => item._id === data.leaveId);
   if (!leave) {
     return { ok: false, message: "Leave request not found." };
   }
@@ -1018,7 +1079,7 @@ function deleteLeaveFallback(session, data) {
     return { ok: false, message: "Leave request id is required." };
   }
 
-  const index = fallbackState.leaves.findIndex((item) => item._id === leaveId);
+  const index = fallbackState.leaves.findIndex(item => item._id === leaveId);
   if (index < 0) {
     return { ok: false, message: "Leave request not found." };
   }
@@ -1031,7 +1092,9 @@ function deleteLeaveFallback(session, data) {
   }
 
   fallbackState.leaves.splice(index, 1);
-  fallbackState.leaveRequestSessions = fallbackState.leaveRequestSessions.filter((item) => item.leave_request_id !== leaveId);
+  fallbackState.leaveRequestSessions = fallbackState.leaveRequestSessions.filter(
+    item => item.leave_request_id !== leaveId
+  );
   recordAudit("leave.delete", session.userId, "leave_requests", leaveId, before, null);
 
   return { ok: true, leaveId, deletedLeave: before, restore };
@@ -1061,10 +1124,7 @@ function submitAttendanceCheckinFallback(session, data) {
   const date = String(data.attendanceDate || data.date || new Date(now).toISOString().slice(0, 10));
   const status = distance <= radius ? "present" : "absent";
   const existing = fallbackState.attendance.find(
-    (item) =>
-      item.studentId === session.userId &&
-      item.courseOfferingId === courseOfferingId &&
-      item.date === date,
+    item => item.studentId === session.userId && item.courseOfferingId === courseOfferingId && item.date === date
   );
   const record = existing || {
     _id: `att_${now}`,
@@ -1079,7 +1139,7 @@ function submitAttendanceCheckinFallback(session, data) {
     attendance_date: date,
     date,
     createdAt: now,
-    created_at: now,
+    created_at: now
   };
 
   Object.assign(record, {
@@ -1094,7 +1154,7 @@ function submitAttendanceCheckinFallback(session, data) {
     distanceToClassroomM: Math.round(distance),
     distance_to_classroom_m: Math.round(distance),
     updatedAt: now,
-    updated_at: now,
+    updated_at: now
   });
 
   if (!existing) {
@@ -1108,8 +1168,8 @@ function submitAttendanceCheckinFallback(session, data) {
       attendance: normalizeAttendanceView(record),
       withinGeofence: status === "present",
       distanceMeters: Math.round(distance),
-      radiusMeters: radius,
-    },
+      radiusMeters: radius
+    }
   };
 }
 
@@ -1128,24 +1188,39 @@ function getAdminManagementFallback(session) {
         roles: [
           { value: "student", label: "Student" },
           { value: "teacher", label: "Teacher" },
-          { value: "admin", label: "Administrator" },
+          { value: "admin", label: "Administrator" }
         ],
-        departments: fallbackState.departments.map((item) => ({ value: item._id, label: item.name || item.code || item._id })),
-        majors: fallbackState.majors.map((item) => ({ value: item._id, label: item.name || item.code || item._id })),
-        adminClasses: fallbackState.adminClasses.map((item) => ({
+        departments: fallbackState.departments.map(item => ({
+          value: item._id,
+          label: item.name || item.code || item._id
+        })),
+        majors: fallbackState.majors.map(item => ({ value: item._id, label: item.name || item.code || item._id })),
+        adminClasses: fallbackState.adminClasses.map(item => ({
           value: item._id,
           label: item.name || item.code || item._id,
           majorId: item.majorId || item.major_id || "",
-          gradeYear: item.gradeYear || item.grade_year || 0,
+          gradeYear: item.gradeYear || item.grade_year || 0
         })),
-        semesters: fallbackState.semesters.map((item) => ({ value: item._id, label: item.name || item._id })),
-        trainingPlans: fallbackState.trainingPlans.map((item) => ({ value: item._id, label: item.name || item._id, gradeYear: item.gradeYear, majorId: item.majorId })),
-        classrooms: fallbackState.classrooms.map((item) => ({
+        semesters: fallbackState.semesters.map(item => ({ value: item._id, label: item.name || item._id })),
+        trainingPlans: fallbackState.trainingPlans.map(item => ({
           value: item._id,
-          label: [item.name || "", item.building && item.roomNo ? `${item.building}-${item.roomNo}` : ""].filter(Boolean).join(" / ") || item._id,
-          capacity: Number(item.capacity || 0),
+          label: item.name || item._id,
+          gradeYear: item.gradeYear,
+          majorId: item.majorId
         })),
-        teachers: fallbackState.teachers.map((item) => ({ value: item._id, label: item.name || item.teacherNo || item._id, subtitle: item.teacherNo || "" })),
+        classrooms: fallbackState.classrooms.map(item => ({
+          value: item._id,
+          label:
+            [item.name || "", item.building && item.roomNo ? `${item.building}-${item.roomNo}` : ""]
+              .filter(Boolean)
+              .join(" / ") || item._id,
+          capacity: Number(item.capacity || 0)
+        })),
+        teachers: fallbackState.teachers.map(item => ({
+          value: item._id,
+          label: item.name || item.teacherNo || item._id,
+          subtitle: item.teacherNo || ""
+        }))
       },
       summary: {
         users: fallbackState.users.length,
@@ -1153,10 +1228,10 @@ function getAdminManagementFallback(session) {
         teachers: fallbackState.teachers.length,
         courses: fallbackState.courses.length,
         offerings: fallbackState.courses.length,
-        materials: fallbackState.materials.length,
+        materials: fallbackState.materials.length
       },
-      meta: { source: "local-fallback", generatedAt: Date.now() },
-    },
+      meta: { source: "local-fallback", generatedAt: Date.now() }
+    }
   };
 }
 
@@ -1165,15 +1240,18 @@ function saveAdminAccountFallback(session, data) {
     return { ok: false, message: "Only administrators can manage accounts." };
   }
   const userId = String(data.userId || data.accountId || "").trim();
-  const existing = userId ? fallbackState.users.find((item) => item._id === userId) : null;
-  const roleCode = String(data.roleCode || data.role || existing && existing.role || "student").trim();
-  const username = String(data.username || existing && existing.username || "").trim();
-  const displayName = String(data.displayName || existing && existing.displayName || "").trim();
+  const existing = userId ? fallbackState.users.find(item => item._id === userId) : null;
+  const roleCode = String(data.roleCode || data.role || (existing && existing.role) || "student").trim();
+  const username = String(data.username || (existing && existing.username) || "").trim();
+  const displayName = String(data.displayName || (existing && existing.displayName) || "").trim();
   const password = String(data.password || data.newPassword || "").trim();
   if (!existing && (!username || !displayName || !password)) {
     return { ok: false, message: "Username, display name, and password are required." };
   }
-  if (username && fallbackState.users.some((item) => item.username === username && item._id !== (existing && existing._id))) {
+  if (
+    username &&
+    fallbackState.users.some(item => item.username === username && item._id !== (existing && existing._id))
+  ) {
     return { ok: false, message: "Username already exists." };
   }
 
@@ -1181,7 +1259,7 @@ function saveAdminAccountFallback(session, data) {
   const user = existing || {
     _id: `u_${roleCode}_${now}`,
     password: password || "",
-    createdAt: now,
+    createdAt: now
   };
   Object.assign(user, {
     username: username || user.username,
@@ -1190,7 +1268,7 @@ function saveAdminAccountFallback(session, data) {
     phone: String(data.phone || user.phone || "").trim(),
     role: roleCode,
     status: String(data.status || user.status || "active").trim(),
-    updatedAt: now,
+    updatedAt: now
   });
   if (password) {
     user.password = password;
@@ -1201,17 +1279,17 @@ function saveAdminAccountFallback(session, data) {
 
   if (roleCode === "student") {
     const payload = data.studentProfile || {};
-    const student = fallbackState.students.find((item) => item.userId === user._id) || {
+    const student = fallbackState.students.find(item => item.userId === user._id) || {
       _id: `stu_${now}`,
       userId: user._id,
       grades: [],
       gpaTrend: [],
       interestTags: [],
       percentileRank: 0,
-      gpa: "0.0",
+      gpa: "0.0"
     };
-    const major = fallbackState.majors.find((item) => item._id === payload.majorId) || {};
-    const adminClass = fallbackState.adminClasses.find((item) => item._id === payload.adminClassId) || {};
+    const major = fallbackState.majors.find(item => item._id === payload.majorId) || {};
+    const adminClass = fallbackState.adminClasses.find(item => item._id === payload.adminClassId) || {};
     const adminClassName = String(payload.adminClassName || payload.adminClass || "").trim();
     Object.assign(student, {
       studentNo: String(payload.studentNo || student.studentNo || "").trim(),
@@ -1223,9 +1301,18 @@ function saveAdminAccountFallback(session, data) {
       adminClass: adminClass.name || adminClassName || student.adminClass || "",
       enrollmentYear: Number(payload.enrollmentYear || student.enrollmentYear || adminClass.gradeYear || 0),
       trainingPlanId: payload.trainingPlanId || student.trainingPlanId || "",
-      contact: { ...(student.contact || {}), email: user.email || "", phone: user.phone || "", address: payload.address || student.contact && student.contact.address || "" },
-      familyInfo: { ...(student.familyInfo || {}), guardianName: payload.guardianName || "", guardianPhone: payload.guardianPhone || "" },
-      status: String(payload.status || student.status || "active").trim(),
+      contact: {
+        ...(student.contact || {}),
+        email: user.email || "",
+        phone: user.phone || "",
+        address: payload.address || (student.contact && student.contact.address) || ""
+      },
+      familyInfo: {
+        ...(student.familyInfo || {}),
+        guardianName: payload.guardianName || "",
+        guardianPhone: payload.guardianPhone || ""
+      },
+      status: String(payload.status || student.status || "active").trim()
     });
     if (!student.studentNo || !student.majorId || !student.enrollmentYear) {
       return { ok: false, message: "Student number, major, and enrollment year are required." };
@@ -1238,14 +1325,14 @@ function saveAdminAccountFallback(session, data) {
 
   if (roleCode === "teacher") {
     const payload = data.teacherProfile || {};
-    const teacher = fallbackState.teachers.find((item) => item.userId === user._id) || {
+    const teacher = fallbackState.teachers.find(item => item.userId === user._id) || {
       _id: `tea_${now}`,
       userId: user._id,
       researchFields: [],
       teachingExperience: "",
-      publicProfile: {},
+      publicProfile: {}
     };
-    const department = fallbackState.departments.find((item) => item._id === payload.departmentId) || {};
+    const department = fallbackState.departments.find(item => item._id === payload.departmentId) || {};
     Object.assign(teacher, {
       teacherNo: String(payload.teacherNo || teacher.teacherNo || "").trim(),
       name: user.displayName,
@@ -1253,7 +1340,7 @@ function saveAdminAccountFallback(session, data) {
       department: department.name || teacher.department || "",
       title: String(payload.title || teacher.title || "").trim(),
       office: String(payload.office || teacher.office || "").trim(),
-      status: String(payload.status || teacher.status || "active").trim(),
+      status: String(payload.status || teacher.status || "active").trim()
     });
     if (!teacher.teacherNo || !teacher.departmentId) {
       return { ok: false, message: "Teacher number and department are required." };
@@ -1277,32 +1364,40 @@ function deleteAdminAccountFallback(session, data) {
   if (userId === session.userId) {
     return { ok: false, message: "You cannot delete the current admin account." };
   }
-  const user = fallbackState.users.find((item) => item._id === userId);
+  const user = fallbackState.users.find(item => item._id === userId);
   if (!user) {
     return { ok: false, message: "Account was not found." };
   }
 
-  const student = fallbackState.students.find((item) => item.userId === userId) || null;
-  const teacher = fallbackState.teachers.find((item) => item.userId === userId) || null;
+  const student = fallbackState.students.find(item => item.userId === userId) || null;
+  const teacher = fallbackState.teachers.find(item => item.userId === userId) || null;
   const studentKeys = student ? new Set([student._id, student.userId].filter(Boolean)) : new Set();
 
-  fallbackState.users = fallbackState.users.filter((item) => item._id !== userId);
-  fallbackState.students = fallbackState.students.filter((item) => item.userId !== userId);
-  fallbackState.teachers = fallbackState.teachers.filter((item) => item.userId !== userId);
+  fallbackState.users = fallbackState.users.filter(item => item._id !== userId);
+  fallbackState.students = fallbackState.students.filter(item => item.userId !== userId);
+  fallbackState.teachers = fallbackState.teachers.filter(item => item.userId !== userId);
   if (studentKeys.size) {
-    fallbackState.enrollments = fallbackState.enrollments.filter((item) => !studentKeys.has(item.studentId || item.student_id));
-    fallbackState.leaves = fallbackState.leaves.filter((item) => !studentKeys.has(item.studentId || item.student_id));
-    fallbackState.attendance = fallbackState.attendance.filter((item) => !studentKeys.has(item.studentId || item.student_id));
-    fallbackState.evaluations = fallbackState.evaluations.filter((item) => !studentKeys.has(item.studentId || item.student_id));
+    fallbackState.enrollments = fallbackState.enrollments.filter(
+      item => !studentKeys.has(item.studentId || item.student_id)
+    );
+    fallbackState.leaves = fallbackState.leaves.filter(item => !studentKeys.has(item.studentId || item.student_id));
+    fallbackState.attendance = fallbackState.attendance.filter(
+      item => !studentKeys.has(item.studentId || item.student_id)
+    );
+    fallbackState.evaluations = fallbackState.evaluations.filter(
+      item => !studentKeys.has(item.studentId || item.student_id)
+    );
   }
   if (teacher) {
-    fallbackState.materials = fallbackState.materials.filter((item) => item.teacherId !== teacher._id && item.uploaderUserId !== userId);
-    fallbackState.courses.forEach((course) => {
-      course.teacherIds = (course.teacherIds || []).filter((id) => id !== teacher._id && id !== userId);
+    fallbackState.materials = fallbackState.materials.filter(
+      item => item.teacherId !== teacher._id && item.uploaderUserId !== userId
+    );
+    fallbackState.courses.forEach(course => {
+      course.teacherIds = (course.teacherIds || []).filter(id => id !== teacher._id && id !== userId);
       course.teacherNames = (course.teacherIds || [])
-        .map((id) => fallbackState.teachers.find((item) => item._id === id || item.userId === id))
+        .map(id => fallbackState.teachers.find(item => item._id === id || item.userId === id))
         .filter(Boolean)
-        .map((item) => item.name || item.teacherNo || item._id);
+        .map(item => item.name || item.teacherNo || item._id);
     });
   }
 
@@ -1327,21 +1422,23 @@ function deleteAdminCourseFallback(session, data) {
   const course = resolved.course;
   const targetOfferingId = course.courseOfferingId;
   const targetCourseId = course.courseId || course._id || "";
-  const shouldRemoveCourse = Boolean(targetCourseId && !fallbackState.courses.some((item) =>
-    item.courseOfferingId !== targetOfferingId &&
-    (item.courseId || item._id) === targetCourseId,
-  ));
+  const shouldRemoveCourse = Boolean(
+    targetCourseId &&
+    !fallbackState.courses.some(
+      item => item.courseOfferingId !== targetOfferingId && (item.courseId || item._id) === targetCourseId
+    )
+  );
   const targetSessionIds = new Set(
     fallbackState.classSessions
-      .filter((item) => (item.courseOfferingId || item.course_offering_id) === targetOfferingId)
-      .map((item) => item._id)
-      .filter(Boolean),
+      .filter(item => (item.courseOfferingId || item.course_offering_id) === targetOfferingId)
+      .map(item => item._id)
+      .filter(Boolean)
   );
   const targetLeaveIds = new Set(
     fallbackState.leaves
-      .filter((item) => (item.courseOfferingId || item.course_offering_id) === targetOfferingId)
-      .map((item) => item._id)
-      .filter(Boolean),
+      .filter(item => (item.courseOfferingId || item.course_offering_id) === targetOfferingId)
+      .map(item => item._id)
+      .filter(Boolean)
   );
 
   const removed = {
@@ -1358,37 +1455,57 @@ function deleteAdminCourseFallback(session, data) {
     evaluationSummaries: 0,
     recommendations: 0,
     academicAlerts: 0,
-    grades: 0,
+    grades: 0
   };
 
-  removed.leaveRequestSessions = removeFallbackRows("leaveRequestSessions", (item) =>
-    targetLeaveIds.has(item.leaveRequestId || item.leave_request_id) ||
-    targetSessionIds.has(item.classSessionId || item.class_session_id),
+  removed.leaveRequestSessions = removeFallbackRows(
+    "leaveRequestSessions",
+    item =>
+      targetLeaveIds.has(item.leaveRequestId || item.leave_request_id) ||
+      targetSessionIds.has(item.classSessionId || item.class_session_id)
   );
-  removed.attendanceRecords = removeFallbackRows("attendance", (item) => matchesFallbackTargetOffering(item, targetOfferingId));
-  removed.leaveRequests = removeFallbackRows("leaves", (item) => matchesFallbackTargetOffering(item, targetOfferingId));
-  removed.evaluations = removeFallbackRows("evaluations", (item) =>
-    matchesFallbackTargetOffering(item, targetOfferingId) || (shouldRemoveCourse && matchesFallbackTargetCourse(item, targetCourseId))
+  removed.attendanceRecords = removeFallbackRows("attendance", item =>
+    matchesFallbackTargetOffering(item, targetOfferingId)
   );
-  removed.materials = removeFallbackRows("materials", (item) => matchesFallbackTargetOffering(item, targetOfferingId));
-  removed.evaluationTokens = removeFallbackRows("evaluationTokens", (item) =>
-    matchesFallbackTargetOffering(item, targetOfferingId) || (shouldRemoveCourse && matchesFallbackTargetCourse(item, targetCourseId))
+  removed.leaveRequests = removeFallbackRows("leaves", item => matchesFallbackTargetOffering(item, targetOfferingId));
+  removed.evaluations = removeFallbackRows(
+    "evaluations",
+    item =>
+      matchesFallbackTargetOffering(item, targetOfferingId) ||
+      (shouldRemoveCourse && matchesFallbackTargetCourse(item, targetCourseId))
   );
-  removed.evaluationSummaries = removeFallbackRows("evaluationSummaries", (item) =>
-    matchesFallbackTargetOffering(item, targetOfferingId) ||
-    (shouldRemoveCourse && matchesFallbackTargetCourse(item, targetCourseId)),
+  removed.materials = removeFallbackRows("materials", item => matchesFallbackTargetOffering(item, targetOfferingId));
+  removed.evaluationTokens = removeFallbackRows(
+    "evaluationTokens",
+    item =>
+      matchesFallbackTargetOffering(item, targetOfferingId) ||
+      (shouldRemoveCourse && matchesFallbackTargetCourse(item, targetCourseId))
   );
-  removed.recommendations = removeFallbackRows("recommendations", (item) =>
-    matchesFallbackTargetOffering(item, targetOfferingId) ||
-    matchesId(item.recommendedOfferingId || item.recommended_offering_id, targetOfferingId) ||
-    (shouldRemoveCourse && matchesFallbackTargetCourse(item, targetCourseId)) ||
-    (shouldRemoveCourse && matchesId(item.recommendedCourseId || item.recommended_course_id, targetCourseId)),
+  removed.evaluationSummaries = removeFallbackRows(
+    "evaluationSummaries",
+    item =>
+      matchesFallbackTargetOffering(item, targetOfferingId) ||
+      (shouldRemoveCourse && matchesFallbackTargetCourse(item, targetCourseId))
   );
-  removed.academicAlerts = removeFallbackRows("academicAlerts", (item) => matchesFallbackTargetOffering(item, targetOfferingId));
-  removed.grades = removeFallbackRows("grades", (item) => matchesFallbackTargetOffering(item, targetOfferingId));
-  removed.enrollments = removeFallbackRows("enrollments", (item) => matchesFallbackTargetOffering(item, targetOfferingId));
-  removed.classSessions = removeFallbackRows("classSessions", (item) => matchesFallbackTargetOffering(item, targetOfferingId));
-  removed.courseOfferings = removeFallbackRows("courses", (item) => matchesId(item.courseOfferingId, targetOfferingId));
+  removed.recommendations = removeFallbackRows(
+    "recommendations",
+    item =>
+      matchesFallbackTargetOffering(item, targetOfferingId) ||
+      matchesId(item.recommendedOfferingId || item.recommended_offering_id, targetOfferingId) ||
+      (shouldRemoveCourse && matchesFallbackTargetCourse(item, targetCourseId)) ||
+      (shouldRemoveCourse && matchesId(item.recommendedCourseId || item.recommended_course_id, targetCourseId))
+  );
+  removed.academicAlerts = removeFallbackRows("academicAlerts", item =>
+    matchesFallbackTargetOffering(item, targetOfferingId)
+  );
+  removed.grades = removeFallbackRows("grades", item => matchesFallbackTargetOffering(item, targetOfferingId));
+  removed.enrollments = removeFallbackRows("enrollments", item =>
+    matchesFallbackTargetOffering(item, targetOfferingId)
+  );
+  removed.classSessions = removeFallbackRows("classSessions", item =>
+    matchesFallbackTargetOffering(item, targetOfferingId)
+  );
+  removed.courseOfferings = removeFallbackRows("courses", item => matchesId(item.courseOfferingId, targetOfferingId));
   removed.courses = shouldRemoveCourse && removed.courseOfferings ? 1 : 0;
 
   recordAudit("admin.course.delete", session.userId, "course_offerings", targetOfferingId, course, removed);
@@ -1397,21 +1514,23 @@ function deleteAdminCourseFallback(session, data) {
     data: {
       deletedCourseOfferingId: targetOfferingId,
       deletedCourseId: removed.courses ? targetCourseId : "",
-      removed,
-    },
+      removed
+    }
   };
 }
 
 function resolveCourseForDeleteFallback(courseOfferingId, courseId) {
   if (courseOfferingId) {
-    const course = fallbackState.courses.find((item) => item.courseOfferingId === courseOfferingId || item._id === courseOfferingId) || null;
+    const course =
+      fallbackState.courses.find(item => item.courseOfferingId === courseOfferingId || item._id === courseOfferingId) ||
+      null;
     if (!course) {
       return { ok: false, message: "Course offering was not found." };
     }
     return { ok: true, course };
   }
 
-  const matches = fallbackState.courses.filter((item) => (item.courseId || item._id) === courseId);
+  const matches = fallbackState.courses.filter(item => (item.courseId || item._id) === courseId);
   if (!matches.length) {
     return { ok: false, message: "Course offering was not found." };
   }
@@ -1436,7 +1555,7 @@ function matchesId(left, right) {
 function removeFallbackRows(key, predicate) {
   const rows = Array.isArray(fallbackState[key]) ? fallbackState[key] : [];
   const before = rows.length;
-  fallbackState[key] = rows.filter((item) => !predicate(item));
+  fallbackState[key] = rows.filter(item => !predicate(item));
   return before - fallbackState[key].length;
 }
 
@@ -1445,8 +1564,22 @@ function saveAdminCourseFallback(session, data) {
     return { ok: false, message: "Only administrators can manage courses." };
   }
   const payload = normalizeAdminCoursePayload(data);
-  if (!payload.courseCode || !payload.courseName || !payload.majorId || !payload.gradeYear || !payload.teacherIds.length || !payload.startDate || !payload.endDate || !payload.totalSessions || !payload.capacity || !payload.scheduleSlots.length) {
-    return { ok: false, message: "Course, major, cohort year, teacher, dates, schedule slots, total sessions, and capacity are required." };
+  if (
+    !payload.courseCode ||
+    !payload.courseName ||
+    !payload.majorId ||
+    !payload.gradeYear ||
+    !payload.teacherIds.length ||
+    !payload.startDate ||
+    !payload.endDate ||
+    !payload.totalSessions ||
+    !payload.capacity ||
+    !payload.scheduleSlots.length
+  ) {
+    return {
+      ok: false,
+      message: "Course, major, cohort year, teacher, dates, schedule slots, total sessions, and capacity are required."
+    };
   }
   if (!Number.isInteger(payload.capacity) || payload.capacity < 1) {
     return { ok: false, message: "Capacity must be a positive integer." };
@@ -1459,39 +1592,49 @@ function saveAdminCourseFallback(session, data) {
   const now = Date.now();
   const existing = payload.courseOfferingId ? findCourse(payload.courseOfferingId) : null;
   const course = existing || { _id: `c_${now}`, courseId: `c_${now}`, courseOfferingId: `co_${now}`, createdAt: now };
-  const major = fallbackState.majors.find((item) => item._id === payload.majorId) || null;
+  const major = fallbackState.majors.find(item => item._id === payload.majorId) || null;
   if (!major) {
     return { ok: false, message: "Major was not found." };
   }
-  const departmentId = String((existing && existing.departmentId) || major.departmentId || major.department_id || data.departmentId || "").trim();
+  const departmentId = String(
+    (existing && existing.departmentId) || major.departmentId || major.department_id || data.departmentId || ""
+  ).trim();
   if (!departmentId) {
     return { ok: false, message: "Selected major is missing a department." };
   }
-  const semester = resolveFallbackSemester(fallbackState.semesters, existing ? existing.semesterId : payload.semesterId);
+  const semester = resolveFallbackSemester(
+    fallbackState.semesters,
+    existing ? existing.semesterId : payload.semesterId
+  );
   const semesterId = semester ? semester._id : "";
   if (!semesterId) {
     return { ok: false, message: "No semester is available to assign the course." };
   }
-  const inferredPlan = fallbackState.trainingPlans.find((item) =>
-    item.majorId === payload.majorId &&
-    Number(item.gradeYear || 0) === Number(payload.gradeYear || 0) &&
-    (!item.status || item.status === "active"),
-  ) || null;
+  const inferredPlan =
+    fallbackState.trainingPlans.find(
+      item =>
+        item.majorId === payload.majorId &&
+        Number(item.gradeYear || 0) === Number(payload.gradeYear || 0) &&
+        (!item.status || item.status === "active")
+    ) || null;
   const plan = payload.trainingPlanId
-    ? fallbackState.trainingPlans.find((item) => item._id === payload.trainingPlanId) || null
+    ? fallbackState.trainingPlans.find(item => item._id === payload.trainingPlanId) || null
     : inferredPlan;
-  if (payload.trainingPlanId && (!plan || plan.majorId !== payload.majorId || Number(plan.gradeYear || 0) !== Number(payload.gradeYear || 0))) {
+  if (
+    payload.trainingPlanId &&
+    (!plan || plan.majorId !== payload.majorId || Number(plan.gradeYear || 0) !== Number(payload.gradeYear || 0))
+  ) {
     return { ok: false, message: "Training plan must match the selected major and cohort year." };
   }
   const primarySlot = payload.scheduleSlots[0];
-  const classroom = fallbackState.classrooms.find((item) => item._id === primarySlot.classroomId) || null;
+  const classroom = fallbackState.classrooms.find(item => item._id === primarySlot.classroomId) || null;
   if (!classroom) {
     return { ok: false, message: "Classroom was not found." };
   }
   const teacherNames = payload.teacherIds
-    .map((id) => fallbackState.teachers.find((item) => item._id === id))
+    .map(id => fallbackState.teachers.find(item => item._id === id))
     .filter(Boolean)
-    .map((item) => item.name || item.teacherNo || item._id);
+    .map(item => item.name || item.teacherNo || item._id);
   const selectedCount = existing ? countSelectedEnrollmentsForCourseFallback(existing.courseOfferingId) : 0;
   if (selectedCount > payload.capacity) {
     return { ok: false, message: `Capacity cannot be lower than current selected student count (${selectedCount}).` };
@@ -1504,11 +1647,14 @@ function saveAdminCourseFallback(session, data) {
     startDate: payload.startDate,
     endDate: payload.endDate,
     scheduleSlots: payload.scheduleSlots,
-    totalSessions: payload.totalSessions,
+    totalSessions: payload.totalSessions
   };
   const proposedSessions = generateFallbackClassSessions(proposedCourse, now);
   if (proposedSessions.length < payload.totalSessions) {
-    return { ok: false, message: `Date range can only generate ${proposedSessions.length} sessions for the configured schedule slots.` };
+    return {
+      ok: false,
+      message: `Date range can only generate ${proposedSessions.length} sessions for the configured schedule slots.`
+    };
   }
   const conflict = findFallbackScheduleConflict(proposedSessions, existing ? existing.courseOfferingId : "");
   if (conflict) {
@@ -1546,16 +1692,18 @@ function saveAdminCourseFallback(session, data) {
       name: classroom.name || classroom._id,
       latitude: Number(classroom.latitude || 0),
       longitude: Number(classroom.longitude || 0),
-      radius: Number(classroom.geofenceRadiusM || classroom.geofence_radius_m || 50),
+      radius: Number(classroom.geofenceRadiusM || classroom.geofence_radius_m || 50)
     },
     status: payload.status,
-    updatedAt: now,
+    updatedAt: now
   });
   if (!existing) {
     fallbackState.courses.unshift(course);
   }
 
-  fallbackState.classSessions = fallbackState.classSessions.filter((item) => item.courseOfferingId !== course.courseOfferingId);
+  fallbackState.classSessions = fallbackState.classSessions.filter(
+    item => item.courseOfferingId !== course.courseOfferingId
+  );
   fallbackState.classSessions.unshift(...generateFallbackClassSessions(course, now));
   enrollCohortStudentsFallback(course, now);
   return { ok: true, data: { course: buildAdminCourseView(course) } };
@@ -1569,7 +1717,7 @@ function selectCourseTeacherFallback(session, data) {
   const teacherId = String(data.teacherId || data.selectedTeacherId || "").trim();
   const student = findStudentBySession(session);
   const course = findCourse(courseOfferingId);
-  const teacher = fallbackState.teachers.find((item) => item._id === teacherId);
+  const teacher = fallbackState.teachers.find(item => item._id === teacherId);
   if (!student || !course || !teacher) {
     return { ok: false, message: "Student, course, or teacher was not found." };
   }
@@ -1580,10 +1728,11 @@ function selectCourseTeacherFallback(session, data) {
     return { ok: false, message: "Teacher selection is closed for this course." };
   }
   const keys = buildUserKeySet(session.userId, student.userId, student._id);
-  const enrollment = fallbackState.enrollments.find((item) =>
-    keys.has(String(item.studentId || item.student_id || "").trim()) &&
-    item.courseOfferingId === courseOfferingId &&
-    item.status !== "dropped",
+  const enrollment = fallbackState.enrollments.find(
+    item =>
+      keys.has(String(item.studentId || item.student_id || "").trim()) &&
+      item.courseOfferingId === courseOfferingId &&
+      item.status !== "dropped"
   );
   if (!enrollment) {
     return { ok: false, message: "You are not in the cohort for this course offering." };
@@ -1610,12 +1759,19 @@ function selectCourseTeacherFallback(session, data) {
     selected_at: enrollment.selected_at || enrollment.selectedAt || now,
     status: "enrolled",
     updatedAt: now,
-    updated_at: now,
+    updated_at: now
   });
   if (!alreadyCounted) {
     course.enrolledCount = selectedCount + 1;
   }
-  recordAudit("course.teacher.select", session.userId, "enrollments", enrollment._id || courseOfferingId, null, enrollment);
+  recordAudit(
+    "course.teacher.select",
+    session.userId,
+    "enrollments",
+    enrollment._id || courseOfferingId,
+    null,
+    enrollment
+  );
   return { ok: true, data: { enrollment: clone(enrollment) } };
 }
 
@@ -1653,16 +1809,13 @@ function saveAttendanceRecordsFallback(session, data) {
       return { ok: false, message: "Teachers can edit attendance only for students who selected them." };
     }
     const existing = fallbackState.attendance.find(
-      (item) =>
-        item.studentId === studentId &&
-        item.courseOfferingId === courseOfferingId &&
-        item.date === attendanceDate,
+      item => item.studentId === studentId && item.courseOfferingId === courseOfferingId && item.date === attendanceDate
     );
     if (existing && existing.status === "on_leave") {
       saved.push(normalizeAttendanceView(existing));
       continue;
     }
-    const student = fallbackState.students.find((item) => item._id === studentId || item.userId === studentId) || {};
+    const student = fallbackState.students.find(item => item._id === studentId || item.userId === studentId) || {};
     const record = existing || {
       _id: `att_${now}_${studentId}`,
       studentId,
@@ -1678,14 +1831,14 @@ function saveAttendanceRecordsFallback(session, data) {
       leaveRequestId: "",
       leave_request_id: "",
       createdAt: now,
-      created_at: now,
+      created_at: now
     };
     Object.assign(record, {
       status,
       source: "teacher_manual",
       remark: String(row.remark || "").trim(),
       updatedAt: now,
-      updated_at: now,
+      updated_at: now
     });
     if (!existing) {
       fallbackState.attendance.unshift(record);
@@ -1696,7 +1849,7 @@ function saveAttendanceRecordsFallback(session, data) {
   recordAudit("attendance.manual_update", session.userId, "attendance_records", courseOfferingId, null, {
     courseOfferingId,
     attendanceDate,
-    count: saved.length,
+    count: saved.length
   });
   return { ok: true, data: { attendance: saved } };
 }
@@ -1728,7 +1881,7 @@ function submitEvaluationFallback(session, data) {
   }
 
   const tokenHash = hashString(`${session.userId}:${courseOfferingId}`);
-  if (fallbackState.evaluations.some((item) => item.tokenHash === tokenHash)) {
+  if (fallbackState.evaluations.some(item => item.tokenHash === tokenHash)) {
     return { ok: false, message: "You have already submitted an evaluation for this course." };
   }
 
@@ -1738,16 +1891,14 @@ function submitEvaluationFallback(session, data) {
     _id: `eval_${now}`,
     courseId: course.courseId || course._id,
     courseOfferingId,
-    teacherIds: selectedTeacherId
-      ? [selectedTeacherId]
-      : course.teacherIds || [],
+    teacherIds: selectedTeacherId ? [selectedTeacherId] : course.teacherIds || [],
     tokenHash,
     rating,
     scores,
     feedback,
     feedbackText: feedback,
     submittedAt: now,
-    status: "submitted",
+    status: "submitted"
   };
 
   fallbackState.evaluations.unshift(evaluation);
@@ -1759,7 +1910,7 @@ function submitEvaluationFallback(session, data) {
     code: 200,
     message: "Evaluation submitted successfully.",
     data: { evaluation: clone(evaluation) },
-    evaluation: clone(evaluation),
+    evaluation: clone(evaluation)
   };
 }
 
@@ -1772,8 +1923,8 @@ function getCourseMaterialsFallback(session) {
     data: {
       courses: resolveCoursesForSession(session),
       materials: resolveMaterialsForSession(session),
-      timeline: resolveClassSessionsForSession(session),
-    },
+      timeline: resolveClassSessionsForSession(session)
+    }
   };
 }
 
@@ -1792,20 +1943,27 @@ function saveCourseMaterialFallback(session, data) {
     return { ok: false, message: "You do not have permission to manage this course offering." };
   }
   const course = findCourse(courseOfferingId);
-  const deadlineAt = Number(course && course.materialUploadDeadlineAt || 0);
+  const deadlineAt = Number((course && course.materialUploadDeadlineAt) || 0);
   if (session.role === "teacher" && deadlineAt && Date.now() > deadlineAt) {
     return { ok: false, message: "The material upload deadline for this course has passed." };
   }
 
   const now = Date.now();
-  const before = fallbackState.materials.find((item) => item._id === data.materialId) || null;
-  if (before && session.role === "teacher" && !materialBelongsToTeacherFallback(before, findTeacherBySession(session), session.userId)) {
+  const before = fallbackState.materials.find(item => item._id === data.materialId) || null;
+  if (
+    before &&
+    session.role === "teacher" &&
+    !materialBelongsToTeacherFallback(before, findTeacherBySession(session), session.userId)
+  ) {
     return { ok: false, message: "Teachers can edit only their own course materials." };
   }
   const material = before || { _id: `mat_${now}`, createdAt: now };
   Object.assign(material, {
     courseOfferingId,
-    teacherId: session.role === "teacher" ? (findTeacherBySession(session) || {})._id || "" : String(data.teacherId || before && before.teacherId || "").trim(),
+    teacherId:
+      session.role === "teacher"
+        ? (findTeacherBySession(session) || {})._id || ""
+        : String(data.teacherId || (before && before.teacherId) || "").trim(),
     uploaderUserId: session.userId,
     title,
     fileUrl,
@@ -1816,7 +1974,7 @@ function saveCourseMaterialFallback(session, data) {
     isPublicToStudents: data.isPublicToStudents !== false,
     knowledgeDocumentId: String(data.knowledgeDocumentId || "").trim(),
     availableAt: Number(data.availableAt || 0) || now,
-    updatedAt: now,
+    updatedAt: now
   });
   if (!before) {
     fallbackState.materials.unshift(material);
@@ -1827,7 +1985,7 @@ function saveCourseMaterialFallback(session, data) {
     "course_materials",
     material._id,
     before,
-    material,
+    material
   );
   return { ok: true, data: { material: buildMaterialView(material) } };
 }
@@ -1868,7 +2026,7 @@ function submitProfileChangeFallback(session, data) {
     createdAt: now,
     created_at: now,
     updatedAt: now,
-    updated_at: now,
+    updated_at: now
   };
 
   fallbackState.profileChangeRequests.unshift(request);
@@ -1887,7 +2045,7 @@ function reviewProfileChangeFallback(session, data) {
     return { ok: false, message: 'Request id and decision "approved" or "rejected" are required.' };
   }
 
-  const request = fallbackState.profileChangeRequests.find((item) => item._id === requestId);
+  const request = fallbackState.profileChangeRequests.find(item => item._id === requestId);
   if (!request) {
     return { ok: false, message: "Profile change request not found." };
   }
@@ -1924,17 +2082,18 @@ function askAssistantFallback(session, data) {
     return { ok: false, message: "Question is required." };
   }
   if (query === "__list_models__") {
-    const provider = String(data.apiSettings && data.apiSettings.provider || "deepseek").trim() || "deepseek";
-    const models = provider === "openai"
-      ? ["gpt-4.1", "gpt-4o", "gpt-4o-mini", "o3-mini", "o1"]
-      : ["deepseek-chat", "deepseek-reasoner"];
+    const provider = String((data.apiSettings && data.apiSettings.provider) || "deepseek").trim() || "deepseek";
+    const models =
+      provider === "openai"
+        ? ["gpt-4.1", "gpt-4o", "gpt-4o-mini", "o3-mini", "o1"]
+        : ["deepseek-chat", "deepseek-reasoner"];
     return {
       ok: true,
       data: {
         models,
         provider,
-        source: "fallback",
-      },
+        source: "fallback"
+      }
     };
   }
 
@@ -1949,7 +2108,7 @@ function askAssistantFallback(session, data) {
     fallbackUsed: false,
     citations: [],
     latencyMs: 0,
-    createdAt: now,
+    createdAt: now
   });
 
   const answer = buildFallbackAssistantAnswer(session, query);
@@ -1961,7 +2120,7 @@ function askAssistantFallback(session, data) {
     fallbackUsed: true,
     citations: answer.citations,
     latencyMs: 0,
-    createdAt: Date.now(),
+    createdAt: Date.now()
   });
 
   return {
@@ -1974,8 +2133,8 @@ function askAssistantFallback(session, data) {
       fallbackUsed: true,
       knowledgeBaseId: answer.knowledgeBaseId || undefined,
       conversationId: conversation._id,
-      citations: assistantMessage.citations || [],
-    },
+      citations: assistantMessage.citations || []
+    }
   };
 }
 
@@ -1999,7 +2158,7 @@ function buildFallbackAssistantAnswer(session, query) {
       sourceTitle: "Student roster",
       knowledgeBaseId: "student_roster",
       grounded: true,
-      citations: [{ knowledgeBaseId: "student_roster", title: "Student roster" }],
+      citations: [{ knowledgeBaseId: "student_roster", title: "Student roster" }]
     };
   }
 
@@ -2012,7 +2171,12 @@ function buildFallbackAssistantAnswer(session, query) {
         sourceTitle,
         knowledgeBaseId: rosterSections.length === 1 ? rosterSections[0].courseOfferingId : "student_roster",
         grounded: true,
-        citations: [{ knowledgeBaseId: rosterSections.length === 1 ? rosterSections[0].courseOfferingId : "student_roster", title: sourceTitle }],
+        citations: [
+          {
+            knowledgeBaseId: rosterSections.length === 1 ? rosterSections[0].courseOfferingId : "student_roster",
+            title: sourceTitle
+          }
+        ]
       };
     }
   }
@@ -2020,13 +2184,21 @@ function buildFallbackAssistantAnswer(session, query) {
   if (isEvaluationQuestion(query)) {
     const evaluationSections = buildFallbackEvaluationSections(session, query);
     if (evaluationSections.length > 0) {
-      const sourceTitle = evaluationSections.length === 1 ? evaluationSections[0].courseLabel : "Anonymous course evaluations";
+      const sourceTitle =
+        evaluationSections.length === 1 ? evaluationSections[0].courseLabel : "Anonymous course evaluations";
       return {
         answer: formatFallbackEvaluationAnswer(evaluationSections),
         sourceTitle,
-        knowledgeBaseId: evaluationSections.length === 1 ? evaluationSections[0].courseOfferingId : "course_evaluations",
+        knowledgeBaseId:
+          evaluationSections.length === 1 ? evaluationSections[0].courseOfferingId : "course_evaluations",
         grounded: true,
-        citations: [{ knowledgeBaseId: evaluationSections.length === 1 ? evaluationSections[0].courseOfferingId : "course_evaluations", title: sourceTitle }],
+        citations: [
+          {
+            knowledgeBaseId:
+              evaluationSections.length === 1 ? evaluationSections[0].courseOfferingId : "course_evaluations",
+            title: sourceTitle
+          }
+        ]
       };
     }
   }
@@ -2038,34 +2210,35 @@ function buildFallbackAssistantAnswer(session, query) {
       sourceTitle: knowledgeHit.title || "",
       knowledgeBaseId: knowledgeHit._id || "",
       grounded: true,
-      citations: [{ knowledgeBaseId: knowledgeHit._id || "", title: knowledgeHit.title || "" }],
+      citations: [{ knowledgeBaseId: knowledgeHit._id || "", title: knowledgeHit.title || "" }]
     };
   }
 
-  const answer = "The current knowledge base does not have enough information. Please contact academic staff for confirmation.";
+  const answer =
+    "The current knowledge base does not have enough information. Please contact academic staff for confirmation.";
   return {
     answer,
     sourceTitle: "",
     knowledgeBaseId: "",
     grounded: false,
-    citations: [],
+    citations: []
   };
 }
 
 function appendAiMessageFallback(conversationId, message) {
   const now = Number(message.createdAt || Date.now());
-  const conversation = fallbackState.aiConversations.find((item) => item._id === conversationId);
+  const conversation = fallbackState.aiConversations.find(item => item._id === conversationId);
   const entry = {
     _id: `ai_msg_${conversationId}_${fallbackState.aiMessages.length + 1}`,
     conversationId,
-    userId: String(message.userId || conversation && conversation.userId || ""),
-    ownerRole: String(message.ownerRole || conversation && conversation.role || ""),
+    userId: String(message.userId || (conversation && conversation.userId) || ""),
+    ownerRole: String(message.ownerRole || (conversation && conversation.role) || ""),
     role: String(message.role || "assistant"),
     content: String(message.content || ""),
     citations: Array.isArray(message.citations) ? message.citations.map(clone) : [],
     fallbackUsed: Boolean(message.fallbackUsed),
     latencyMs: Number(message.latencyMs || 0),
-    createdAt: now,
+    createdAt: now
   };
   fallbackState.aiMessages.unshift(entry);
   if (conversation) {
@@ -2082,7 +2255,7 @@ function findFallbackKnowledgeMatch(query) {
   const keywords = buildQueryKeywords(query);
   const cleanedQuery = String(query || "").toLowerCase();
   const scored = (fallbackState.knowledge || [])
-    .map((item) => {
+    .map(item => {
       const itemKeywords = Array.isArray(item.keywords) ? item.keywords : [];
       const hitCount = itemKeywords.reduce((sum, keyword) => {
         const normalized = String(keyword || "").toLowerCase();
@@ -2091,14 +2264,14 @@ function findFallbackKnowledgeMatch(query) {
       const titleHit = item.title && cleanedQuery.includes(String(item.title).toLowerCase()) ? 1 : 0;
       return { ...item, _score: hitCount + titleHit };
     })
-    .filter((item) => item._score > 0)
+    .filter(item => item._score > 0)
     .sort((a, b) => b._score - a._score);
   return scored[0] || null;
 }
 
 function extractCourseCodes(query) {
   const matches = String(query || "").match(/\b[A-Z]{2,6}\d{3,4}\b/gi) || [];
-  return Array.from(new Set(matches.map((value) => String(value || "").toUpperCase())));
+  return Array.from(new Set(matches.map(value => String(value || "").toUpperCase())));
 }
 
 function buildFallbackRosterSections(session, query) {
@@ -2106,7 +2279,7 @@ function buildFallbackRosterSections(session, query) {
     return [];
   }
   const courses = resolveCoursesForSession(session);
-  const courseMap = new Map(courses.map((course) => [course.courseOfferingId, course]));
+  const courseMap = new Map(courses.map(course => [course.courseOfferingId, course]));
   const grouped = new Map();
   for (const row of resolveCourseStudentsForSession(session)) {
     const courseOfferingId = String(row.courseOfferingId || "").trim();
@@ -2114,12 +2287,12 @@ function buildFallbackRosterSections(session, query) {
       const course = courseMap.get(courseOfferingId) || findCourse(courseOfferingId);
       grouped.set(courseOfferingId, {
         courseOfferingId,
-        courseCode: String(course && course.code || "").trim(),
-        courseName: String(course && course.name || "").trim(),
+        courseCode: String((course && course.code) || "").trim(),
+        courseName: String((course && course.name) || "").trim(),
         courseLabel: buildCourseName(course, courseOfferingId),
         teacherNames: Array.isArray(course && course.teacherNames) ? course.teacherNames.slice() : [],
         studentCount: 0,
-        students: [],
+        students: []
       });
     }
     const section = grouped.get(courseOfferingId);
@@ -2131,26 +2304,26 @@ function buildFallbackRosterSections(session, query) {
       major: String(row.major || "").trim(),
       adminClass: String(row.adminClass || "").trim(),
       enrollmentStatus: String(row.enrollmentStatus || "").trim(),
-      selectedTeacherName: String(row.selectedTeacherName || "").trim(),
+      selectedTeacherName: String(row.selectedTeacherName || "").trim()
     });
   }
-  const sections = Array.from(grouped.values()).filter((section) => section.students.length > 0);
-  const matched = sections.filter((section) => matchesFallbackSectionQuery(section, query));
+  const sections = Array.from(grouped.values()).filter(section => section.students.length > 0);
+  const matched = sections.filter(section => matchesFallbackSectionQuery(section, query));
   return matched.length > 0 ? matched : sections.slice(0, 5);
 }
 
 function buildFallbackEvaluationSections(session, query) {
   const summaries = buildEvaluationSummary(session) || [];
-  const sections = summaries.map((item) => {
+  const sections = summaries.map(item => {
     const course = findCourse(item.courseOfferingId || item.courseId);
     return {
       ...item,
-      courseCode: String(course && course.code || "").trim(),
+      courseCode: String((course && course.code) || "").trim(),
       courseLabel: buildCourseName(course, item.courseOfferingId || item.courseId),
-      teacherNames: Array.isArray(course && course.teacherNames) ? course.teacherNames.slice() : [],
+      teacherNames: Array.isArray(course && course.teacherNames) ? course.teacherNames.slice() : []
     };
   });
-  const matched = sections.filter((section) => matchesFallbackSectionQuery(section, query));
+  const matched = sections.filter(section => matchesFallbackSectionQuery(section, query));
   return matched.length > 0 ? matched : sections.slice(0, 5);
 }
 
@@ -2160,22 +2333,24 @@ function matchesFallbackSectionQuery(section, query) {
   const candidates = [
     String(section.courseOfferingId || "").toUpperCase(),
     String(section.courseId || "").toUpperCase(),
-    String(section.courseCode || "").toUpperCase(),
+    String(section.courseCode || "").toUpperCase()
   ];
-  if (codes.some((code) => candidates.includes(code))) {
+  if (codes.some(code => candidates.includes(code))) {
     return true;
   }
   const teacherNames = Array.isArray(section.teacherNames) ? section.teacherNames : [];
   return [section.courseCode, section.courseName, section.courseLabel, section.teacherLabel, ...teacherNames]
     .filter(Boolean)
-    .some((value) => normalized.includes(String(value).toLowerCase()));
+    .some(value => normalized.includes(String(value).toLowerCase()));
 }
 
 function formatFallbackRosterAnswer(sections) {
   const lines = ["参与学生名单："];
-  sections.forEach((section) => {
-    lines.push(`${section.courseLabel}${section.teacherNames && section.teacherNames.length ? ` / 教师：${section.teacherNames.join("、")}` : ""}（${section.studentCount}人）`);
-    section.students.forEach((student) => {
+  sections.forEach(section => {
+    lines.push(
+      `${section.courseLabel}${section.teacherNames && section.teacherNames.length ? ` / 教师：${section.teacherNames.join("、")}` : ""}（${section.studentCount}人）`
+    );
+    section.students.forEach(student => {
       lines.push(formatFallbackStudentLine(student));
     });
   });
@@ -2187,16 +2362,22 @@ function formatFallbackStudentLine(student) {
   const details = [
     student.major ? `专业：${student.major}` : "",
     student.adminClass ? `班级：${student.adminClass}` : "",
-    student.enrollmentStatus ? `状态：${student.enrollmentStatus}` : "",
-  ].filter(Boolean).join("，");
+    student.enrollmentStatus ? `状态：${student.enrollmentStatus}` : ""
+  ]
+    .filter(Boolean)
+    .join("，");
   return details ? `- ${header}（${details}）` : `- ${header}`;
 }
 
 function formatFallbackEvaluationAnswer(sections) {
   const lines = ["匿名课程评价："];
-  sections.forEach((section) => {
-    lines.push(`${section.courseLabel}${section.teacherNames && section.teacherNames.length ? ` / 教师：${section.teacherNames.join("、")}` : ""}（${section.count}条，平均 ${formatFallbackAverage(section.averageScores && section.averageScores.overall)}/5）`);
-    lines.push(`  内容 ${formatFallbackAverage(section.averageScores && section.averageScores.content)}/5，教学 ${formatFallbackAverage(section.averageScores && section.averageScores.teaching_method)}/5，难度 ${formatFallbackAverage(section.averageScores && section.averageScores.difficulty)}/5，工作量 ${formatFallbackAverage(section.averageScores && section.averageScores.workload)}/5，成效 ${formatFallbackAverage(section.averageScores && section.averageScores.achievement)}/5`);
+  sections.forEach(section => {
+    lines.push(
+      `${section.courseLabel}${section.teacherNames && section.teacherNames.length ? ` / 教师：${section.teacherNames.join("、")}` : ""}（${section.count}条，平均 ${formatFallbackAverage(section.averageScores && section.averageScores.overall)}/5）`
+    );
+    lines.push(
+      `  内容 ${formatFallbackAverage(section.averageScores && section.averageScores.content)}/5，教学 ${formatFallbackAverage(section.averageScores && section.averageScores.teaching_method)}/5，难度 ${formatFallbackAverage(section.averageScores && section.averageScores.difficulty)}/5，工作量 ${formatFallbackAverage(section.averageScores && section.averageScores.workload)}/5，成效 ${formatFallbackAverage(section.averageScores && section.averageScores.achievement)}/5`
+    );
     if (Array.isArray(section.feedback) && section.feedback.length > 0) {
       lines.push(`  反馈：${section.feedback.slice(0, 2).join("；")}`);
     }
@@ -2210,14 +2391,16 @@ function formatFallbackAverage(value) {
 }
 
 function formatFallbackStudentRoster() {
-  const lines = fallbackState.students.map((student) => {
+  const lines = fallbackState.students.map(student => {
     const title = [student.studentNo, student.name].filter(Boolean).join(" ");
     const details = [
       student.major ? `Major: ${student.major}` : "",
       student.adminClass ? `Class: ${student.adminClass}` : "",
       student.enrollmentYear ? `Enrollment: ${student.enrollmentYear}` : "",
-      student.status ? `Status: ${student.status}` : "",
-    ].filter(Boolean).join(", ");
+      student.status ? `Status: ${student.status}` : ""
+    ]
+      .filter(Boolean)
+      .join(", ");
     return `- ${title || student.userId}${details ? ` (${details})` : ""}`;
   });
   return `\u5b66\u751f\u540d\u5355\uff1a\n${lines.join("\n")}`;
@@ -2231,14 +2414,14 @@ function getAiHistoryFallback(session, data) {
   purgeExpiredAiHistoryFallback();
   const userKeys = buildAiUserKeySet(session.userId);
   const conversations = fallbackState.aiConversations
-    .filter((item) => aiConversationBelongsToSession(item, session, userKeys))
+    .filter(item => aiConversationBelongsToSession(item, session, userKeys))
     .sort((a, b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0));
   const requestedId = String(data.conversationId || "").trim();
-  const active = conversations.find((item) => item._id === requestedId) || conversations[0] || null;
+  const active = conversations.find(item => item._id === requestedId) || conversations[0] || null;
   const messages = active
     ? fallbackState.aiMessages
-        .filter((item) => item.conversationId === active._id)
-        .filter((item) => aiMessageBelongsToSession(item, session, userKeys))
+        .filter(item => item.conversationId === active._id)
+        .filter(item => aiMessageBelongsToSession(item, session, userKeys))
         .sort((a, b) => Number(a.createdAt || 0) - Number(b.createdAt || 0))
     : [];
 
@@ -2250,8 +2433,8 @@ function getAiHistoryFallback(session, data) {
       conversations: conversations.map(clone),
       activeConversationId: active ? active._id : "",
       messages: messages.map(clone),
-      retentionDays: 60,
-    },
+      retentionDays: 60
+    }
   };
 }
 
@@ -2259,7 +2442,7 @@ function resolveAiConversationFallback(session, data, query, now) {
   const requestedId = String(data.conversationId || "").trim();
   const userKeys = buildAiUserKeySet(session.userId);
   const requested = fallbackState.aiConversations.find(
-    (item) => item._id === requestedId && aiConversationBelongsToSession(item, session, userKeys),
+    item => item._id === requestedId && aiConversationBelongsToSession(item, session, userKeys)
   );
   if (requested) {
     return requested;
@@ -2267,7 +2450,8 @@ function resolveAiConversationFallback(session, data, query, now) {
 
   const scenario = resolveAiScenario(query);
   const active = fallbackState.aiConversations.find(
-    (item) => aiConversationBelongsToSession(item, session, userKeys) && item.scenario === scenario && item.status === "active",
+    item =>
+      aiConversationBelongsToSession(item, session, userKeys) && item.scenario === scenario && item.status === "active"
   );
   if (active) {
     return active;
@@ -2283,7 +2467,7 @@ function resolveAiConversationFallback(session, data, query, now) {
     messageCount: 0,
     status: "active",
     createdAt: now,
-    updatedAt: now,
+    updatedAt: now
   };
   fallbackState.aiConversations.unshift(conversation);
   return conversation;
@@ -2291,10 +2475,10 @@ function resolveAiConversationFallback(session, data, query, now) {
 
 function purgeExpiredAiHistoryFallback(now = Date.now()) {
   const cutoff = now - AI_HISTORY_RETENTION_MS;
-  fallbackState.aiMessages = fallbackState.aiMessages.filter((item) => Number(item.createdAt || 0) >= cutoff);
-  const aliveConversationIds = new Set(fallbackState.aiMessages.map((item) => item.conversationId));
+  fallbackState.aiMessages = fallbackState.aiMessages.filter(item => Number(item.createdAt || 0) >= cutoff);
+  const aliveConversationIds = new Set(fallbackState.aiMessages.map(item => item.conversationId));
   fallbackState.aiConversations = fallbackState.aiConversations.filter(
-    (item) => Number(item.updatedAt || 0) >= cutoff || aliveConversationIds.has(item._id),
+    item => Number(item.updatedAt || 0) >= cutoff || aliveConversationIds.has(item._id)
   );
 }
 
@@ -2346,8 +2530,8 @@ function resolveAiScenario(query) {
 }
 
 function buildAdminAccountView(user) {
-  const student = fallbackState.students.find((item) => item.userId === user._id) || null;
-  const teacher = fallbackState.teachers.find((item) => item.userId === user._id) || null;
+  const student = fallbackState.students.find(item => item.userId === user._id) || null;
+  const teacher = fallbackState.teachers.find(item => item.userId === user._id) || null;
   return {
     _id: user._id,
     username: user.username || "",
@@ -2357,30 +2541,34 @@ function buildAdminAccountView(user) {
     status: user.status || "active",
     primaryRole: user.role || "",
     linkedProfileType: student ? "student" : teacher ? "teacher" : "",
-    studentProfile: student ? {
-      _id: student._id,
-      userId: student.userId,
-      studentNo: student.studentNo,
-      name: student.name,
-      majorId: student.majorId || "",
-      majorName: student.major || "",
-      adminClassId: student.adminClassId || "",
-      adminClassName: student.adminClass || "",
-      enrollmentYear: Number(student.enrollmentYear || 0),
-      trainingPlanId: student.trainingPlanId || "",
-      status: student.status || "active",
-      contact: clone(student.contact || {}),
-      familyInfo: clone(student.familyInfo || {}),
-    } : null,
-    teacherProfile: teacher ? {
-      _id: teacher._id,
-      userId: teacher.userId,
-      teacherNo: teacher.teacherNo,
-      name: teacher.name,
-      departmentName: teacher.department,
-      title: teacher.title,
-      status: teacher.status || "active",
-    } : null,
+    studentProfile: student
+      ? {
+          _id: student._id,
+          userId: student.userId,
+          studentNo: student.studentNo,
+          name: student.name,
+          majorId: student.majorId || "",
+          majorName: student.major || "",
+          adminClassId: student.adminClassId || "",
+          adminClassName: student.adminClass || "",
+          enrollmentYear: Number(student.enrollmentYear || 0),
+          trainingPlanId: student.trainingPlanId || "",
+          status: student.status || "active",
+          contact: clone(student.contact || {}),
+          familyInfo: clone(student.familyInfo || {})
+        }
+      : null,
+    teacherProfile: teacher
+      ? {
+          _id: teacher._id,
+          userId: teacher.userId,
+          teacherNo: teacher.teacherNo,
+          name: teacher.name,
+          departmentName: teacher.department,
+          title: teacher.title,
+          status: teacher.status || "active"
+        }
+      : null
   };
 }
 
@@ -2407,7 +2595,7 @@ function buildAdminCourseView(course) {
     majorName: course.majorName || "",
     gradeYear: Number(course.gradeYear || 0),
     classroomId: course.classroomId || "",
-    classroomName: course.classroomName || course.classroom && course.classroom.name || "",
+    classroomName: course.classroomName || (course.classroom && course.classroom.name) || "",
     startDate: course.startDate || "",
     endDate: course.endDate || "",
     classWeekday: Number(course.classWeekday || 0),
@@ -2418,8 +2606,8 @@ function buildAdminCourseView(course) {
     totalSessions: Number(course.totalSessions || 0),
     materialUploadDeadlineAt: Number(course.materialUploadDeadlineAt || 0),
     schedule: course.schedule || "",
-    materialCount: fallbackState.materials.filter((item) => item.courseOfferingId === course.courseOfferingId).length,
-    status: course.status || "active",
+    materialCount: fallbackState.materials.filter(item => item.courseOfferingId === course.courseOfferingId).length,
+    status: course.status || "active"
   };
 }
 
@@ -2449,49 +2637,70 @@ function normalizeAdminCoursePayload(data) {
     credits: Number(data.credits || 0),
     courseType: String(data.courseType || "major_required").trim(),
     difficultyLevel: Number(data.difficultyLevel || 3),
-    capacity: Math.max(0, Math.round(Number(
-      data.capacity !== undefined ? data.capacity :
-      data.cpapcity !== undefined ? data.cpapcity :
-      data.capapcity !== undefined ? data.capapcity :
-      0
-    ))),
-    status: String(data.status || "active").trim(),
+    capacity: Math.max(
+      0,
+      Math.round(
+        Number(
+          data.capacity !== undefined
+            ? data.capacity
+            : data.cpapcity !== undefined
+              ? data.cpapcity
+              : data.capapcity !== undefined
+                ? data.capapcity
+                : 0
+        )
+      )
+    ),
+    status: String(data.status || "active").trim()
   };
 }
 
 function normalizeAdminScheduleSlots(data) {
-  const explicit = Array.isArray(data.scheduleSlots) ? data.scheduleSlots : Array.isArray(data.schedule_slots) ? data.schedule_slots : [];
-  const source = explicit.length ? explicit : [{
-    weekday: data.classWeekday || data.weekday,
-    startTime: data.classStartTime || data.startTime,
-    endTime: data.classEndTime || data.endTime,
-    classroomId: data.classroomId || data.classroom_id,
-  }];
+  const explicit = Array.isArray(data.scheduleSlots)
+    ? data.scheduleSlots
+    : Array.isArray(data.schedule_slots)
+      ? data.schedule_slots
+      : [];
+  const source = explicit.length
+    ? explicit
+    : [
+        {
+          weekday: data.classWeekday || data.weekday,
+          startTime: data.classStartTime || data.startTime,
+          endTime: data.classEndTime || data.endTime,
+          classroomId: data.classroomId || data.classroom_id
+        }
+      ];
   return source
-    .map((slot) => ({
+    .map(slot => ({
       weekday: Math.max(1, Math.min(7, Math.round(Number(slot.weekday || slot.class_weekday || 0)))),
       startTime: String(slot.startTime || slot.start_time || "").trim(),
       endTime: String(slot.endTime || slot.end_time || "").trim(),
-      classroomId: String(slot.classroomId || slot.classroom_id || "").trim(),
+      classroomId: String(slot.classroomId || slot.classroom_id || "").trim()
     }))
-    .filter((slot) => slot.weekday && slot.startTime && slot.endTime && slot.classroomId);
+    .filter(slot => slot.weekday && slot.startTime && slot.endTime && slot.classroomId);
 }
 
 function normalizeAdminScheduleSlotsFromCourse(course) {
-  const source = Array.isArray(course.scheduleSlots) && course.scheduleSlots.length ? course.scheduleSlots : [{
-    weekday: course.classWeekday,
-    startTime: course.classStartTime,
-    endTime: course.classEndTime,
-    classroomId: course.classroomId,
-  }];
+  const source =
+    Array.isArray(course.scheduleSlots) && course.scheduleSlots.length
+      ? course.scheduleSlots
+      : [
+          {
+            weekday: course.classWeekday,
+            startTime: course.classStartTime,
+            endTime: course.classEndTime,
+            classroomId: course.classroomId
+          }
+        ];
   return source
-    .map((slot) => ({
+    .map(slot => ({
       weekday: Number(slot.weekday || 0),
       startTime: String(slot.startTime || "").trim(),
       endTime: String(slot.endTime || "").trim(),
-      classroomId: String(slot.classroomId || "").trim(),
+      classroomId: String(slot.classroomId || "").trim()
     }))
-    .filter((slot) => slot.weekday && slot.startTime && slot.endTime && slot.classroomId);
+    .filter(slot => slot.weekday && slot.startTime && slot.endTime && slot.classroomId);
 }
 
 function validateAdminSchedulePayload(payload) {
@@ -2518,7 +2727,10 @@ function validateAdminSchedulePayload(payload) {
     for (let rightIndex = leftIndex + 1; rightIndex < payload.scheduleSlots.length; rightIndex += 1) {
       const left = payload.scheduleSlots[leftIndex];
       const right = payload.scheduleSlots[rightIndex];
-      if (left.weekday === right.weekday && timeRangesOverlap(left.startTime, left.endTime, right.startTime, right.endTime)) {
+      if (
+        left.weekday === right.weekday &&
+        timeRangesOverlap(left.startTime, left.endTime, right.startTime, right.endTime)
+      ) {
         return { ok: false, message: "Schedule slots in the same course cannot overlap." };
       }
     }
@@ -2527,14 +2739,21 @@ function validateAdminSchedulePayload(payload) {
 }
 
 function formatAdminScheduleSlots(slots) {
-  return slots.map((slot) => `${weekdayLabel(slot.weekday)} ${slot.startTime}-${slot.endTime}`).join("; ");
+  return slots.map(slot => `${weekdayLabel(slot.weekday)} ${slot.startTime}-${slot.endTime}`).join("; ");
 }
 
 function normalizeIdList(value) {
   if (Array.isArray(value)) {
-    return Array.from(new Set(value.map((item) => String(item || "").trim()).filter(Boolean)));
+    return Array.from(new Set(value.map(item => String(item || "").trim()).filter(Boolean)));
   }
-  return Array.from(new Set(String(value || "").split(/[;,\s]+/).map((item) => item.trim()).filter(Boolean)));
+  return Array.from(
+    new Set(
+      String(value || "")
+        .split(/[;,\s]+/)
+        .map(item => item.trim())
+        .filter(Boolean)
+    )
+  );
 }
 
 function weekdayLabel(value) {
@@ -2542,7 +2761,9 @@ function weekdayLabel(value) {
 }
 
 function timeToMinutes(value) {
-  const parts = String(value || "").split(":").map(Number);
+  const parts = String(value || "")
+    .split(":")
+    .map(Number);
   if (parts.length < 2 || !Number.isFinite(parts[0]) || !Number.isFinite(parts[1])) {
     return -1;
   }
@@ -2563,19 +2784,19 @@ function formatLocalDate(date) {
 function resolveFallbackSemester(semesters, preferredSemesterId) {
   const preferredId = String(preferredSemesterId || "").trim();
   if (preferredId) {
-    const preferredSemester = semesters.find((item) => String(item._id || "") === preferredId);
+    const preferredSemester = semesters.find(item => String(item._id || "") === preferredId);
     if (preferredSemester) {
       return preferredSemester;
     }
   }
 
-  const currentSemester = semesters.find((item) => item.is_current || item.isCurrent);
+  const currentSemester = semesters.find(item => item.is_current || item.isCurrent);
   if (currentSemester) {
     return currentSemester;
   }
 
   const now = Date.now();
-  const activeSemester = semesters.find((item) => {
+  const activeSemester = semesters.find(item => {
     const start = Date.parse(`${item.startDate || item.start_date || ""}T00:00:00`);
     const end = Date.parse(`${item.endDate || item.end_date || ""}T23:59:59`);
     return Number.isFinite(start) && Number.isFinite(end) && start <= now && now <= end;
@@ -2595,7 +2816,11 @@ function generateFallbackClassSessions(course, now) {
   }
   const slots = normalizeAdminScheduleSlotsFromCourse(course);
   const sessions = [];
-  for (let cursor = new Date(first.getTime()); cursor.getTime() <= end.getTime(); cursor.setDate(cursor.getDate() + 1)) {
+  for (
+    let cursor = new Date(first.getTime());
+    cursor.getTime() <= end.getTime();
+    cursor.setDate(cursor.getDate() + 1)
+  ) {
     const uniWeekday = cursor.getDay() === 0 ? 7 : cursor.getDay();
     for (const slot of slots) {
       if (Number(slot.weekday) !== uniWeekday) {
@@ -2627,18 +2852,22 @@ function generateFallbackClassSessions(course, now) {
         createdAt: now,
         created_at: now,
         updatedAt: now,
-        updated_at: now,
+        updated_at: now
       });
     }
   }
   return sessions
-    .sort((left, right) => Number(left.sessionStartAt || left.session_start_at || 0) - Number(right.sessionStartAt || right.session_start_at || 0))
+    .sort(
+      (left, right) =>
+        Number(left.sessionStartAt || left.session_start_at || 0) -
+        Number(right.sessionStartAt || right.session_start_at || 0)
+    )
     .slice(0, Number(course.totalSessions || 0))
     .map((session, index) => ({
       ...session,
       _id: `${course.courseOfferingId}_session_${index + 1}`,
       sequenceNo: index + 1,
-      sequence_no: index + 1,
+      sequence_no: index + 1
     }));
 }
 
@@ -2648,11 +2877,22 @@ function findFallbackScheduleConflict(proposedSessions, currentOfferingId) {
       const existingOfferingId = existing.courseOfferingId || existing.course_offering_id || "";
       if (currentOfferingId && existingOfferingId === currentOfferingId) continue;
       if ((existing.sessionDate || existing.session_date) !== (proposed.sessionDate || proposed.session_date)) continue;
-      if (!timeRangesOverlap(proposed.startTime || proposed.start_time, proposed.endTime || proposed.end_time, existing.startTime || existing.start_time, existing.endTime || existing.end_time)) continue;
+      if (
+        !timeRangesOverlap(
+          proposed.startTime || proposed.start_time,
+          proposed.endTime || proposed.end_time,
+          existing.startTime || existing.start_time,
+          existing.endTime || existing.end_time
+        )
+      )
+        continue;
       const existingCourse = findCourse(existingOfferingId) || {};
-      const sameCohort = existingCourse.majorId === proposed.majorId && Number(existingCourse.gradeYear || 0) === Number(proposed.gradeYear || 0);
+      const sameCohort =
+        existingCourse.majorId === proposed.majorId &&
+        Number(existingCourse.gradeYear || 0) === Number(proposed.gradeYear || 0);
       const existingClassroomId = existing.classroomId || existing.classroom_id || existingCourse.classroomId || "";
-      const classroomConflict = proposed.classroomId && existingClassroomId && proposed.classroomId === existingClassroomId;
+      const classroomConflict =
+        proposed.classroomId && existingClassroomId && proposed.classroomId === existingClassroomId;
       if (sameCohort || classroomConflict) {
         const reason = classroomConflict ? "classroom" : "cohort";
         return `Schedule conflict (${reason}) on ${proposed.sessionDate} ${proposed.startTime}-${proposed.endTime}.`;
@@ -2663,10 +2903,12 @@ function findFallbackScheduleConflict(proposedSessions, currentOfferingId) {
 }
 
 function enrollCohortStudentsFallback(course, now) {
-  const students = fallbackState.students.filter((student) => studentMatchesCourseCohortFallback(student, course));
+  const students = fallbackState.students.filter(student => studentMatchesCourseCohortFallback(student, course));
   for (const student of students) {
     const studentKey = student.userId || student._id;
-    const existing = fallbackState.enrollments.find((item) => item.studentId === studentKey && item.courseOfferingId === course.courseOfferingId);
+    const existing = fallbackState.enrollments.find(
+      item => item.studentId === studentKey && item.courseOfferingId === course.courseOfferingId
+    );
     if (existing) {
       existing.status = existing.status === "dropped" ? "selected" : existing.status;
       continue;
@@ -2676,7 +2918,7 @@ function enrollCohortStudentsFallback(course, now) {
       studentId: studentKey,
       courseOfferingId: course.courseOfferingId,
       status: "selected",
-      selectedAt: now,
+      selectedAt: now
     });
   }
 }
@@ -2685,14 +2927,16 @@ function enrollCohortStudentsForStudentFallback(student, now) {
   for (const course of fallbackState.courses) {
     if (!studentMatchesCourseCohortFallback(student, course)) continue;
     const studentKey = student.userId || student._id;
-    const existing = fallbackState.enrollments.find((item) => item.studentId === studentKey && item.courseOfferingId === course.courseOfferingId);
+    const existing = fallbackState.enrollments.find(
+      item => item.studentId === studentKey && item.courseOfferingId === course.courseOfferingId
+    );
     if (existing) continue;
     fallbackState.enrollments.push({
       _id: `enroll_${student._id}_${course.courseOfferingId}`,
       studentId: studentKey,
       courseOfferingId: course.courseOfferingId,
       status: "selected",
-      selectedAt: now,
+      selectedAt: now
     });
   }
 }
@@ -2704,20 +2948,17 @@ function studentMatchesCourseCohortFallback(student, course) {
   if (course.majorId) {
     return Boolean(sameYear && sameMajor);
   }
-  return Boolean(
-    (course.trainingPlanId && student.trainingPlanId === course.trainingPlanId) ||
-    sameYear,
-  );
+  return Boolean((course.trainingPlanId && student.trainingPlanId === course.trainingPlanId) || sameYear);
 }
 
 function resolveCoursesForSession(session) {
   if (session.role === "admin") {
-    return fallbackState.courses.map((course) => buildCourseRuntimeView(course));
+    return fallbackState.courses.map(course => buildCourseRuntimeView(course));
   }
   if (session.role === "teacher") {
     return fallbackState.courses
-      .filter((item) => canTeacherAccessCourse(session.userId, item.courseOfferingId))
-      .map((course) => buildCourseRuntimeView(course));
+      .filter(item => canTeacherAccessCourse(session.userId, item.courseOfferingId))
+      .map(course => buildCourseRuntimeView(course));
   }
   const student = findStudentBySession(session);
   const studentKeys = buildUserKeySet(session.userId, student ? student.userId || student.user_id || student._id : "");
@@ -2726,43 +2967,46 @@ function resolveCoursesForSession(session) {
   }
 
   const courses = fallbackState.enrollments
-    .filter((item) => {
+    .filter(item => {
       const enrollmentStudentId = String(item.studentId || item.student_id || "").trim();
       return studentKeys.has(enrollmentStudentId) && item.status !== "dropped";
     })
-    .map((item) => {
+    .map(item => {
       const course = findCourse(item.courseOfferingId);
       return course ? buildCourseRuntimeView(course, item) : null;
     })
     .filter(Boolean);
 
-  return courses.length ? courses : fallbackState.courses.map((course) => buildCourseRuntimeView(course));
+  return courses.length ? courses : fallbackState.courses.map(course => buildCourseRuntimeView(course));
 }
 
 function resolveAttendanceForSession(session) {
   const teacher = session.role === "teacher" ? findTeacherBySession(session) : null;
   return fallbackState.attendance
-    .filter((item) => {
+    .filter(item => {
       if (session.role === "student") {
         return item.studentId === session.userId;
       }
       if (session.role === "teacher") {
         const enrollment = findEnrollmentForStudentCourse(item.studentId, item.courseOfferingId);
-        return canTeacherAccessCourse(session.userId, item.courseOfferingId) && enrollmentBelongsToTeacherFallback(enrollment, teacher, session.userId);
+        return (
+          canTeacherAccessCourse(session.userId, item.courseOfferingId) &&
+          enrollmentBelongsToTeacherFallback(enrollment, teacher, session.userId)
+        );
       }
       return true;
     })
-    .map((item) => ({
+    .map(item => ({
       ...normalizeAttendanceView(item),
-      courseName: buildCourseName(findCourse(item.courseOfferingId), item.courseOfferingId),
+      courseName: buildCourseName(findCourse(item.courseOfferingId), item.courseOfferingId)
     }))
     .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
 }
 
 function resolveClassSessionsForSession(session) {
-  const offeringIds = new Set(resolveCoursesForSession(session).map((item) => item.courseOfferingId));
+  const offeringIds = new Set(resolveCoursesForSession(session).map(item => item.courseOfferingId));
   return fallbackState.classSessions
-    .filter((item) => offeringIds.has(item.courseOfferingId || item.course_offering_id))
+    .filter(item => offeringIds.has(item.courseOfferingId || item.course_offering_id))
     .map(normalizeClassSessionView)
     .sort((a, b) => Number(a.sessionStartAt || 0) - Number(b.sessionStartAt || 0));
 }
@@ -2771,13 +3015,16 @@ function resolveCourseStudentsForSession(session) {
   if (!["teacher", "admin"].includes(session.role)) {
     return [];
   }
-  const offeringIds = new Set(resolveCoursesForSession(session).map((item) => item.courseOfferingId));
+  const offeringIds = new Set(resolveCoursesForSession(session).map(item => item.courseOfferingId));
   const teacher = session.role === "teacher" ? findTeacherBySession(session) : null;
   return fallbackState.enrollments
-    .filter((item) => offeringIds.has(item.courseOfferingId) && item.status !== "dropped")
-    .filter((item) => session.role !== "teacher" || enrollmentBelongsToTeacherFallback(item, teacher, session.userId))
-    .map((enrollment) => {
-      const student = fallbackState.students.find((item) => item.userId === enrollment.studentId || item._id === enrollment.studentId) || {};
+    .filter(item => offeringIds.has(item.courseOfferingId) && item.status !== "dropped")
+    .filter(item => session.role !== "teacher" || enrollmentBelongsToTeacherFallback(item, teacher, session.userId))
+    .map(enrollment => {
+      const student =
+        fallbackState.students.find(
+          item => item.userId === enrollment.studentId || item._id === enrollment.studentId
+        ) || {};
       return {
         studentId: student._id || enrollment.studentId,
         userId: student.userId || enrollment.studentId,
@@ -2787,25 +3034,28 @@ function resolveCourseStudentsForSession(session) {
         enrollmentStatus: enrollment.status || "enrolled",
         selectedTeacherId: enrollment.selectedTeacherId || enrollment.selected_teacher_id || "",
         selectedTeacherUserId: enrollment.selectedTeacherUserId || enrollment.selected_teacher_user_id || "",
-        selectedTeacherName: enrollment.selectedTeacherName || enrollment.selected_teacher_name || "",
+        selectedTeacherName: enrollment.selectedTeacherName || enrollment.selected_teacher_name || ""
       };
     });
 }
 
 function resolveLeavesForSession(session) {
   return fallbackState.leaves
-    .filter((item) => {
+    .filter(item => {
       if (session.role === "student") {
         return item.studentId === session.userId;
       }
       if (session.role === "teacher") {
         const teacher = findTeacherBySession(session);
         const enrollment = findEnrollmentForStudentCourse(item.studentId, item.courseOfferingId);
-        return canTeacherAccessCourse(session.userId, item.courseOfferingId) && enrollmentBelongsToTeacherFallback(enrollment, teacher, session.userId);
+        return (
+          canTeacherAccessCourse(session.userId, item.courseOfferingId) &&
+          enrollmentBelongsToTeacherFallback(enrollment, teacher, session.userId)
+        );
       }
       return true;
     })
-    .map((item) => normalizeLeaveReviewView(item))
+    .map(item => normalizeLeaveReviewView(item))
     .sort((a, b) => {
       if (a.status === "pending" && b.status !== "pending") return -1;
       if (a.status !== "pending" && b.status === "pending") return 1;
@@ -2823,39 +3073,51 @@ function normalizeLeaveReviewView(item) {
     ...item,
     studentId: item.studentId || item.student_id || "",
     student_id: item.student_id || item.studentId || "",
-    studentName: item.studentName || item.student_name || student && student.name || item.studentId || item.student_id || "",
-    student_name: item.student_name || item.studentName || student && student.name || item.studentId || item.student_id || "",
-    studentNo: item.studentNo || item.student_no || student && student.studentNo || "",
-    student_no: item.student_no || item.studentNo || student && student.studentNo || "",
+    studentName:
+      item.studentName || item.student_name || (student && student.name) || item.studentId || item.student_id || "",
+    student_name:
+      item.student_name || item.studentName || (student && student.name) || item.studentId || item.student_id || "",
+    studentNo: item.studentNo || item.student_no || (student && student.studentNo) || "",
+    student_no: item.student_no || item.studentNo || (student && student.studentNo) || "",
     courseOfferingId,
     course_offering_id: item.course_offering_id || item.courseOfferingId || "",
     courseName: item.courseName || item.course_name || buildCourseName(course, ""),
     course_name: item.course_name || item.courseName || buildCourseName(course, ""),
-    ...teacherView,
+    ...teacherView
   });
 }
 
 function buildLeaveTeacherView(course = {}, enrollment = {}) {
   const teacherIds = Array.isArray(course && course.teacherIds) ? course.teacherIds.slice() : [];
   const teacherOptions = teacherIds
-    .map((teacherId) => fallbackState.teachers.find((teacher) => teacher._id === teacherId || teacher.userId === teacherId))
+    .map(teacherId => fallbackState.teachers.find(teacher => teacher._id === teacherId || teacher.userId === teacherId))
     .filter(Boolean)
-    .map((teacher) => ({
+    .map(teacher => ({
       teacherId: teacher._id || "",
       teacherUserId: teacher.userId || "",
-      teacherName: teacher.name || teacher.teacherNo || teacher._id || "",
+      teacherName: teacher.name || teacher.teacherNo || teacher._id || ""
     }));
-  const selectedTeacherId = String(enrollment && (enrollment.selectedTeacherId || enrollment.selected_teacher_id) || "").trim();
-  const selectedTeacherUserId = String(enrollment && (enrollment.selectedTeacherUserId || enrollment.selected_teacher_user_id) || "").trim();
-  const selectedTeacher = teacherOptions.find((teacher) =>
-    (selectedTeacherId && teacher.teacherId === selectedTeacherId) ||
-    (selectedTeacherUserId && teacher.teacherUserId === selectedTeacherUserId)
-  ) || null;
-  const selectedTeacherName = String(enrollment && (enrollment.selectedTeacherName || enrollment.selected_teacher_name) || selectedTeacher && selectedTeacher.teacherName || "").trim();
+  const selectedTeacherId = String(
+    (enrollment && (enrollment.selectedTeacherId || enrollment.selected_teacher_id)) || ""
+  ).trim();
+  const selectedTeacherUserId = String(
+    (enrollment && (enrollment.selectedTeacherUserId || enrollment.selected_teacher_user_id)) || ""
+  ).trim();
+  const selectedTeacher =
+    teacherOptions.find(
+      teacher =>
+        (selectedTeacherId && teacher.teacherId === selectedTeacherId) ||
+        (selectedTeacherUserId && teacher.teacherUserId === selectedTeacherUserId)
+    ) || null;
+  const selectedTeacherName = String(
+    (enrollment && (enrollment.selectedTeacherName || enrollment.selected_teacher_name)) ||
+      (selectedTeacher && selectedTeacher.teacherName) ||
+      ""
+  ).trim();
   const teacherNames = selectedTeacherName
     ? [selectedTeacherName]
-    : teacherOptions.map((teacher) => teacher.teacherName).filter(Boolean);
-  const teacherUserIds = teacherOptions.map((teacher) => teacher.teacherUserId).filter(Boolean);
+    : teacherOptions.map(teacher => teacher.teacherName).filter(Boolean);
+  const teacherUserIds = teacherOptions.map(teacher => teacher.teacherUserId).filter(Boolean);
   return {
     teacherIds,
     teacher_ids: teacherIds,
@@ -2870,31 +3132,42 @@ function buildLeaveTeacherView(course = {}, enrollment = {}) {
     selectedTeacherUserId,
     selected_teacher_user_id: selectedTeacherUserId,
     selectedTeacherName,
-    selected_teacher_name: selectedTeacherName,
+    selected_teacher_name: selectedTeacherName
   };
 }
 
 function findStudentByAnyKey(value) {
   const keys = buildUserKeySet(value);
-  return fallbackState.students.find((item) =>
-    keys.has(String(item._id || "").trim()) ||
-    keys.has(String(item.userId || item.user_id || "").trim()) ||
-    keys.has(String(item.studentNo || item.student_no || "").trim()),
-  ) || null;
+  return (
+    fallbackState.students.find(
+      item =>
+        keys.has(String(item._id || "").trim()) ||
+        keys.has(String(item.userId || item.user_id || "").trim()) ||
+        keys.has(String(item.studentNo || item.student_no || "").trim())
+    ) || null
+  );
 }
 
 function resolveMaterialsForSession(session) {
   const now = Date.now();
   const teacher = session.role === "teacher" ? findTeacherBySession(session) : null;
   return fallbackState.materials
-    .filter((item) => {
+    .filter(item => {
       if (session.role === "student") {
         const course = findCourse(item.courseOfferingId);
         const enrollment = findEnrollmentForStudentCourse(session.userId, item.courseOfferingId);
-        return item.isPublicToStudents && canStudentAccessCourse(session.userId, item.courseOfferingId) && isCourseStarted(course, now) && materialMatchesEnrollmentTeacherFallback(item, enrollment, course);
+        return (
+          item.isPublicToStudents &&
+          canStudentAccessCourse(session.userId, item.courseOfferingId) &&
+          isCourseStarted(course, now) &&
+          materialMatchesEnrollmentTeacherFallback(item, enrollment, course)
+        );
       }
       if (session.role === "teacher") {
-        return canTeacherAccessCourse(session.userId, item.courseOfferingId) && materialBelongsToTeacherFallback(item, teacher, session.userId);
+        return (
+          canTeacherAccessCourse(session.userId, item.courseOfferingId) &&
+          materialBelongsToTeacherFallback(item, teacher, session.userId)
+        );
       }
       return true;
     })
@@ -2902,7 +3175,7 @@ function resolveMaterialsForSession(session) {
     .sort((a, b) =>
       session.role === "student"
         ? Number(a.timelineAt || a.updatedAt || 0) - Number(b.timelineAt || b.updatedAt || 0)
-        : Number(b.updatedAt || 0) - Number(a.updatedAt || 0),
+        : Number(b.updatedAt || 0) - Number(a.updatedAt || 0)
     );
 }
 
@@ -2910,7 +3183,7 @@ function resolveProfileChangeRequests(session) {
   const sessionUserKeys = buildUserKeySet(session.userId);
   return fallbackState.profileChangeRequests
     .map(normalizeProfileRequestView)
-    .filter((item) => {
+    .filter(item => {
       if (session.role === "admin") {
         return normalizeProfileRequestStatus(item.status) === "pending";
       }
@@ -2928,7 +3201,7 @@ function normalizeProfileRequestView(item = {}) {
     requesterUserId,
     requesterName: rawRequesterName,
     targetType,
-    targetId,
+    targetId
   });
   const status = normalizeProfileRequestStatus(item.status || "pending");
   return clone({
@@ -2952,7 +3225,7 @@ function normalizeProfileRequestView(item = {}) {
     createdAt: Number(item.createdAt || item.created_at || 0),
     created_at: Number(item.created_at || item.createdAt || 0),
     updatedAt: Number(item.updatedAt || item.updated_at || 0),
-    updated_at: Number(item.updated_at || item.updatedAt || 0),
+    updated_at: Number(item.updated_at || item.updatedAt || 0)
   });
 }
 
@@ -2960,38 +3233,44 @@ function resolveProfileRequesterNameFallback({ requesterUserId, requesterName, t
   const requesterKeys = buildUserKeySet(requesterUserId);
   const target = String(targetId || "").trim();
   const collection = targetType === "teacher" ? fallbackState.teachers : fallbackState.students;
-  const matched = (collection || []).find((item) =>
-    requesterKeys.has(String(item.userId || item.user_id || "").trim()) ||
-    requesterKeys.has(String(item._id || "").trim()) ||
-    (target && String(item._id || "").trim() === target)
+  const matched = (collection || []).find(
+    item =>
+      requesterKeys.has(String(item.userId || item.user_id || "").trim()) ||
+      requesterKeys.has(String(item._id || "").trim()) ||
+      (target && String(item._id || "").trim() === target)
   );
   const resolved = matched && (matched.name || matched.studentNo || matched.teacherNo || matched._id);
   return String(resolved || requesterName || requesterUserId || "").trim();
 }
 
 function normalizeProfileRequestStatus(status) {
-  return String(status || "").trim().toLowerCase();
+  return String(status || "")
+    .trim()
+    .toLowerCase();
 }
 
 function resolveStudentContact(student = {}) {
-  const contact = student && student.contact && typeof student.contact === "object" && !Array.isArray(student.contact)
-    ? student.contact
-    : {};
+  const contact =
+    student && student.contact && typeof student.contact === "object" && !Array.isArray(student.contact)
+      ? student.contact
+      : {};
   return {
     email: String(contact.email || student.contact_email || student.contactEmail || student.email || "").trim(),
     phone: String(contact.phone || student.contact_phone || student.contactPhone || student.phone || "").trim(),
-    address: String(contact.address || student.contact_address || student.contactAddress || student.address || "").trim(),
+    address: String(
+      contact.address || student.contact_address || student.contactAddress || student.address || ""
+    ).trim()
   };
 }
 
 function resolveStudentAdminClassName(student = {}, adminClass = null) {
   return String(
     (adminClass && (adminClass.name || adminClass.code || adminClass._id)) ||
-    student.admin_class_name ||
-    student.adminClassName ||
-    student.adminClass ||
-    student.admin_class ||
-    ""
+      student.admin_class_name ||
+      student.adminClassName ||
+      student.adminClass ||
+      student.admin_class ||
+      ""
   ).trim();
 }
 
@@ -3003,7 +3282,7 @@ function buildStudentProfile(session) {
       gpa: "0.0",
       creditsEarned: 0,
       totalCredits: 0,
-      enrollmentYear: "",
+      enrollmentYear: ""
     };
   }
   const progress = calculateStudentProgress(student);
@@ -3031,22 +3310,22 @@ function buildStudentProfile(session) {
     moduleCredits: progress.moduleCredits,
     gpaTrend: student.gpaTrend,
     percentileRank: student.percentileRank,
-    interestTags: student.interestTags,
+    interestTags: student.interestTags
   });
 }
 
 function buildTeacherProfile(session) {
-  const teacher = fallbackState.teachers.find((item) => item.userId === session.userId);
+  const teacher = fallbackState.teachers.find(item => item.userId === session.userId);
   if (!teacher) {
     return { department: "", title: "", studentCount: 0 };
   }
   const offeringIds = fallbackState.courses
-    .filter((item) => canTeacherAccessCourse(session.userId, item.courseOfferingId))
-    .map((item) => item.courseOfferingId);
+    .filter(item => canTeacherAccessCourse(session.userId, item.courseOfferingId))
+    .map(item => item.courseOfferingId);
   const studentCount = new Set(
     fallbackState.enrollments
-      .filter((item) => offeringIds.includes(item.courseOfferingId) && item.status !== "dropped")
-      .map((item) => item.studentId),
+      .filter(item => offeringIds.includes(item.courseOfferingId) && item.status !== "dropped")
+      .map(item => item.studentId)
   ).size;
   return clone({
     teacherId: teacher._id,
@@ -3058,13 +3337,13 @@ function buildTeacherProfile(session) {
     researchFields: teacher.researchFields,
     teachingExperience: teacher.teachingExperience,
     publicProfile: teacher.publicProfile,
-    studentCount,
+    studentCount
   });
 }
 
 function buildEvaluationSummary(session = {}) {
   const allowedOfferingIds = resolveCoursesForSession(session.role ? session : { role: "admin" }).map(
-    (course) => course.courseOfferingId,
+    course => course.courseOfferingId
   );
   const groups = new Map();
   for (const evaluation of fallbackState.evaluations) {
@@ -3081,14 +3360,14 @@ function buildEvaluationSummary(session = {}) {
     groups.get(key).push(evaluation);
   }
 
-  return Array.from(groups.values()).map((items) => {
+  return Array.from(groups.values()).map(items => {
     const first = items[0];
     const course = findCourse(first.courseOfferingId || first.courseId);
     const averageScores = {};
     for (const key of ["content", "teaching_method", "difficulty", "workload", "achievement", "overall"]) {
       averageScores[key] = round1(
         items.reduce((sum, item) => sum + Number((item.scores && item.scores[key]) || item.rating || 0), 0) /
-          Math.max(items.length, 1),
+          Math.max(items.length, 1)
       );
     }
     return {
@@ -3099,14 +3378,14 @@ function buildEvaluationSummary(session = {}) {
       average: averageScores.overall,
       averageRating: averageScores.overall.toFixed(1),
       averageScores,
-      feedback: items.map((item) => item.feedbackText || item.feedback).filter(Boolean),
+      feedback: items.map(item => item.feedbackText || item.feedback).filter(Boolean)
     };
   });
 }
 
 function buildTeacherCourseEvaluationReviews(session = {}) {
   const allowedOfferingIds = resolveCoursesForSession(session.role ? session : { role: "admin" }).map(
-    (course) => course.courseOfferingId,
+    course => course.courseOfferingId
   );
   const groups = new Map();
   for (const evaluation of fallbackState.evaluations) {
@@ -3116,9 +3395,10 @@ function buildTeacherCourseEvaluationReviews(session = {}) {
     if (evaluation.status === "hidden") {
       continue;
     }
-    const teacherIds = Array.isArray(evaluation.teacherIds) && evaluation.teacherIds.length
-      ? evaluation.teacherIds
-      : (findCourse(evaluation.courseOfferingId || evaluation.courseId) || {}).teacherIds || [""];
+    const teacherIds =
+      Array.isArray(evaluation.teacherIds) && evaluation.teacherIds.length
+        ? evaluation.teacherIds
+        : (findCourse(evaluation.courseOfferingId || evaluation.courseId) || {}).teacherIds || [""];
     for (const teacherId of teacherIds) {
       const key = [teacherId, evaluation.courseOfferingId || evaluation.courseId].join("::");
       if (!groups.has(key)) {
@@ -3128,15 +3408,16 @@ function buildTeacherCourseEvaluationReviews(session = {}) {
     }
   }
 
-  return Array.from(groups.values()).map((items) => {
+  return Array.from(groups.values()).map(items => {
     const first = items[0];
     const course = findCourse(first.courseOfferingId || first.courseId);
-    const teacher = fallbackState.teachers.find((item) => item._id === first.teacherId || item.userId === first.teacherId) || {};
+    const teacher =
+      fallbackState.teachers.find(item => item._id === first.teacherId || item.userId === first.teacherId) || {};
     const averageScores = {};
     for (const key of ["content", "teaching_method", "difficulty", "workload", "achievement", "overall"]) {
       averageScores[key] = round1(
         items.reduce((sum, item) => sum + Number((item.scores && item.scores[key]) || item.rating || 0), 0) /
-          Math.max(items.length, 1),
+          Math.max(items.length, 1)
       );
     }
     const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
@@ -3161,7 +3442,7 @@ function buildTeacherCourseEvaluationReviews(session = {}) {
       evaluations: items
         .slice()
         .sort((a, b) => Number(b.submittedAt || 0) - Number(a.submittedAt || 0))
-        .map((item) => ({
+        .map(item => ({
           course_id: item.courseId,
           course_offering_id: item.courseOfferingId,
           course_name: buildCourseName(course, item.courseOfferingId),
@@ -3173,33 +3454,35 @@ function buildTeacherCourseEvaluationReviews(session = {}) {
           submitted_at: Number(item.submittedAt || 0),
           rating: Number(item.rating || (item.scores && item.scores.overall) || 0),
           content: item.feedbackText || item.feedback || "",
-          create_time: Number(item.submittedAt || 0),
-        })),
+          create_time: Number(item.submittedAt || 0)
+        }))
     };
   });
 }
 
 function buildRecommendations(session) {
-  const student = fallbackState.students.find((item) => item.userId === session.userId);
+  const student = fallbackState.students.find(item => item.userId === session.userId);
   if (!student) {
     return [];
   }
   const enrolledOfferingIds = new Set(
     fallbackState.enrollments
-      .filter((item) => item.studentId === session.userId && item.status !== "dropped")
-      .map((item) => item.courseOfferingId),
+      .filter(item => item.studentId === session.userId && item.status !== "dropped")
+      .map(item => item.courseOfferingId)
   );
-  const completedCourseIds = new Set((student.grades || []).map((item) => item.courseId));
-  const evaluationMap = new Map(buildEvaluationSummary({ role: "admin" }).map((item) => [item.courseOfferingId, item]));
+  const completedCourseIds = new Set((student.grades || []).map(item => item.courseId));
+  const evaluationMap = new Map(buildEvaluationSummary({ role: "admin" }).map(item => [item.courseOfferingId, item]));
   return fallbackState.courses
-    .filter((course) => !enrolledOfferingIds.has(course.courseOfferingId))
-    .map((course) => {
+    .filter(course => !enrolledOfferingIds.has(course.courseOfferingId))
+    .map(course => {
       const evaluation = evaluationMap.get(course.courseOfferingId) || {};
       const interestScore = interestMatchScore(student.interestTags, course);
       const gradeScore = completedCourseIds.has("c_programming") ? 18 : 8;
       const evaluationScore = Number(evaluation.average || 0) * 12;
       const score = Math.round(gradeScore + interestScore + evaluationScore);
-      const pathName = course.name.toLowerCase().includes("data") ? "Data Analysis Direction" : "Software Engineering Direction";
+      const pathName = course.name.toLowerCase().includes("data")
+        ? "Data Analysis Direction"
+        : "Software Engineering Direction";
       return {
         _id: `rec_${session.userId}_${course.courseOfferingId}`,
         courseId: course.courseId,
@@ -3210,15 +3493,15 @@ function buildRecommendations(session) {
         reason: [
           `Matches interest tags: ${(student.interestTags || []).join(", ") || "general academic planning"}`,
           `Historical evaluation average: ${evaluation.averageRating || "not enough data"}`,
-          `Prerequisite signal: ${completedCourseIds.has("c_programming") ? "programming foundation completed" : "foundation course suggested first"}`,
+          `Prerequisite signal: ${completedCourseIds.has("c_programming") ? "programming foundation completed" : "foundation course suggested first"}`
         ].join("; "),
         evidence: {
           completedCourseIds: Array.from(completedCourseIds),
           interestTags: student.interestTags || [],
           evaluationAverage: evaluation.average || 0,
-          difficultyLevel: course.difficultyLevel,
+          difficultyLevel: course.difficultyLevel
         },
-        status: "new",
+        status: "new"
       };
     })
     .sort((a, b) => b.score - a.score)
@@ -3226,13 +3509,13 @@ function buildRecommendations(session) {
 }
 
 function buildAcademicAlertsForStudent(userId) {
-  const student = fallbackState.students.find((item) => item.userId === userId);
+  const student = fallbackState.students.find(item => item.userId === userId);
   const alerts = [];
   if (!student) {
     return alerts;
   }
   const absenceCount = fallbackState.attendance.filter(
-    (item) => item.studentId === userId && item.status === "absent",
+    item => item.studentId === userId && item.status === "absent"
   ).length;
   if (absenceCount >= 3) {
     alerts.push({
@@ -3241,7 +3524,7 @@ function buildAcademicAlertsForStudent(userId) {
       severity: "high",
       message: `${absenceCount} absence records detected. Counselor follow-up is recommended.`,
       status: "open",
-      triggerRule: { absentGreaterOrEqual: 3 },
+      triggerRule: { absentGreaterOrEqual: 3 }
     });
   }
   if (Number(student.gpa) < 2.5) {
@@ -3251,7 +3534,7 @@ function buildAcademicAlertsForStudent(userId) {
       severity: "medium",
       message: `Current GPA ${student.gpa} is below the 2.5 early-warning threshold.`,
       status: "open",
-      triggerRule: { gpaBelow: 2.5 },
+      triggerRule: { gpaBelow: 2.5 }
     });
   }
   return alerts;
@@ -3273,13 +3556,13 @@ function buildAtRiskStudents() {
   return Array.from(grouped.entries())
     .filter(([, value]) => value.absenceCount >= 3)
     .map(([studentId, value]) => {
-      const user = fallbackState.users.find((item) => item._id === studentId) || {};
+      const user = fallbackState.users.find(item => item._id === studentId) || {};
       return {
         studentId,
         studentName: user.displayName || studentId,
         absenceCount: value.absenceCount,
         courseCount: value.courseIds.size,
-        severity: value.absenceCount >= 5 ? "critical" : "high",
+        severity: value.absenceCount >= 5 ? "critical" : "high"
       };
     });
 }
@@ -3287,10 +3570,10 @@ function buildAtRiskStudents() {
 function syncAttendanceFallback(leave, now) {
   const classSessionId = `${leave.courseOfferingId}_${leave.leaveDate}`;
   const attendance = fallbackState.attendance.find(
-    (item) =>
+    item =>
       item.studentId === leave.studentId &&
       item.courseOfferingId === leave.courseOfferingId &&
-      item.date === leave.leaveDate,
+      item.date === leave.leaveDate
   );
   const previousStatus = attendance ? attendance.status : "absent";
   const previousSource = attendance ? attendance.source || "system_import" : "system_import";
@@ -3303,7 +3586,7 @@ function syncAttendanceFallback(leave, now) {
       leaveRequestId: leave._id,
       leave_request_id: leave._id,
       updatedAt: now,
-      updated_at: now,
+      updated_at: now
     });
   } else {
     fallbackState.attendance.unshift({
@@ -3325,7 +3608,7 @@ function syncAttendanceFallback(leave, now) {
       createdAt: now,
       created_at: now,
       updatedAt: now,
-      updated_at: now,
+      updated_at: now
     });
   }
 
@@ -3336,10 +3619,10 @@ function syncAttendanceFallback(leave, now) {
     previous_status: previousStatus,
     previous_source: previousSource,
     created_at: now,
-    updated_at: now,
+    updated_at: now
   };
   const existingLink = fallbackState.leaveRequestSessions.find(
-    (item) => item.leave_request_id === leave._id && item.class_session_id === classSessionId,
+    item => item.leave_request_id === leave._id && item.class_session_id === classSessionId
   );
   if (existingLink) {
     Object.assign(existingLink, link);
@@ -3350,10 +3633,10 @@ function syncAttendanceFallback(leave, now) {
 }
 
 function restoreAttendanceFallback(leave, now) {
-  const links = fallbackState.leaveRequestSessions.filter((item) => item.leave_request_id === leave._id);
+  const links = fallbackState.leaveRequestSessions.filter(item => item.leave_request_id === leave._id);
   const restored = [];
   for (const link of links) {
-    const attendance = fallbackState.attendance.find((item) => item._id === link.attendance_record_id);
+    const attendance = fallbackState.attendance.find(item => item._id === link.attendance_record_id);
     if (!attendance) {
       continue;
     }
@@ -3366,7 +3649,7 @@ function restoreAttendanceFallback(leave, now) {
     restored.push({
       attendanceId: attendance._id,
       previousStatus: attendance.status,
-      previousSource: attendance.source,
+      previousSource: attendance.source
     });
   }
   return { restored };
@@ -3379,14 +3662,14 @@ function normalizeProfileChanges(role, target, raw) {
           "contact.email": "Email",
           "contact.phone": "Phone",
           "contact.address": "Address",
-          "familyInfo.guardianName": "Guardian Name",
+          "familyInfo.guardianName": "Guardian Name"
         }
       : {
           office: "Office",
           teachingExperience: "Teaching Experience",
           researchFields: "Research Fields",
           "publicProfile.officeHours": "Office Hours",
-          "publicProfile.homepage": "Homepage",
+          "publicProfile.homepage": "Homepage"
         };
   const changes = {};
   for (const [field, label] of Object.entries(allowed)) {
@@ -3395,7 +3678,7 @@ function normalizeProfileChanges(role, target, raw) {
       continue;
     }
     const normalizedNewValue = Array.isArray(nextValue)
-      ? nextValue.map((item) => String(item).trim()).filter(Boolean)
+      ? nextValue.map(item => String(item).trim()).filter(Boolean)
       : String(nextValue).trim();
     const oldValue = getByPath(target, field);
     if (stableSerialize(oldValue || "") === stableSerialize(normalizedNewValue || "")) {
@@ -3405,7 +3688,7 @@ function normalizeProfileChanges(role, target, raw) {
       field,
       oldValue: oldValue === undefined ? "" : oldValue,
       newValue: normalizedNewValue,
-      label,
+      label
     };
   }
   return changes;
@@ -3413,7 +3696,7 @@ function normalizeProfileChanges(role, target, raw) {
 
 function applyProfileChanges(request) {
   const collection = request.targetType === "teacher" ? fallbackState.teachers : fallbackState.students;
-  const target = collection.find((item) => item._id === request.targetId);
+  const target = collection.find(item => item._id === request.targetId);
   if (!target) {
     return;
   }
@@ -3422,7 +3705,7 @@ function applyProfileChanges(request) {
     setByPath(target, field, change.newValue);
   }
   if (request.targetType === "student") {
-    const user = fallbackState.users.find((item) => item._id === target.userId);
+    const user = fallbackState.users.find(item => item._id === target.userId);
     if (user) {
       user.email = target.contact && target.contact.email ? target.contact.email : user.email;
       user.phone = target.contact && target.contact.phone ? target.contact.phone : user.phone;
@@ -3431,9 +3714,11 @@ function applyProfileChanges(request) {
 }
 
 function safeProfileChangeKey(field) {
-  return String(field || "")
-    .replace(/[^a-zA-Z0-9_]/g, "_")
-    .replace(/^_+|_+$/g, "") || "field";
+  return (
+    String(field || "")
+      .replace(/[^a-zA-Z0-9_]/g, "_")
+      .replace(/^_+|_+$/g, "") || "field"
+  );
 }
 
 function resolveProfileTarget(session) {
@@ -3454,11 +3739,11 @@ function resolveProfileTarget(session) {
       contact: {
         email: session.email || "",
         phone: session.phone || "",
-        address: "",
+        address: ""
       },
       familyInfo: {
         guardianName: "",
-        guardianPhone: "",
+        guardianPhone: ""
       },
       interestTags: [],
       totalCredits: 0,
@@ -3467,19 +3752,19 @@ function resolveProfileTarget(session) {
         general: { current: 0, total: 0 },
         majorRequired: { current: 0, total: 0 },
         majorElective: { current: 0, total: 0 },
-        practice: { current: 0, total: 0 },
+        practice: { current: 0, total: 0 }
       },
       grades: [],
       gpaTrend: [],
       percentileRank: 0,
-      gpa: "0.0",
+      gpa: "0.0"
     };
     fallbackState.students.unshift(seeded);
     return seeded;
   }
   if (session.role === "teacher") {
     const keys = buildUserKeySet(session.userId);
-    const matched = fallbackState.teachers.find((item) => {
+    const matched = fallbackState.teachers.find(item => {
       const candidate = String(item.userId || item.user_id || "").trim();
       return keys.has(candidate);
     });
@@ -3498,8 +3783,8 @@ function resolveProfileTarget(session) {
       teachingExperience: "",
       publicProfile: {
         officeHours: "",
-        homepage: "",
-      },
+        homepage: ""
+      }
     };
     fallbackState.teachers.unshift(seeded);
     return seeded;
@@ -3510,9 +3795,9 @@ function resolveProfileTarget(session) {
 function buildUserKeySet(...values) {
   const keys = new Set();
   values
-    .map((value) => String(value || "").trim())
+    .map(value => String(value || "").trim())
     .filter(Boolean)
-    .forEach((value) => {
+    .forEach(value => {
       keys.add(value);
       if (value.startsWith("user_")) {
         keys.add(`u_${value.slice(5)}`);
@@ -3527,7 +3812,7 @@ function buildUserKeySet(...values) {
 function findStudentBySession(session) {
   const keys = buildUserKeySet(session.userId);
   return (
-    fallbackState.students.find((item) => {
+    fallbackState.students.find(item => {
       const userId = String(item.userId || item.user_id || "").trim();
       const studentId = String(item._id || "").trim();
       return keys.has(userId) || keys.has(studentId);
@@ -3538,7 +3823,7 @@ function findStudentBySession(session) {
 function buildMaterialView(item) {
   const course = findCourse(item.courseOfferingId);
   const firstSession = fallbackState.classSessions
-    .filter((session) => (session.courseOfferingId || session.course_offering_id) === item.courseOfferingId)
+    .filter(session => (session.courseOfferingId || session.course_offering_id) === item.courseOfferingId)
     .sort((a, b) => getSessionStartAt(a) - getSessionStartAt(b))[0];
   return {
     _id: item._id,
@@ -3555,9 +3840,11 @@ function buildMaterialView(item) {
     fileType: item.fileType,
     isPublicToStudents: item.isPublicToStudents === true,
     knowledgeDocumentId: item.knowledgeDocumentId || "",
-    timelineAt: Number(item.availableAt || item.available_at || 0) || (firstSession ? getSessionStartAt(firstSession) : Number(item.updatedAt || 0)),
+    timelineAt:
+      Number(item.availableAt || item.available_at || 0) ||
+      (firstSession ? getSessionStartAt(firstSession) : Number(item.updatedAt || 0)),
     createdAt: Number(item.createdAt || 0),
-    updatedAt: Number(item.updatedAt || 0),
+    updatedAt: Number(item.updatedAt || 0)
   };
 }
 
@@ -3571,7 +3858,11 @@ function fileNameFromMaterialPath(value) {
 }
 
 function inferMaterialFileType(value) {
-  const ext = String(value || "").split("?")[0].split(".").pop().toLowerCase();
+  const ext = String(value || "")
+    .split("?")[0]
+    .split(".")
+    .pop()
+    .toLowerCase();
   if (["pdf", "doc", "docx", "xls", "xlsx", "txt"].includes(ext)) return "document";
   if (["ppt", "pptx"].includes(ext)) return "slide";
   if (["mp4", "mov", "avi", "mkv"].includes(ext)) return "video";
@@ -3590,10 +3881,10 @@ function syncEvaluationKnowledgeFallback(course, evaluation) {
       "feedback",
       course.code,
       course.name,
-      ...(course.keywords || []),
+      ...(course.keywords || [])
     ].filter(Boolean),
     answer: `Anonymous course feedback for ${buildCourseName(course, course.courseOfferingId)}: average ${evaluation.rating}/5. ${evaluation.feedback}`,
-    category: "course",
+    category: "course"
   });
 }
 
@@ -3604,9 +3895,9 @@ function buildQueryKeywords(value) {
         .toLowerCase()
         .replace(/[^\u4e00-\u9fa5a-z0-9\s]/g, " ")
         .split(/\s+/)
-        .map((item) => item.trim())
-        .filter(Boolean),
-    ),
+        .map(item => item.trim())
+        .filter(Boolean)
+    )
   );
 }
 
@@ -3627,48 +3918,54 @@ function canStudentAccessCourse(userId, courseOfferingId) {
 }
 
 function canTeacherAccessCourse(userId, courseOfferingId) {
-  const teacher = fallbackState.teachers.find((item) => item.userId === userId);
+  const teacher = fallbackState.teachers.find(item => item.userId === userId);
   const course = findCourse(courseOfferingId);
   return Boolean(teacher && course && (course.teacherIds || []).includes(teacher._id));
 }
 
 function findTeacherBySession(session) {
   const keys = buildUserKeySet(session.userId);
-  return fallbackState.teachers.find((item) => keys.has(String(item.userId || item.user_id || "").trim())) || null;
+  return fallbackState.teachers.find(item => keys.has(String(item.userId || item.user_id || "").trim())) || null;
 }
 
 function findEnrollmentForStudentCourse(studentId, courseOfferingId) {
   const keys = buildUserKeySet(studentId);
-  return fallbackState.enrollments.find((item) =>
-    keys.has(String(item.studentId || item.student_id || "").trim()) &&
-    item.courseOfferingId === courseOfferingId &&
-    item.status !== "dropped",
-  ) || null;
+  return (
+    fallbackState.enrollments.find(
+      item =>
+        keys.has(String(item.studentId || item.student_id || "").trim()) &&
+        item.courseOfferingId === courseOfferingId &&
+        item.status !== "dropped"
+    ) || null
+  );
 }
 
 function enrollmentHasSelectedTeacherFallback(enrollment) {
   return Boolean(
-    String(enrollment && (enrollment.selectedTeacherId || enrollment.selected_teacher_id) || "").trim() ||
-    String(enrollment && (enrollment.selectedTeacherUserId || enrollment.selected_teacher_user_id) || "").trim()
+    String((enrollment && (enrollment.selectedTeacherId || enrollment.selected_teacher_id)) || "").trim() ||
+    String((enrollment && (enrollment.selectedTeacherUserId || enrollment.selected_teacher_user_id)) || "").trim()
   );
 }
 
 function countSelectedEnrollmentsForCourseFallback(courseOfferingId) {
-  return fallbackState.enrollments.filter((item) =>
-    item.courseOfferingId === courseOfferingId &&
-    item.status !== "dropped" &&
-    (item.status === "enrolled" || enrollmentHasSelectedTeacherFallback(item)),
+  return fallbackState.enrollments.filter(
+    item =>
+      item.courseOfferingId === courseOfferingId &&
+      item.status !== "dropped" &&
+      (item.status === "enrolled" || enrollmentHasSelectedTeacherFallback(item))
   ).length;
 }
 
 function enrollmentBelongsToTeacherFallback(enrollment, teacher, sessionUserId) {
   if (!enrollment) return true;
   const selectedTeacherId = String(enrollment.selectedTeacherId || enrollment.selected_teacher_id || "").trim();
-  const selectedTeacherUserId = String(enrollment.selectedTeacherUserId || enrollment.selected_teacher_user_id || "").trim();
+  const selectedTeacherUserId = String(
+    enrollment.selectedTeacherUserId || enrollment.selected_teacher_user_id || ""
+  ).trim();
   if (!selectedTeacherId && !selectedTeacherUserId) return true;
   return Boolean(
     (teacher && selectedTeacherId && selectedTeacherId === teacher._id) ||
-    (selectedTeacherUserId && selectedTeacherUserId === sessionUserId),
+    (selectedTeacherUserId && selectedTeacherUserId === sessionUserId)
   );
 }
 
@@ -3676,53 +3973,62 @@ function materialBelongsToTeacherFallback(material, teacher, sessionUserId) {
   const teacherId = String(material.teacherId || material.teacher_id || "").trim();
   const uploaderUserId = String(material.uploaderUserId || material.uploader_user_id || "").trim();
   return Boolean(
-    (teacher && teacherId && teacherId === teacher._id) ||
-    (uploaderUserId && uploaderUserId === sessionUserId),
+    (teacher && teacherId && teacherId === teacher._id) || (uploaderUserId && uploaderUserId === sessionUserId)
   );
 }
 
 function materialMatchesEnrollmentTeacherFallback(material, enrollment, course) {
   const teacherIds = course && Array.isArray(course.teacherIds) ? course.teacherIds : [];
-  const selectedTeacherId = String(enrollment && (enrollment.selectedTeacherId || enrollment.selected_teacher_id) || "").trim() || (teacherIds.length === 1 ? teacherIds[0] : "");
-  const selectedTeacherUserId = String(enrollment && (enrollment.selectedTeacherUserId || enrollment.selected_teacher_user_id) || "").trim();
+  const selectedTeacherId =
+    String((enrollment && (enrollment.selectedTeacherId || enrollment.selected_teacher_id)) || "").trim() ||
+    (teacherIds.length === 1 ? teacherIds[0] : "");
+  const selectedTeacherUserId = String(
+    (enrollment && (enrollment.selectedTeacherUserId || enrollment.selected_teacher_user_id)) || ""
+  ).trim();
   if (!selectedTeacherId && !selectedTeacherUserId) return false;
   const materialTeacherId = String(material.teacherId || material.teacher_id || "").trim();
   const uploaderUserId = String(material.uploaderUserId || material.uploader_user_id || "").trim();
   return Boolean(
     (selectedTeacherId && materialTeacherId && selectedTeacherId === materialTeacherId) ||
     (selectedTeacherUserId && uploaderUserId && selectedTeacherUserId === uploaderUserId) ||
-    (!materialTeacherId && !selectedTeacherUserId && teacherIds.length === 1),
+    (!materialTeacherId && !selectedTeacherUserId && teacherIds.length === 1)
   );
 }
 
 function buildCourseRuntimeView(course, enrollment = null) {
   const view = clone(course);
   const teacherOptions = (course.teacherIds || [])
-    .map((teacherId) => fallbackState.teachers.find((item) => item._id === teacherId))
+    .map(teacherId => fallbackState.teachers.find(item => item._id === teacherId))
     .filter(Boolean)
-    .map((teacher) => ({
+    .map(teacher => ({
       teacherId: teacher._id,
       userId: teacher.userId || "",
       name: teacher.name || teacher.teacherNo || teacher._id,
-      teacherNo: teacher.teacherNo || "",
+      teacherNo: teacher.teacherNo || ""
     }));
   view.teacherOptions = teacherOptions;
-  view.teacherNames = teacherOptions.map((item) => item.name);
-  view.selectedTeacherId = enrollment && (enrollment.selectedTeacherId || enrollment.selected_teacher_id) || "";
-  view.selectedTeacherUserId = enrollment && (enrollment.selectedTeacherUserId || enrollment.selected_teacher_user_id) || "";
-  view.selectedTeacherName = enrollment && (enrollment.selectedTeacherName || enrollment.selected_teacher_name) || "";
-  view.teacherSelectedAt = Number(enrollment && (enrollment.teacherSelectedAt || enrollment.teacher_selected_at) || 0);
+  view.teacherNames = teacherOptions.map(item => item.name);
+  view.selectedTeacherId = (enrollment && (enrollment.selectedTeacherId || enrollment.selected_teacher_id)) || "";
+  view.selectedTeacherUserId =
+    (enrollment && (enrollment.selectedTeacherUserId || enrollment.selected_teacher_user_id)) || "";
+  view.selectedTeacherName = (enrollment && (enrollment.selectedTeacherName || enrollment.selected_teacher_name)) || "";
+  view.teacherSelectedAt = Number(
+    (enrollment && (enrollment.teacherSelectedAt || enrollment.teacher_selected_at)) || 0
+  );
   view.teacherSelectionRequired = teacherOptions.length > 1;
   view.teacherSelected = teacherOptions.length <= 1 || Boolean(view.selectedTeacherId);
   view.completed = isCourseCompleted(course);
-  view.enrollmentStatus = view.completed ? "completed" : enrollment && enrollment.status || "";
+  view.enrollmentStatus = view.completed ? "completed" : (enrollment && enrollment.status) || "";
   return view;
 }
 
 function findCourse(courseOfferingId) {
   return (
     fallbackState.courses.find(
-      (item) => item.courseOfferingId === courseOfferingId || item._id === courseOfferingId || item.courseId === courseOfferingId,
+      item =>
+        item.courseOfferingId === courseOfferingId ||
+        item._id === courseOfferingId ||
+        item.courseId === courseOfferingId
     ) || null
   );
 }
@@ -3786,7 +4092,7 @@ function normalizeLeaveView(leave) {
     createdAt: leave.createdAt || leave.created_at,
     created_at: leave.created_at || leave.createdAt,
     updatedAt: leave.updatedAt || leave.updated_at,
-    updated_at: leave.updated_at || leave.updatedAt,
+    updated_at: leave.updated_at || leave.updatedAt
   };
 }
 
@@ -3808,7 +4114,7 @@ function normalizeAttendanceView(attendance) {
     createdAt: attendance.createdAt || attendance.created_at,
     created_at: attendance.created_at || attendance.createdAt,
     updatedAt: attendance.updatedAt || attendance.updated_at,
-    updated_at: attendance.updated_at || attendance.updatedAt,
+    updated_at: attendance.updated_at || attendance.updatedAt
   };
 }
 
@@ -3818,21 +4124,26 @@ function normalizeClassSessionView(session) {
   const sessionDate = session.sessionDate || session.session_date || "";
   const startTime = session.startTime || session.start_time || "";
   const endTime = session.endTime || session.end_time || "";
-  const classroomId = session.classroomId || session.classroom_id || course && course.classroomId || "";
-  const classroom = fallbackState.classrooms.find((item) => item._id === classroomId) || {};
+  const classroomId = session.classroomId || session.classroom_id || (course && course.classroomId) || "";
+  const classroom = fallbackState.classrooms.find(item => item._id === classroomId) || {};
   return {
     ...session,
     courseOfferingId,
     course_offering_id: courseOfferingId,
     courseName: buildCourseName(course, courseOfferingId),
-    majorId: session.majorId || session.major_id || course && course.majorId || "",
-    major_id: session.major_id || session.majorId || course && course.majorId || "",
-    majorName: course && course.majorName || "",
-    gradeYear: Number(session.gradeYear || session.grade_year || course && course.gradeYear || 0),
-    grade_year: Number(session.grade_year || session.gradeYear || course && course.gradeYear || 0),
+    majorId: session.majorId || session.major_id || (course && course.majorId) || "",
+    major_id: session.major_id || session.majorId || (course && course.majorId) || "",
+    majorName: (course && course.majorName) || "",
+    gradeYear: Number(session.gradeYear || session.grade_year || (course && course.gradeYear) || 0),
+    grade_year: Number(session.grade_year || session.gradeYear || (course && course.gradeYear) || 0),
     classroomId,
     classroom_id: classroomId,
-    classroomName: session.classroomName || classroom.name || [classroom.building, classroom.roomNo].filter(Boolean).join("-") || course && course.classroomName || "",
+    classroomName:
+      session.classroomName ||
+      classroom.name ||
+      [classroom.building, classroom.roomNo].filter(Boolean).join("-") ||
+      (course && course.classroomName) ||
+      "",
     sessionDate,
     session_date: sessionDate,
     startTime,
@@ -3844,16 +4155,18 @@ function normalizeClassSessionView(session) {
     sessionStartAt: getSessionStartAt(session),
     session_start_at: getSessionStartAt(session),
     sessionEndAt: getSessionEndAt(session),
-    session_end_at: getSessionEndAt(session),
+    session_end_at: getSessionEndAt(session)
   };
 }
 
 function findClassSessionForDate(courseOfferingId, date) {
-  return fallbackState.classSessions.find(
-    (item) =>
-      (item.courseOfferingId === courseOfferingId || item.course_offering_id === courseOfferingId) &&
-      (item.sessionDate === date || item.session_date === date),
-  ) || null;
+  return (
+    fallbackState.classSessions.find(
+      item =>
+        (item.courseOfferingId === courseOfferingId || item.course_offering_id === courseOfferingId) &&
+        (item.sessionDate === date || item.session_date === date)
+    ) || null
+  );
 }
 
 function getSessionStartAt(session) {
@@ -3880,35 +4193,37 @@ function isCourseStarted(course, now = Date.now()) {
 
 function isCourseCompleted(course, now = Date.now()) {
   if (!course) return false;
-  const sessions = fallbackState.classSessions.filter((item) => (item.courseOfferingId || item.course_offering_id) === course.courseOfferingId);
+  const sessions = fallbackState.classSessions.filter(
+    item => (item.courseOfferingId || item.course_offering_id) === course.courseOfferingId
+  );
   if (sessions.length) {
-    return sessions.every((item) => getSessionEndAt(item) && getSessionEndAt(item) < now);
+    return sessions.every(item => getSessionEndAt(item) && getSessionEndAt(item) < now);
   }
   const endAt = Date.parse(`${course.endDate || ""}T${course.classEndTime || "23:59"}:00`);
   return Boolean(endAt && endAt < now);
 }
 
 function calculateStudentProgress(student) {
-  const planCourses = fallbackState.courses.filter((course) =>
-    (student.trainingPlanId && course.trainingPlanId === student.trainingPlanId) ||
-    (student.enrollmentYear && Number(course.gradeYear || 0) === Number(student.enrollmentYear)),
+  const planCourses = fallbackState.courses.filter(
+    course =>
+      (student.trainingPlanId && course.trainingPlanId === student.trainingPlanId) ||
+      (student.enrollmentYear && Number(course.gradeYear || 0) === Number(student.enrollmentYear))
   );
-  const enrollments = fallbackState.enrollments.filter((item) =>
-    item.status !== "dropped" &&
-    (item.studentId === student.userId || item.studentId === student._id),
+  const enrollments = fallbackState.enrollments.filter(
+    item => item.status !== "dropped" && (item.studentId === student.userId || item.studentId === student._id)
   );
   const completedCourseIds = new Set();
   const completedCourses = enrollments
-    .map((item) => findCourse(item.courseOfferingId))
-    .filter((course) => course && isCourseCompleted(course))
-    .filter((course) => {
+    .map(item => findCourse(item.courseOfferingId))
+    .filter(course => course && isCourseCompleted(course))
+    .filter(course => {
       const key = course.courseId || course._id;
       if (completedCourseIds.has(key)) return false;
       completedCourseIds.add(key);
       return true;
     });
   const planCourseIds = new Set();
-  const uniquePlanCourses = planCourses.filter((course) => {
+  const uniquePlanCourses = planCourses.filter(course => {
     const key = course.courseId || course._id;
     if (planCourseIds.has(key)) return false;
     planCourseIds.add(key);
@@ -3935,25 +4250,27 @@ function calculateStudentProgress(student) {
     creditsEarned: completedCourses.reduce((sum, course) => sum + Number(course.credits || 0), 0),
     totalCredits: uniquePlanCourses.reduce((sum, course) => sum + Number(course.credits || 0), 0),
     completedCourseCount: completedCourses.length,
-    moduleCredits,
+    moduleCredits
   };
 }
 
 function calculateAttendanceStatsForStudent(student, now = Date.now()) {
-  const enrollments = fallbackState.enrollments.filter((item) =>
-    item.status !== "dropped" &&
-    (item.studentId === student.userId || item.studentId === student._id),
+  const enrollments = fallbackState.enrollments.filter(
+    item => item.status !== "dropped" && (item.studentId === student.userId || item.studentId === student._id)
   );
-  const offeringIds = new Set(enrollments.map((item) => item.courseOfferingId));
-  const pastSessions = fallbackState.classSessions.filter((item) => offeringIds.has(item.courseOfferingId || item.course_offering_id) && getSessionEndAt(item) < now);
+  const offeringIds = new Set(enrollments.map(item => item.courseOfferingId));
+  const pastSessions = fallbackState.classSessions.filter(
+    item => offeringIds.has(item.courseOfferingId || item.course_offering_id) && getSessionEndAt(item) < now
+  );
   let attended = 0;
   let leave = 0;
   for (const classSession of pastSessions) {
     const date = classSession.sessionDate || classSession.session_date;
-    const record = fallbackState.attendance.find((item) =>
-      (item.studentId === student.userId || item.studentId === student._id) &&
-      item.courseOfferingId === (classSession.courseOfferingId || classSession.course_offering_id) &&
-      item.date === date,
+    const record = fallbackState.attendance.find(
+      item =>
+        (item.studentId === student.userId || item.studentId === student._id) &&
+        item.courseOfferingId === (classSession.courseOfferingId || classSession.course_offering_id) &&
+        item.date === date
     );
     if (record && record.status === "on_leave") {
       leave += 1;
@@ -3967,7 +4284,7 @@ function calculateAttendanceStatsForStudent(student, now = Date.now()) {
     leaveSessions: leave,
     pastSessions: pastSessions.length,
     countedSessions: denominator,
-    attendanceRate: denominator ? Math.round((attended / denominator) * 100) : 0,
+    attendanceRate: denominator ? Math.round((attended / denominator) * 100) : 0
   };
 }
 
@@ -3988,7 +4305,7 @@ function normalizeResult(result) {
       data: result.data,
       message: result.message,
       summary: result.summary,
-      anonymousEvaluations: result.anonymousEvaluations,
+      anonymousEvaluations: result.anonymousEvaluations
     };
   }
 
@@ -3996,7 +4313,7 @@ function normalizeResult(result) {
     return {
       ok: false,
       data: result.data,
-      message: result.message || "Request failed.",
+      message: result.message || "Request failed."
     };
   }
 
@@ -4053,7 +4370,7 @@ function stableSerialize(value) {
   }
   return `{${Object.keys(value)
     .sort()
-    .map((key) => `${JSON.stringify(key)}:${stableSerialize(value[key])}`)
+    .map(key => `${JSON.stringify(key)}:${stableSerialize(value[key])}`)
     .join(",")}}`;
 }
 
@@ -4069,7 +4386,7 @@ function recordAudit(action, actorUserId, targetCollection, targetId, before, af
     target_id: targetId,
     before: before ? clone(before) : null,
     after: after ? clone(after) : null,
-    created_at: Date.now(),
+    created_at: Date.now()
   });
 }
 
@@ -4090,15 +4407,14 @@ function round1(value) {
 
 function distanceMeters(lat1, lon1, lat2, lon2) {
   const values = [lat1, lon1, lat2, lon2].map(Number);
-  if (values.some((value) => !Number.isFinite(value))) {
+  if (values.some(value => !Number.isFinite(value))) {
     return Number.POSITIVE_INFINITY;
   }
-  const [aLat, aLon, bLat, bLon] = values.map((value) => (value * Math.PI) / 180);
+  const [aLat, aLon, bLat, bLon] = values.map(value => (value * Math.PI) / 180);
   const dLat = bLat - aLat;
   const dLon = bLon - aLon;
   const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(aLat) * Math.cos(bLat) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(aLat) * Math.cos(bLat) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
   return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
@@ -4126,13 +4442,16 @@ function extractFieldValue(raw, field) {
 function getByPath(object, path) {
   return String(path)
     .split(".")
-    .reduce((current, key) => (current && Object.prototype.hasOwnProperty.call(current, key) ? current[key] : undefined), object);
+    .reduce(
+      (current, key) => (current && Object.prototype.hasOwnProperty.call(current, key) ? current[key] : undefined),
+      object
+    );
 }
 
 function setByPath(object, path, value) {
   const keys = String(path).split(".");
   let current = object;
-  keys.slice(0, -1).forEach((key) => {
+  keys.slice(0, -1).forEach(key => {
     if (!current[key] || typeof current[key] !== "object") {
       current[key] = {};
     }

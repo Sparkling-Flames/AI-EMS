@@ -14,29 +14,38 @@ exports.main = async (event = {}) => {
     return { ok: false, message: "Username, display name, role, and password are required for new accounts." };
   }
 
-  const [roles, users, students, teachers, majors, departments, adminClasses, offerings, enrollments] = await Promise.all([
-    readCollection("roles"),
-    readCollection("users"),
-    readCollection("students"),
-    readCollection("teachers"),
-    readCollection("majors"),
-    readCollection("departments"),
-    readCollection("admin_classes"),
-    readCollection("course_offerings"),
-    readCollection("enrollments"),
-  ]);
+  const [roles, users, students, teachers, majors, departments, adminClasses, offerings, enrollments] =
+    await Promise.all([
+      readCollection("roles"),
+      readCollection("users"),
+      readCollection("students"),
+      readCollection("teachers"),
+      readCollection("majors"),
+      readCollection("departments"),
+      readCollection("admin_classes"),
+      readCollection("course_offerings"),
+      readCollection("enrollments")
+    ]);
 
   const roleMap = mapRolesByCode(roles);
-  const existing = payload.userId ? users.find((item) => item._id === payload.userId) || null : null;
+  const existing = payload.userId ? users.find(item => item._id === payload.userId) || null : null;
   const currentRoleCodes = existing ? resolveRoleCodes(existing.role_ids || [], roles) : [];
   const currentPrimaryRole = resolvePrimaryRole(currentRoleCodes);
   const effectiveRoleCode = existing ? currentPrimaryRole || payload.roleCode : payload.roleCode;
-  const roleIds = existing ? (Array.isArray(existing.role_ids) ? existing.role_ids.slice() : []) : resolveRoleIds(buildRoleCodeList(payload.roleCode), roleMap);
+  const roleIds = existing
+    ? Array.isArray(existing.role_ids)
+      ? existing.role_ids.slice()
+      : []
+    : resolveRoleIds(buildRoleCodeList(payload.roleCode), roleMap);
 
-  if (existing && payload.username && users.some((item) => item.username === payload.username && item._id !== existing._id)) {
+  if (
+    existing &&
+    payload.username &&
+    users.some(item => item.username === payload.username && item._id !== existing._id)
+  ) {
     return { ok: false, message: "Username already exists." };
   }
-  if (!existing && users.some((item) => item.username === payload.username)) {
+  if (!existing && users.some(item => item.username === payload.username)) {
     return { ok: false, message: "Username already exists." };
   }
 
@@ -88,10 +97,10 @@ exports.main = async (event = {}) => {
       email: userDoc.email,
       phone: userDoc.phone,
       payload: payload.studentProfile || {},
-      existing: students.find((item) => item.user_id === savedUserId) || null,
+      existing: students.find(item => item.user_id === savedUserId) || null,
       majors,
       adminClasses,
-      now,
+      now
     });
     if (!studentDoc) {
       return { ok: false, message: "Student profile information is incomplete." };
@@ -103,9 +112,9 @@ exports.main = async (event = {}) => {
       userId: savedUserId,
       displayName: userDoc.display_name,
       payload: payload.teacherProfile || {},
-      existing: teachers.find((item) => item.user_id === savedUserId) || null,
+      existing: teachers.find(item => item.user_id === savedUserId) || null,
       departments,
-      now,
+      now
     });
     if (!teacherDoc) {
       return { ok: false, message: "Teacher profile information is incomplete." };
@@ -130,7 +139,12 @@ exports.main = async (event = {}) => {
       savedStudentId = addResult.id;
       studentDoc._id = savedStudentId;
     }
-    await enrollStudentInCohortOfferings({ student: { ...studentDoc, _id: savedStudentId }, offerings, enrollments, now });
+    await enrollStudentInCohortOfferings({
+      student: { ...studentDoc, _id: savedStudentId },
+      offerings,
+      enrollments,
+      now
+    });
   }
 
   if (teacherDoc) {
@@ -156,7 +170,7 @@ exports.main = async (event = {}) => {
     roles,
     majors,
     departments,
-    adminClasses,
+    adminClasses
   });
 
   await writeAudit(existing ? "admin.user.update" : "admin.user.create", session, savedUserId, before, account);
@@ -164,8 +178,8 @@ exports.main = async (event = {}) => {
   return {
     ok: true,
     data: {
-      account,
-    },
+      account
+    }
   };
 };
 
@@ -181,12 +195,10 @@ async function readCollection(name, limit = 1000) {
 
 async function enrollStudentInCohortOfferings({ student, offerings, enrollments, now }) {
   if (!student || !student._id) return;
-  const matchedOfferings = (offerings || []).filter((offering) => studentMatchesOffering(student, offering));
+  const matchedOfferings = (offerings || []).filter(offering => studentMatchesOffering(student, offering));
   for (const offering of matchedOfferings) {
-    const exists = (enrollments || []).some((item) =>
-      item.student_id === student._id &&
-      item.course_offering_id === offering._id &&
-      item.status !== "dropped",
+    const exists = (enrollments || []).some(
+      item => item.student_id === student._id && item.course_offering_id === offering._id && item.status !== "dropped"
     );
     if (exists) continue;
     await db.collection("enrollments").add({
@@ -195,7 +207,7 @@ async function enrollStudentInCohortOfferings({ student, offerings, enrollments,
       status: "selected",
       selected_at: now,
       created_at: now,
-      updated_at: now,
+      updated_at: now
     });
   }
 }
@@ -207,10 +219,7 @@ function studentMatchesOffering(student, offering) {
   if (offering.major_id) {
     return Boolean(sameYear && sameMajor);
   }
-  return Boolean(
-    (student.training_plan_id && offering.training_plan_id === student.training_plan_id) ||
-    sameYear,
-  );
+  return Boolean((student.training_plan_id && offering.training_plan_id === student.training_plan_id) || sameYear);
 }
 
 function normalizePayload(event) {
@@ -225,19 +234,35 @@ function normalizePayload(event) {
     password: String(event.password || event.newPassword || "").trim(),
     forceChangePassword: event.forceChangePassword === true || event.mustChangePassword === true,
     studentProfile: event.studentProfile || {},
-    teacherProfile: event.teacherProfile || {},
+    teacherProfile: event.teacherProfile || {}
   };
 }
 
 function buildStudentDoc(input) {
   const existing = input.existing;
   const payload = input.payload || {};
-  const majorId = String(payload.majorId || payload.major_id || existing && existing.major_id || "").trim();
-  const adminClassId = String(payload.adminClassId || payload.admin_class_id || existing && existing.admin_class_id || "").trim();
-  const major = majorId ? lookupLabel(input.majors, majorId) : String(payload.majorName || payload.major || existing && existing.major_name || existing && existing.major || "").trim();
-  const adminClass = adminClassId ? lookupLabel(input.adminClasses, adminClassId) : String(payload.adminClassName || payload.adminClass || existing && existing.admin_class_name || existing && existing.admin_class || "").trim();
-  const enrollmentYear = Number(payload.enrollmentYear || payload.enrollment_year || existing && existing.enrollment_year || 0);
-  const studentNo = String(payload.studentNo || payload.student_no || existing && existing.student_no || "").trim();
+  const majorId = String(payload.majorId || payload.major_id || (existing && existing.major_id) || "").trim();
+  const adminClassId = String(
+    payload.adminClassId || payload.admin_class_id || (existing && existing.admin_class_id) || ""
+  ).trim();
+  const major = majorId
+    ? lookupLabel(input.majors, majorId)
+    : String(
+        payload.majorName || payload.major || (existing && existing.major_name) || (existing && existing.major) || ""
+      ).trim();
+  const adminClass = adminClassId
+    ? lookupLabel(input.adminClasses, adminClassId)
+    : String(
+        payload.adminClassName ||
+          payload.adminClass ||
+          (existing && existing.admin_class_name) ||
+          (existing && existing.admin_class) ||
+          ""
+      ).trim();
+  const enrollmentYear = Number(
+    payload.enrollmentYear || payload.enrollment_year || (existing && existing.enrollment_year) || 0
+  );
+  const studentNo = String(payload.studentNo || payload.student_no || (existing && existing.student_no) || "").trim();
 
   if (!studentNo || !majorId || !Number.isFinite(enrollmentYear) || !enrollmentYear) {
     return null;
@@ -254,26 +279,38 @@ function buildStudentDoc(input) {
     admin_class_id: adminClassId,
     admin_class_name: adminClass,
     enrollment_year: enrollmentYear,
-    training_plan_id: String(payload.trainingPlanId || payload.training_plan_id || existing && existing.training_plan_id || "").trim(),
-    photo_url: String(payload.photoUrl || payload.photo_url || existing && existing.photo_url || "").trim(),
+    training_plan_id: String(
+      payload.trainingPlanId || payload.training_plan_id || (existing && existing.training_plan_id) || ""
+    ).trim(),
+    photo_url: String(payload.photoUrl || payload.photo_url || (existing && existing.photo_url) || "").trim(),
     contact: {
       ...(existing && existing.contact ? existing.contact : {}),
-      email: input.email || existing && existing.contact && existing.contact.email || "",
-      phone: input.phone || existing && existing.contact && existing.contact.phone || "",
+      email: input.email || (existing && existing.contact && existing.contact.email) || "",
+      phone: input.phone || (existing && existing.contact && existing.contact.phone) || ""
     },
     family_info: existing && existing.family_info ? existing.family_info : {},
-    status: normalizeStudentStatus(String(payload.status || existing && existing.status || "active").trim()),
+    status: normalizeStudentStatus(String(payload.status || (existing && existing.status) || "active").trim()),
     created_at: existing && existing.created_at ? existing.created_at : input.now,
-    updated_at: input.now,
+    updated_at: input.now
   };
 }
 
 function buildTeacherDoc(input) {
   const existing = input.existing;
   const payload = input.payload || {};
-  const departmentId = String(payload.departmentId || payload.department_id || existing && existing.department_id || "").trim();
-  const department = departmentId ? lookupLabel(input.departments, departmentId) : String(payload.departmentName || payload.department || existing && existing.department_name || existing && existing.department || "").trim();
-  const teacherNo = String(payload.teacherNo || payload.teacher_no || existing && existing.teacher_no || "").trim();
+  const departmentId = String(
+    payload.departmentId || payload.department_id || (existing && existing.department_id) || ""
+  ).trim();
+  const department = departmentId
+    ? lookupLabel(input.departments, departmentId)
+    : String(
+        payload.departmentName ||
+          payload.department ||
+          (existing && existing.department_name) ||
+          (existing && existing.department) ||
+          ""
+      ).trim();
+  const teacherNo = String(payload.teacherNo || payload.teacher_no || (existing && existing.teacher_no) || "").trim();
 
   if (!teacherNo || !departmentId) {
     return null;
@@ -287,18 +324,29 @@ function buildTeacherDoc(input) {
     name: input.displayName,
     department_id: departmentId,
     department_name: department,
-    title: String(payload.title || existing && existing.title || "").trim(),
-    research_fields: normalizeStringArray(payload.researchFields || payload.research_fields || existing && existing.research_fields || []),
-    teaching_experience: String(payload.teachingExperience || payload.teaching_experience || existing && existing.teaching_experience || "").trim(),
-    office: String(payload.office || existing && existing.office || "").trim(),
+    title: String(payload.title || (existing && existing.title) || "").trim(),
+    research_fields: normalizeStringArray(
+      payload.researchFields || payload.research_fields || (existing && existing.research_fields) || []
+    ),
+    teaching_experience: String(
+      payload.teachingExperience || payload.teaching_experience || (existing && existing.teaching_experience) || ""
+    ).trim(),
+    office: String(payload.office || (existing && existing.office) || "").trim(),
     public_profile: {
       ...(existing && existing.public_profile ? existing.public_profile : {}),
-      officeHours: String(payload.officeHours || payload.office_hours || existing && existing.public_profile && existing.public_profile.officeHours || "").trim(),
-      homepage: String(payload.homepage || existing && existing.public_profile && existing.public_profile.homepage || "").trim(),
+      officeHours: String(
+        payload.officeHours ||
+          payload.office_hours ||
+          (existing && existing.public_profile && existing.public_profile.officeHours) ||
+          ""
+      ).trim(),
+      homepage: String(
+        payload.homepage || (existing && existing.public_profile && existing.public_profile.homepage) || ""
+      ).trim()
     },
-    status: normalizeTeacherStatus(String(payload.status || existing && existing.status || "active").trim()),
+    status: normalizeTeacherStatus(String(payload.status || (existing && existing.status) || "active").trim()),
     created_at: existing && existing.created_at ? existing.created_at : input.now,
-    updated_at: input.now,
+    updated_at: input.now
   };
 }
 
@@ -327,7 +375,7 @@ function buildAccountView(input) {
     updatedAt: Number(user.updated_at || 0),
     linkedProfileType: student ? "student" : teacher ? "teacher" : "",
     studentProfile: student ? buildStudentProfile(student, input.majors, input.adminClasses) : null,
-    teacherProfile: teacher ? buildTeacherProfile(teacher, input.departments) : null,
+    teacherProfile: teacher ? buildTeacherProfile(teacher, input.departments) : null
   };
 }
 
@@ -347,7 +395,7 @@ function buildStudentProfile(student, majors, adminClasses) {
     trainingPlanId: student.training_plan_id || "",
     status: student.status || "active",
     contact: clone(student.contact || {}),
-    familyInfo: clone(student.family_info || {}),
+    familyInfo: clone(student.family_info || {})
   };
 }
 
@@ -364,22 +412,22 @@ function buildTeacherProfile(teacher, departments) {
     researchFields: Array.isArray(teacher.research_fields) ? teacher.research_fields.slice() : [],
     teachingExperience: teacher.teaching_experience || "",
     office: teacher.office || "",
-    status: teacher.status || "active",
+    status: teacher.status || "active"
   };
 }
 
 function resolveRoleCodes(roleIds, roles) {
   const roleMap = mapRolesByCode(roles);
   return (roleIds || [])
-    .map((roleId) => roleMap.get(roleId))
+    .map(roleId => roleMap.get(roleId))
     .filter(Boolean)
-    .map((role) => role.code)
+    .map(role => role.code)
     .filter(Boolean);
 }
 
 function resolvePrimaryRole(roleCodes) {
   const priority = ["admin", "academic_staff", "teacher", "counselor", "student", "guardian"];
-  const code = priority.find((item) => roleCodes.includes(item));
+  const code = priority.find(item => roleCodes.includes(item));
   if (code === "academic_staff") {
     return "admin";
   }
@@ -404,9 +452,9 @@ function buildRoleCodeList(roleCode) {
 
 function resolveRoleIds(roleCodes, roleMap) {
   return (roleCodes || [])
-    .map((roleCode) => roleMap.get(roleCode))
+    .map(roleCode => roleMap.get(roleCode))
     .filter(Boolean)
-    .map((role) => role._id);
+    .map(role => role._id);
 }
 
 function mapRolesByCode(roles) {
@@ -436,11 +484,11 @@ function normalizeTeacherStatus(status) {
 
 function normalizeStringArray(value) {
   if (Array.isArray(value)) {
-    return value.map((item) => String(item || "").trim()).filter(Boolean);
+    return value.map(item => String(item || "").trim()).filter(Boolean);
   }
   return String(value || "")
     .split(/[;,\n]+/)
-    .map((item) => item.trim())
+    .map(item => item.trim())
     .filter(Boolean);
 }
 
@@ -472,7 +520,7 @@ function pickUserCreate(user) {
     updated_at: user.updated_at,
     password_updated_at: user.password_updated_at || 0,
     must_change_password: Boolean(user.must_change_password),
-    last_login_at: user.last_login_at || 0,
+    last_login_at: user.last_login_at || 0
   };
 }
 
@@ -489,7 +537,7 @@ function pickUserUpdate(user) {
     updated_at: user.updated_at,
     password_updated_at: user.password_updated_at || 0,
     must_change_password: Boolean(user.must_change_password),
-    last_login_at: user.last_login_at || 0,
+    last_login_at: user.last_login_at || 0
   };
 }
 
@@ -513,7 +561,7 @@ async function writeAudit(action, session, targetId, before, after) {
       target_id: targetId,
       before,
       after,
-      created_at: Date.now(),
+      created_at: Date.now()
     });
   } catch (error) {
     console.warn("[save-admin-account] audit write skipped.", error);

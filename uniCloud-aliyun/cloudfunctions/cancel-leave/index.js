@@ -32,7 +32,7 @@ exports.main = async (event = {}) => {
   const now = Date.now();
   await db.collection("leave_requests").doc(leaveId).update({
     status: "cancelled",
-    updated_at: now,
+    updated_at: now
   });
 
   let restore = null;
@@ -43,21 +43,18 @@ exports.main = async (event = {}) => {
   await writeAudit("leave.cancel", session, leaveId, leave, {
     ...leave,
     status: "cancelled",
-    updated_at: now,
+    updated_at: now
   });
 
   return {
     ok: true,
     leave: buildLeaveView({ ...leave, status: "cancelled", updated_at: now }),
-    restore,
+    restore
   };
 };
 
 async function restoreAttendance(leave, now) {
-  const result = await db
-    .collection("leave_request_sessions")
-    .where({ leave_request_id: leave._id })
-    .get();
+  const result = await db.collection("leave_request_sessions").where({ leave_request_id: leave._id }).get();
   const links = result.data || [];
   const restored = [];
 
@@ -73,13 +70,13 @@ async function restoreAttendance(leave, now) {
       status: previousStatus,
       source: previousSource,
       leave_request_id: "",
-      updated_at: now,
+      updated_at: now
     });
 
     restored.push({
       attendanceId: attendance._id,
       previousStatus,
-      previousSource,
+      previousSource
     });
   }
 
@@ -100,7 +97,7 @@ async function findAttendanceByLink(leave, link) {
     .where({
       student_id: leave.student_id,
       course_offering_id: leave.course_offering_id,
-      attendance_date: date,
+      attendance_date: date
     })
     .limit(1)
     .get();
@@ -113,7 +110,11 @@ async function findById(collection, id) {
 }
 
 async function findByField(collection, field, value) {
-  const result = await db.collection(collection).where({ [field]: value }).limit(1).get();
+  const result = await db
+    .collection(collection)
+    .where({ [field]: value })
+    .limit(1)
+    .get();
   return result.data && result.data[0] ? result.data[0] : null;
 }
 
@@ -135,7 +136,7 @@ function buildLeaveView(leave) {
     reviewComment: leave.review_comment || "",
     reviewedAt: Number(leave.reviewed_at || 0),
     createdAt: Number(leave.created_at || 0),
-    updatedAt: Number(leave.updated_at || 0),
+    updatedAt: Number(leave.updated_at || 0)
   };
 }
 
@@ -153,7 +154,7 @@ async function writeAudit(action, session, targetId, before, after) {
       target_id: targetId,
       before,
       after,
-      created_at: Date.now(),
+      created_at: Date.now()
     });
   } catch (error) {
     console.warn("[cancel-leave] audit write skipped.", error);

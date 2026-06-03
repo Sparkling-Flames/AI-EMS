@@ -4,11 +4,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
-const {
-  performanceMetricsPath,
-  projectPath,
-  reportDir,
-} = require("./test-utils.cjs");
+const { performanceMetricsPath, projectPath, reportDir } = require("./test-utils.cjs");
 
 const generatedAt = new Date();
 
@@ -19,21 +15,21 @@ function relative(filePath) {
 function listTestFiles() {
   return fs
     .readdirSync(__dirname)
-    .filter((file) => file.endsWith(".test.cjs"))
+    .filter(file => file.endsWith(".test.cjs"))
     .sort()
-    .map((file) => path.join(__dirname, file));
+    .map(file => path.join(__dirname, file));
 }
 
 function runTests(testFiles) {
   const result = spawnSync(process.execPath, ["--test", "--test-reporter=tap", ...testFiles], {
     cwd: projectPath(),
     encoding: "utf8",
-    windowsHide: true,
+    windowsHide: true
   });
   return {
     status: result.status === null ? 1 : result.status,
     stdout: result.stdout || "",
-    stderr: result.stderr || "",
+    stderr: result.stderr || ""
   };
 }
 
@@ -49,7 +45,7 @@ function parseTap(output) {
         name: match[2].trim(),
         type: inferType(match[2]),
         status: match[1] === "ok" ? "passed" : "failed",
-        durationMs: 0,
+        durationMs: 0
       };
       tests.push(current);
       continue;
@@ -63,7 +59,7 @@ function parseTap(output) {
     }
   }
 
-  return tests.filter((item) => item.type !== "Other");
+  return tests.filter(item => item.type !== "Other");
 }
 
 function inferType(name) {
@@ -75,21 +71,21 @@ function inferType(name) {
 
 function summarize(items) {
   const total = items.length;
-  const passed = items.filter((item) => item.status === "passed").length;
+  const passed = items.filter(item => item.status === "passed").length;
   const failed = total - passed;
   return {
     total,
     passed,
     failed,
-    passRate: total ? Math.round((passed / total) * 1000) / 10 : 0,
+    passRate: total ? Math.round((passed / total) * 1000) / 10 : 0
   };
 }
 
 function groupByType(tests) {
   const types = ["Functional Testing", "Performance Testing", "Error Handling Testing"];
-  return types.map((type) => ({
+  return types.map(type => ({
     type,
-    ...summarize(tests.filter((item) => item.type === type)),
+    ...summarize(tests.filter(item => item.type === type))
   }));
 }
 
@@ -118,7 +114,9 @@ function renderBar(value, total, color) {
 }
 
 function renderHtml(report) {
-  const typeRows = report.byType.map((item) => `
+  const typeRows = report.byType
+    .map(
+      item => `
     <tr>
       <td>${escapeHtml(item.type)}</td>
       <td>${item.total}</td>
@@ -127,9 +125,13 @@ function renderHtml(report) {
       <td>${item.passRate}%</td>
       <td>${renderBar(item.passed, item.total, item.failed ? "#dc2626" : "#16a34a")}</td>
     </tr>
-  `).join("");
+  `
+    )
+    .join("");
 
-  const testRows = report.tests.map((item, index) => `
+  const testRows = report.tests
+    .map(
+      (item, index) => `
     <tr>
       <td>${index + 1}</td>
       <td>${escapeHtml(item.type)}</td>
@@ -137,13 +139,16 @@ function renderHtml(report) {
       <td><span class="pill ${item.status}">${item.status}</span></td>
       <td>${item.durationMs.toFixed(2)} ms</td>
     </tr>
-  `).join("");
+  `
+    )
+    .join("");
 
-  const maxMetric = Math.max(1, ...report.performanceMetrics.map((item) => Math.max(item.durationMs, item.thresholdMs)));
-  const performanceRows = report.performanceMetrics.map((item) => {
-    const durationWidth = Math.max(2, Math.round((item.durationMs / maxMetric) * 100));
-    const thresholdWidth = Math.max(2, Math.round((item.thresholdMs / maxMetric) * 100));
-    return `
+  const maxMetric = Math.max(1, ...report.performanceMetrics.map(item => Math.max(item.durationMs, item.thresholdMs)));
+  const performanceRows = report.performanceMetrics
+    .map(item => {
+      const durationWidth = Math.max(2, Math.round((item.durationMs / maxMetric) * 100));
+      const thresholdWidth = Math.max(2, Math.round((item.thresholdMs / maxMetric) * 100));
+      return `
       <tr>
         <td>${escapeHtml(item.name)}</td>
         <td>${item.durationMs.toFixed(2)} ms</td>
@@ -154,7 +159,8 @@ function renderHtml(report) {
         </td>
       </tr>
     `;
-  }).join("");
+    })
+    .join("");
 
   const status = report.summary.failed === 0 ? "PASS" : "FAIL";
   return `<!doctype html>
@@ -256,10 +262,12 @@ function renderMarkdown(report) {
     "",
     "| Test type | Total | Passed | Failed | Pass rate |",
     "|---|---:|---:|---:|---:|",
-    ...report.byType.map((item) => `| ${item.type} | ${item.total} | ${item.passed} | ${item.failed} | ${item.passRate}% |`),
+    ...report.byType.map(
+      item => `| ${item.type} | ${item.total} | ${item.passed} | ${item.failed} | ${item.passRate}% |`
+    ),
     "",
     `HTML visualization: ${relative(path.join(reportDir, "system-evaluation-report.html"))}`,
-    `JSON data: ${relative(path.join(reportDir, "system-evaluation-results.json"))}`,
+    `JSON data: ${relative(path.join(reportDir, "system-evaluation-results.json"))}`
   ].join("\n");
 }
 
@@ -281,8 +289,8 @@ function main() {
     performanceMetrics: readPerformanceMetrics(),
     raw: {
       stdout: run.stdout,
-      stderr: run.stderr,
-    },
+      stderr: run.stderr
+    }
   };
 
   fs.writeFileSync(path.join(reportDir, "system-evaluation-results.json"), JSON.stringify(report, null, 2));

@@ -14,12 +14,12 @@ Import data lives in `uniCloud-aliyun/database/import/`.
 
 The relationship is defined by `course_offerings.teacher_ids`, which references `teachers._id`.
 
-| Teacher | Login username | Course offering | Course | Semester | Section | Status | Enrolled / Capacity |
-|---|---|---|---|---|---|---|---|
-| Alice Chen (`T1001`) | `t1001` | `offering_sd_2026s` | `JC3506 Software Design and Implementation` | 2026 Spring | 01 | open | 32 / 50 |
-| Alice Chen (`T1001`) | `t1001` | `offering_pm_2026s` | `PM3506 Software Process Management` | 2026 Spring | 01 | open | 28 / 45 |
-| Alice Chen (`T1001`) | `t1001` | `offering_da_2026s` | `DA3506 Educational Data Analysis` | 2026 Spring | 01 | open | 22 / 40 |
-| Brian Li (`T1002`) | `t1002` | `offering_db_2026s` | `DB2501 Database Principles` | 2026 Spring | 02 | closed | 35 / 55 |
+| Teacher              | Login username | Course offering     | Course                                      | Semester    | Section | Status | Enrolled / Capacity |
+| -------------------- | -------------- | ------------------- | ------------------------------------------- | ----------- | ------- | ------ | ------------------- |
+| Alice Chen (`T1001`) | `t1001`        | `offering_sd_2026s` | `JC3506 Software Design and Implementation` | 2026 Spring | 01      | open   | 32 / 50             |
+| Alice Chen (`T1001`) | `t1001`        | `offering_pm_2026s` | `PM3506 Software Process Management`        | 2026 Spring | 01      | open   | 28 / 45             |
+| Alice Chen (`T1001`) | `t1001`        | `offering_da_2026s` | `DA3506 Educational Data Analysis`          | 2026 Spring | 01      | open   | 22 / 40             |
+| Brian Li (`T1002`)   | `t1002`        | `offering_db_2026s` | `DB2501 Database Principles`                | 2026 Spring | 02      | closed | 35 / 55             |
 
 Note: H5 local fallback data in `common/api.js` uses local test fixtures; the table above reflects the database import files.
 

@@ -8,7 +8,22 @@ exports.main = async (event = {}) => {
     return { ok: false, message: "Login is required." };
   }
 
-  const [courses, offerings, enrollments, students, teachers, attendance, leaves, evaluations, classSessions, materials, profileChangeRequests, trainingPlans, adminClasses, majors] = await Promise.all([
+  const [
+    courses,
+    offerings,
+    enrollments,
+    students,
+    teachers,
+    attendance,
+    leaves,
+    evaluations,
+    classSessions,
+    materials,
+    profileChangeRequests,
+    trainingPlans,
+    adminClasses,
+    majors
+  ] = await Promise.all([
     readCollection("courses"),
     readCollection("course_offerings"),
     readCollection("enrollments"),
@@ -22,7 +37,7 @@ exports.main = async (event = {}) => {
     readCollection("profile_change_requests", 5000),
     readCollection("training_plans"),
     readCollection("admin_classes"),
-    readCollection("majors"),
+    readCollection("majors")
   ]);
 
   const student = findByUserId(students, session.userId);
@@ -33,7 +48,7 @@ exports.main = async (event = {}) => {
     student,
     teacher,
     offerings,
-    enrollments,
+    enrollments
   });
 
   const courseMap = mapById(courses);
@@ -44,50 +59,58 @@ exports.main = async (event = {}) => {
   const majorMap = mapById(majors);
   const sessionsByOfferingId = groupBy(classSessions, "course_offering_id");
   const studentIds = buildStudentIdSet(student, session.userId);
-  const studentEnrollmentByOffering = session.role === "student"
-    ? buildStudentEnrollmentMap(enrollments, studentIds)
-    : new Map();
-  const teacherStudentIds = session.role === "teacher"
-    ? buildTeacherStudentIdSet({ teacher, sessionUserId: session.userId, enrollments, allowedOfferingIds })
-    : new Set();
+  const studentEnrollmentByOffering =
+    session.role === "student" ? buildStudentEnrollmentMap(enrollments, studentIds) : new Map();
+  const teacherStudentIds =
+    session.role === "teacher"
+      ? buildTeacherStudentIdSet({ teacher, sessionUserId: session.userId, enrollments, allowedOfferingIds })
+      : new Set();
   const coursesView = offerings
-    .filter((item) => allowedOfferingIds.has(item._id))
-    .map((offering) => buildCourseView(offering, courseMap, teacherMap, sessionsByOfferingId, {
-      enrollment: studentEnrollmentByOffering.get(offering._id) || null,
-      enrollments,
-    }));
+    .filter(item => allowedOfferingIds.has(item._id))
+    .map(offering =>
+      buildCourseView(offering, courseMap, teacherMap, sessionsByOfferingId, {
+        enrollment: studentEnrollmentByOffering.get(offering._id) || null,
+        enrollments
+      })
+    );
 
   const attendanceView = attendance
     .map(normalizeAttendance)
-    .filter((item) => {
+    .filter(item => {
       if (session.role === "admin") return true;
       if (session.role === "teacher") {
-        return allowedOfferingIds.has(item.courseOfferingId) && (!teacherStudentIds.size || teacherStudentIds.has(item.studentId));
+        return (
+          allowedOfferingIds.has(item.courseOfferingId) &&
+          (!teacherStudentIds.size || teacherStudentIds.has(item.studentId))
+        );
       }
       return studentIds.has(item.studentId);
     })
-    .map((item) => ({
+    .map(item => ({
       ...item,
-      courseName: buildCourseName(offeringMap.get(item.courseOfferingId), courseMap),
+      courseName: buildCourseName(offeringMap.get(item.courseOfferingId), courseMap)
     }));
 
   const classSessionView = classSessions
-    .filter((item) => allowedOfferingIds.has(item.course_offering_id || item.courseOfferingId))
-    .map((item) => normalizeClassSession(item, offeringMap, courseMap))
+    .filter(item => allowedOfferingIds.has(item.course_offering_id || item.courseOfferingId))
+    .map(item => normalizeClassSession(item, offeringMap, courseMap))
     .sort((a, b) => Number(a.sessionStartAt || 0) - Number(b.sessionStartAt || 0));
 
   const leaveView = leaves
     .map(normalizeLeave)
-    .filter((item) => {
+    .filter(item => {
       if (session.role === "admin") {
         return true;
       }
       if (session.role === "teacher") {
-        return allowedOfferingIds.has(item.courseOfferingId) && (!teacherStudentIds.size || teacherStudentIds.has(item.studentId));
+        return (
+          allowedOfferingIds.has(item.courseOfferingId) &&
+          (!teacherStudentIds.size || teacherStudentIds.has(item.studentId))
+        );
       }
       return studentIds.has(item.studentId);
     })
-    .map((item) => {
+    .map(item => {
       const offering = offeringMap.get(item.courseOfferingId);
       const enrollment = findEnrollmentForLeave(enrollments, item);
       const teacherView = buildLeaveTeacherView({ offering, enrollment, teacherMap });
@@ -98,7 +121,7 @@ exports.main = async (event = {}) => {
         studentNo: item.studentNo || resolveStudentNo(students, item.studentId),
         student_no: item.studentNo || resolveStudentNo(students, item.studentId),
         courseName: item.courseName || buildCourseName(offering, courseMap),
-        ...teacherView,
+        ...teacherView
       };
     })
     .sort((left, right) => {
@@ -117,34 +140,43 @@ exports.main = async (event = {}) => {
     allowedOfferingIds,
     offeringMap,
     courseMap,
-    now: Date.now(),
+    now: Date.now()
   });
-  const profile = session.role === "student"
-    ? buildStudentProfile({
-        student,
-        session,
-        offerings,
-        courses,
-        enrollments,
-        attendance,
-        classSessions,
-        trainingPlanMap,
-        adminClassMap,
-        majorMap,
-      })
-    : {};
-  const teacherProfile = session.role === "teacher"
-    ? buildTeacherProfile({ teacher, session, offerings, enrollments, teachers, courses, allowedOfferingIds })
-    : {};
+  const profile =
+    session.role === "student"
+      ? buildStudentProfile({
+          student,
+          session,
+          offerings,
+          courses,
+          enrollments,
+          attendance,
+          classSessions,
+          trainingPlanMap,
+          adminClassMap,
+          majorMap
+        })
+      : {};
+  const teacherProfile =
+    session.role === "teacher"
+      ? buildTeacherProfile({ teacher, session, offerings, enrollments, teachers, courses, allowedOfferingIds })
+      : {};
   const courseStudents = ["teacher", "admin"].includes(session.role)
-    ? buildCourseStudents({ role: session.role, allowedOfferingIds, enrollments, students, teacher, sessionUserId: session.userId })
+    ? buildCourseStudents({
+        role: session.role,
+        allowedOfferingIds,
+        enrollments,
+        students,
+        teacher,
+        sessionUserId: session.userId
+      })
     : [];
   const profileChangeRequestView = buildProfileChangeRequests({
     role: session.role,
     sessionUserId: session.userId,
     rows: profileChangeRequests,
     students,
-    teachers,
+    teachers
   });
 
   return {
@@ -165,15 +197,15 @@ exports.main = async (event = {}) => {
         totalStudents: students.length,
         totalTeachers: teachers.length,
         activeCourses: courses.length,
-        activeOfferings: offerings.length,
+        activeOfferings: offerings.length
       },
       metrics: {
         courses: coursesView.length,
-        pendingLeaves: leaveView.filter((item) => item.status === "pending").length,
+        pendingLeaves: leaveView.filter(item => item.status === "pending").length,
         evaluations: summary.reduce((sum, item) => sum + Number(item.count || 0), 0),
         attendance: attendanceView.length,
-        profileChanges: profileChangeRequestView.filter((item) => isPendingStatus(item.status)).length,
-        riskStudents: session.role === "teacher" ? calculateAtRiskStudentCount(attendanceView) : 0,
+        profileChanges: profileChangeRequestView.filter(item => isPendingStatus(item.status)).length,
+        riskStudents: session.role === "teacher" ? calculateAtRiskStudentCount(attendanceView) : 0
       },
       meta: {
         source: "unicloud",
@@ -192,18 +224,18 @@ exports.main = async (event = {}) => {
           courseEvaluations: evaluations.length,
           classSessions: classSessions.length,
           courseMaterials: materials.length,
-          profileChangeRequests: profileChangeRequests.length,
-        },
-      },
-    },
+          profileChangeRequests: profileChangeRequests.length
+        }
+      }
+    }
   };
 };
 
 function buildProfileChangeRequests({ role, sessionUserId, rows, students = [], teachers = [] }) {
   const sessionUserKeys = buildUserKeys(sessionUserId);
   return (rows || [])
-    .map((item) => normalizeProfileChangeRequest(item, { students, teachers }))
-    .filter((item) => {
+    .map(item => normalizeProfileChangeRequest(item, { students, teachers }))
+    .filter(item => {
       if (role === "admin") {
         return isPendingStatus(item.status);
       }
@@ -223,7 +255,7 @@ function normalizeProfileChangeRequest(item = {}, context = {}) {
     targetType,
     targetId,
     students: context.students || [],
-    teachers: context.teachers || [],
+    teachers: context.teachers || []
   });
   const status = normalizeStatus(item.status || "pending");
   return {
@@ -247,7 +279,7 @@ function normalizeProfileChangeRequest(item = {}, context = {}) {
     createdAt: Number(item.created_at || item.createdAt || 0),
     created_at: Number(item.created_at || item.createdAt || 0),
     updatedAt: Number(item.updated_at || item.updatedAt || 0),
-    updated_at: Number(item.updated_at || item.updatedAt || 0),
+    updated_at: Number(item.updated_at || item.updatedAt || 0)
   };
 }
 
@@ -256,12 +288,14 @@ function resolveProfileRequesterName({ requesterUserId, requesterName, targetTyp
   const requesterKeys = buildUserKeys(requesterUserId);
   const target = String(targetId || "").trim();
   const collection = targetType === "teacher" ? teachers : students;
-  const matched = (collection || []).find((item) =>
-    requesterKeys.has(String(item.user_id || item.userId || "").trim()) ||
-    requesterKeys.has(String(item._id || "").trim()) ||
-    (target && String(item._id || "").trim() === target)
+  const matched = (collection || []).find(
+    item =>
+      requesterKeys.has(String(item.user_id || item.userId || "").trim()) ||
+      requesterKeys.has(String(item._id || "").trim()) ||
+      (target && String(item._id || "").trim() === target)
   );
-  const resolved = matched && (matched.name || matched.display_name || matched.student_no || matched.teacher_no || matched._id);
+  const resolved =
+    matched && (matched.name || matched.display_name || matched.student_no || matched.teacher_no || matched._id);
   if (resolved) {
     return String(resolved).trim();
   }
@@ -273,7 +307,9 @@ function isPendingStatus(status) {
 }
 
 function normalizeStatus(status) {
-  return String(status || "").trim().toLowerCase();
+  return String(status || "")
+    .trim()
+    .toLowerCase();
 }
 
 async function readCollection(name, limit = 1000) {
@@ -289,7 +325,7 @@ async function readCollection(name, limit = 1000) {
 function findByUserId(rows, userId) {
   const keys = buildUserKeys(userId);
   return (
-    rows.find((item) => {
+    rows.find(item => {
       const candidate = String(item.user_id || item.userId || "").trim();
       return keys.has(candidate);
     }) || null
@@ -330,7 +366,7 @@ function addRoleAliases(keys, value, roleName, roleCode) {
 
 function buildStudentIdSet(student, sessionUserId) {
   const ids = new Set();
-  const add = (value) => {
+  const add = value => {
     const normalized = String(value || "").trim();
     if (normalized) {
       ids.add(normalized);
@@ -382,19 +418,21 @@ function buildTeacherStudentIdSet({ teacher, sessionUserId, enrollments, allowed
 
 function enrollmentBelongsToTeacher(enrollment, teacher, sessionUserId) {
   const selectedTeacherId = String(enrollment.selected_teacher_id || enrollment.selectedTeacherId || "").trim();
-  const selectedTeacherUserId = String(enrollment.selected_teacher_user_id || enrollment.selectedTeacherUserId || "").trim();
+  const selectedTeacherUserId = String(
+    enrollment.selected_teacher_user_id || enrollment.selectedTeacherUserId || ""
+  ).trim();
   if (!selectedTeacherId && !selectedTeacherUserId) {
     return true;
   }
   return Boolean(
     (teacher && selectedTeacherId && selectedTeacherId === String(teacher._id || "").trim()) ||
-    (selectedTeacherUserId && selectedTeacherUserId === String(sessionUserId || "").trim()),
+    (selectedTeacherUserId && selectedTeacherUserId === String(sessionUserId || "").trim())
   );
 }
 
 function resolveAllowedOfferingIds({ role, sessionUserId, student, teacher, offerings, enrollments }) {
   if (role === "admin") {
-    return new Set(offerings.map((item) => item._id).filter(Boolean));
+    return new Set(offerings.map(item => item._id).filter(Boolean));
   }
 
   if (role === "teacher") {
@@ -405,22 +443,22 @@ function resolveAllowedOfferingIds({ role, sessionUserId, student, teacher, offe
     }
     return new Set(
       offerings
-        .filter((item) => {
-          const ids = Array.isArray(item.teacher_ids) ? item.teacher_ids.map((value) => String(value || "")) : [];
-          return ids.some((id) => teacherKeys.has(id));
+        .filter(item => {
+          const ids = Array.isArray(item.teacher_ids) ? item.teacher_ids.map(value => String(value || "")) : [];
+          return ids.some(id => teacherKeys.has(id));
         })
-        .map((item) => item._id)
-        .filter(Boolean),
+        .map(item => item._id)
+        .filter(Boolean)
     );
   }
 
   const studentIds = buildStudentIdSet(student, sessionUserId);
   return new Set(
     enrollments
-      .filter((item) => item.status !== "dropped")
-      .filter((item) => studentIds.has(String(item.student_id || item.studentId || "").trim()))
-      .map((item) => item.course_offering_id || item.courseOfferingId)
-      .filter(Boolean),
+      .filter(item => item.status !== "dropped")
+      .filter(item => studentIds.has(String(item.student_id || item.studentId || "").trim()))
+      .map(item => item.course_offering_id || item.courseOfferingId)
+      .filter(Boolean)
   );
 }
 
@@ -429,18 +467,18 @@ function buildCourseView(offering, courseMap, teacherMap = new Map(), sessionsBy
   const sessions = sessionsByOfferingId.get(offering._id) || [];
   const teacherIds = Array.isArray(offering.teacher_ids) ? offering.teacher_ids : [];
   const teacherOptions = teacherIds
-    .map((teacherId) => {
+    .map(teacherId => {
       const teacher = teacherMap.get(teacherId);
       if (!teacher) return null;
       return {
         teacherId,
         userId: teacher.user_id || "",
         name: teacher.name || teacher.display_name || teacher.teacher_no || teacher._id,
-        teacherNo: teacher.teacher_no || "",
+        teacherNo: teacher.teacher_no || ""
       };
     })
     .filter(Boolean);
-  const teacherNames = teacherOptions.map((item) => item.name).filter(Boolean);
+  const teacherNames = teacherOptions.map(item => item.name).filter(Boolean);
   const enrollment = options.enrollment || {};
   const completed = isOfferingCompleted(offering, sessions);
   return {
@@ -476,7 +514,7 @@ function buildCourseView(offering, courseMap, teacherMap = new Map(), sessionsBy
     materialUploadDeadlineAt: Number(offering.material_upload_deadline_at || 0),
     completed,
     enrollmentStatus: completed ? "completed" : enrollment.status || "",
-    selectionStatus: offering.selection_status || "",
+    selectionStatus: offering.selection_status || ""
   };
 }
 
@@ -489,7 +527,7 @@ function normalizeAttendance(item) {
     status: item.status || "",
     source: item.source || "",
     createdAt: Number(item.created_at || item.createdAt || 0),
-    updatedAt: Number(item.updated_at || item.updatedAt || 0),
+    updatedAt: Number(item.updated_at || item.updatedAt || 0)
   };
 }
 
@@ -506,7 +544,7 @@ function normalizeClassSession(item, offeringMap, courseMap) {
     sequenceNo: Number(item.sequence_no || item.sequenceNo || 0),
     sessionStartAt: getSessionStartAt(item),
     sessionEndAt: getSessionEndAt(item),
-    status: item.status || "scheduled",
+    status: item.status || "scheduled"
   };
 }
 
@@ -524,40 +562,55 @@ function normalizeLeave(item) {
     status: item.status || "pending",
     reviewComment: item.review_comment || item.reviewComment || "",
     createdAt: Number(item.created_at || item.createdAt || 0),
-    updatedAt: Number(item.updated_at || item.updatedAt || 0),
+    updatedAt: Number(item.updated_at || item.updatedAt || 0)
   };
 }
 
 function findEnrollmentForLeave(enrollments, leave) {
   const studentKeys = buildUserKeys(leave.studentId);
   const offeringId = String(leave.courseOfferingId || "").trim();
-  return (enrollments || []).find((item) =>
-    String(item.course_offering_id || item.courseOfferingId || "").trim() === offeringId &&
-    studentKeys.has(String(item.student_id || item.studentId || "").trim())
-  ) || null;
+  return (
+    (enrollments || []).find(
+      item =>
+        String(item.course_offering_id || item.courseOfferingId || "").trim() === offeringId &&
+        studentKeys.has(String(item.student_id || item.studentId || "").trim())
+    ) || null
+  );
 }
 
 function buildLeaveTeacherView({ offering = {}, enrollment = {}, teacherMap = new Map() }) {
-  const teacherIds = Array.isArray(offering && offering.teacher_ids) ? offering.teacher_ids.map((value) => String(value || "").trim()).filter(Boolean) : [];
+  const teacherIds = Array.isArray(offering && offering.teacher_ids)
+    ? offering.teacher_ids.map(value => String(value || "").trim()).filter(Boolean)
+    : [];
   const teacherOptions = teacherIds
-    .map((teacherId) => teacherMap.get(teacherId))
+    .map(teacherId => teacherMap.get(teacherId))
     .filter(Boolean)
-    .map((teacher) => ({
+    .map(teacher => ({
       teacherId: teacher._id || "",
       teacherUserId: teacher.user_id || teacher.userId || "",
-      teacherName: teacher.name || teacher.display_name || teacher.teacher_no || teacher._id || "",
+      teacherName: teacher.name || teacher.display_name || teacher.teacher_no || teacher._id || ""
     }));
-  const selectedTeacherId = String(enrollment && (enrollment.selected_teacher_id || enrollment.selectedTeacherId) || "").trim();
-  const selectedTeacherUserId = String(enrollment && (enrollment.selected_teacher_user_id || enrollment.selectedTeacherUserId) || "").trim();
-  const selectedTeacher = teacherOptions.find((teacher) =>
-    (selectedTeacherId && teacher.teacherId === selectedTeacherId) ||
-    (selectedTeacherUserId && teacher.teacherUserId === selectedTeacherUserId)
-  ) || null;
-  const selectedTeacherName = String(enrollment && (enrollment.selected_teacher_name || enrollment.selectedTeacherName) || selectedTeacher && selectedTeacher.teacherName || "").trim();
+  const selectedTeacherId = String(
+    (enrollment && (enrollment.selected_teacher_id || enrollment.selectedTeacherId)) || ""
+  ).trim();
+  const selectedTeacherUserId = String(
+    (enrollment && (enrollment.selected_teacher_user_id || enrollment.selectedTeacherUserId)) || ""
+  ).trim();
+  const selectedTeacher =
+    teacherOptions.find(
+      teacher =>
+        (selectedTeacherId && teacher.teacherId === selectedTeacherId) ||
+        (selectedTeacherUserId && teacher.teacherUserId === selectedTeacherUserId)
+    ) || null;
+  const selectedTeacherName = String(
+    (enrollment && (enrollment.selected_teacher_name || enrollment.selectedTeacherName)) ||
+      (selectedTeacher && selectedTeacher.teacherName) ||
+      ""
+  ).trim();
   const teacherNames = selectedTeacherName
     ? [selectedTeacherName]
-    : teacherOptions.map((teacher) => teacher.teacherName).filter(Boolean);
-  const teacherUserIds = teacherOptions.map((teacher) => teacher.teacherUserId).filter(Boolean);
+    : teacherOptions.map(teacher => teacher.teacherName).filter(Boolean);
+  const teacherUserIds = teacherOptions.map(teacher => teacher.teacherUserId).filter(Boolean);
   return {
     teacherIds,
     teacher_ids: teacherIds,
@@ -572,7 +625,7 @@ function buildLeaveTeacherView({ offering = {}, enrollment = {}, teacherMap = ne
     selectedTeacherUserId,
     selected_teacher_user_id: selectedTeacherUserId,
     selectedTeacherName,
-    selected_teacher_name: selectedTeacherName,
+    selected_teacher_name: selectedTeacherName
   };
 }
 
@@ -588,11 +641,14 @@ function resolveStudentNo(students, studentId) {
 
 function findStudentByAnyId(students, studentId) {
   const keys = buildUserKeys(studentId);
-  return (students || []).find((item) =>
-    keys.has(String(item._id || "").trim()) ||
-    keys.has(String(item.user_id || item.userId || "").trim()) ||
-    keys.has(String(item.student_no || item.studentNo || "").trim()),
-  ) || null;
+  return (
+    (students || []).find(
+      item =>
+        keys.has(String(item._id || "").trim()) ||
+        keys.has(String(item.user_id || item.userId || "").trim()) ||
+        keys.has(String(item.student_no || item.studentNo || "").trim())
+    ) || null
+  );
 }
 
 function buildCourseName(offering, courseMap) {
@@ -612,23 +668,21 @@ function buildSchedule(offering) {
 }
 
 function buildEvaluationSummary(courses, evaluations) {
-  const allowedIds = new Set(
-    courses.map((item) => item.courseOfferingId || item._id).filter(Boolean),
-  );
+  const allowedIds = new Set(courses.map(item => item.courseOfferingId || item._id).filter(Boolean));
   const normalized = evaluations
-    .map((item) => {
+    .map(item => {
       const scores = item.scores && typeof item.scores === "object" ? item.scores : {};
       return {
         courseOfferingId: item.course_offering_id || item.courseOfferingId || "",
         courseId: item.course_id || item.courseId || "",
         rating: Number(item.rating || scores.overall || item.average_rating || 0),
-        feedback: item.feedback_text || item.feedback || item.content || "",
+        feedback: item.feedback_text || item.feedback || item.content || ""
       };
     })
-    .filter((item) => item.courseOfferingId && allowedIds.has(item.courseOfferingId));
+    .filter(item => item.courseOfferingId && allowedIds.has(item.courseOfferingId));
 
-  return courses.map((course) => {
-    const rows = normalized.filter((item) => item.courseOfferingId === course.courseOfferingId);
+  return courses.map(course => {
+    const rows = normalized.filter(item => item.courseOfferingId === course.courseOfferingId);
     const average = rows.length
       ? Math.round((rows.reduce((sum, item) => sum + Number(item.rating || 0), 0) / rows.length) * 10) / 10
       : 0;
@@ -638,7 +692,7 @@ function buildEvaluationSummary(courses, evaluations) {
       courseName: [course.code, course.name].filter(Boolean).join(" ").trim() || course.name || "",
       count: rows.length,
       average,
-      feedback: rows.map((item) => item.feedback).filter(Boolean),
+      feedback: rows.map(item => item.feedback).filter(Boolean)
     };
   });
 }
@@ -649,13 +703,23 @@ function calculateAtRiskStudentCount(attendanceView) {
     if (item.status !== "absent" || !item.studentId) continue;
     counts[item.studentId] = (counts[item.studentId] || 0) + 1;
   }
-  return Object.values(counts).filter((count) => count >= 3).length;
+  return Object.values(counts).filter(count => count >= 3).length;
 }
 
-function buildVisibleMaterials({ role, sessionUserId, teacher, studentEnrollmentByOffering, materials, allowedOfferingIds, offeringMap, courseMap, now }) {
+function buildVisibleMaterials({
+  role,
+  sessionUserId,
+  teacher,
+  studentEnrollmentByOffering,
+  materials,
+  allowedOfferingIds,
+  offeringMap,
+  courseMap,
+  now
+}) {
   return materials
-    .filter((item) => allowedOfferingIds.has(String(item.course_offering_id || item.courseOfferingId || "")))
-    .filter((item) => {
+    .filter(item => allowedOfferingIds.has(String(item.course_offering_id || item.courseOfferingId || "")))
+    .filter(item => {
       const offeringId = String(item.course_offering_id || item.courseOfferingId || "");
       const offering = offeringMap.get(offeringId) || {};
       if (role === "teacher") {
@@ -663,11 +727,13 @@ function buildVisibleMaterials({ role, sessionUserId, teacher, studentEnrollment
       }
       if (role !== "student") return true;
       const enrollment = studentEnrollmentByOffering.get(offeringId) || {};
-      return item.is_public_to_students === true &&
+      return (
+        item.is_public_to_students === true &&
         isOfferingStarted(offering, now) &&
-        materialMatchesEnrollmentTeacher(item, enrollment, offering);
+        materialMatchesEnrollmentTeacher(item, enrollment, offering)
+      );
     })
-    .map((item) => {
+    .map(item => {
       const offering = offeringMap.get(item.course_offering_id) || {};
       const courseName = buildCourseName(offering, courseMap);
       return {
@@ -684,12 +750,14 @@ function buildVisibleMaterials({ role, sessionUserId, teacher, studentEnrollment
         knowledgeDocumentId: item.knowledge_document_id || "",
         timelineAt: Number(item.available_at || item.updated_at || 0),
         createdAt: Number(item.created_at || 0),
-        updatedAt: Number(item.updated_at || 0),
+        updatedAt: Number(item.updated_at || 0)
       };
     })
-    .sort((a, b) => role === "student"
-      ? Number(a.timelineAt || 0) - Number(b.timelineAt || 0)
-      : Number(b.updatedAt || 0) - Number(a.updatedAt || 0));
+    .sort((a, b) =>
+      role === "student"
+        ? Number(a.timelineAt || 0) - Number(b.timelineAt || 0)
+        : Number(b.updatedAt || 0) - Number(a.updatedAt || 0)
+    );
 }
 
 function materialBelongsToTeacher(material, teacher, sessionUserId) {
@@ -697,15 +765,16 @@ function materialBelongsToTeacher(material, teacher, sessionUserId) {
   const uploaderUserId = String(material.uploader_user_id || material.uploaderUserId || "").trim();
   return Boolean(
     (teacherId && teacher && teacherId === String(teacher._id || "").trim()) ||
-    (uploaderUserId && uploaderUserId === String(sessionUserId || "").trim()),
+    (uploaderUserId && uploaderUserId === String(sessionUserId || "").trim())
   );
 }
 
 function materialMatchesEnrollmentTeacher(material, enrollment, offering) {
   const teacherIds = Array.isArray(offering.teacher_ids)
-    ? offering.teacher_ids.map((item) => String(item || "").trim()).filter(Boolean)
+    ? offering.teacher_ids.map(item => String(item || "").trim()).filter(Boolean)
     : [];
-  const selectedTeacherId = String(enrollment.selected_teacher_id || "").trim() || (teacherIds.length === 1 ? teacherIds[0] : "");
+  const selectedTeacherId =
+    String(enrollment.selected_teacher_id || "").trim() || (teacherIds.length === 1 ? teacherIds[0] : "");
   const selectedTeacherUserId = String(enrollment.selected_teacher_user_id || "").trim();
   if (!selectedTeacherId && !selectedTeacherUserId) {
     return false;
@@ -715,7 +784,7 @@ function materialMatchesEnrollmentTeacher(material, enrollment, offering) {
   return Boolean(
     (selectedTeacherId && materialTeacherId && selectedTeacherId === materialTeacherId) ||
     (selectedTeacherUserId && uploaderUserId && selectedTeacherUserId === uploaderUserId) ||
-    (!materialTeacherId && !selectedTeacherUserId && teacherIds.length === 1),
+    (!materialTeacherId && !selectedTeacherUserId && teacherIds.length === 1)
   );
 }
 
@@ -732,13 +801,15 @@ function buildStudentProfile(input) {
   const studentIds = buildStudentIdSet(student, input.session.userId);
   const enrolledOfferingIds = new Set(
     input.enrollments
-      .filter((item) => item.status !== "dropped" && studentIds.has(String(item.student_id || item.studentId || "").trim()))
-      .map((item) => item.course_offering_id || item.courseOfferingId)
-      .filter(Boolean),
+      .filter(
+        item => item.status !== "dropped" && studentIds.has(String(item.student_id || item.studentId || "").trim())
+      )
+      .map(item => item.course_offering_id || item.courseOfferingId)
+      .filter(Boolean)
   );
-  const planOfferings = input.offerings.filter((offering) => studentMatchesPlanOffering(student, offering));
+  const planOfferings = input.offerings.filter(offering => studentMatchesPlanOffering(student, offering));
   const planCourseIds = new Set();
-  const uniquePlanOfferings = planOfferings.filter((offering) => {
+  const uniquePlanOfferings = planOfferings.filter(offering => {
     const key = offering.course_id;
     if (!key || planCourseIds.has(key)) return false;
     planCourseIds.add(key);
@@ -746,9 +817,14 @@ function buildStudentProfile(input) {
   });
   const completedCourseIds = new Set();
   const completedOfferings = input.offerings
-    .filter((offering) => enrolledOfferingIds.has(offering._id))
-    .filter((offering) => isOfferingCompleted(offering, input.classSessions.filter((item) => item.course_offering_id === offering._id)))
-    .filter((offering) => {
+    .filter(offering => enrolledOfferingIds.has(offering._id))
+    .filter(offering =>
+      isOfferingCompleted(
+        offering,
+        input.classSessions.filter(item => item.course_offering_id === offering._id)
+      )
+    )
+    .filter(offering => {
       if (completedCourseIds.has(offering.course_id)) return false;
       completedCourseIds.add(offering.course_id);
       return true;
@@ -756,17 +832,23 @@ function buildStudentProfile(input) {
   const moduleCredits = buildModuleCredits({
     planOfferings: uniquePlanOfferings,
     completedOfferings,
-    courseMap: mapById(input.courses),
+    courseMap: mapById(input.courses)
   });
   const totalCredits = uniquePlanOfferings.length
-    ? uniquePlanOfferings.reduce((sum, offering) => sum + Number((mapById(input.courses).get(offering.course_id) || {}).credits || 0), 0)
+    ? uniquePlanOfferings.reduce(
+        (sum, offering) => sum + Number((mapById(input.courses).get(offering.course_id) || {}).credits || 0),
+        0
+      )
     : Number(plan.total_required_credits || 0);
-  const creditsEarned = completedOfferings.reduce((sum, offering) => sum + Number((mapById(input.courses).get(offering.course_id) || {}).credits || 0), 0);
+  const creditsEarned = completedOfferings.reduce(
+    (sum, offering) => sum + Number((mapById(input.courses).get(offering.course_id) || {}).credits || 0),
+    0
+  );
   const attendanceStats = calculateAttendanceStats({
     studentIds,
     enrolledOfferingIds,
     classSessions: input.classSessions,
-    attendance: input.attendance,
+    attendance: input.attendance
   });
 
   return {
@@ -791,29 +873,32 @@ function buildStudentProfile(input) {
     moduleCredits,
     gpaTrend: [],
     percentileRank: Number(student.percentile_rank || 0),
-    interestTags: [],
+    interestTags: []
   };
 }
 
 function resolveStudentContact(student = {}) {
-  const contact = student && student.contact && typeof student.contact === "object" && !Array.isArray(student.contact)
-    ? student.contact
-    : {};
+  const contact =
+    student && student.contact && typeof student.contact === "object" && !Array.isArray(student.contact)
+      ? student.contact
+      : {};
   return {
     email: String(contact.email || student.contact_email || student.contactEmail || student.email || "").trim(),
     phone: String(contact.phone || student.contact_phone || student.contactPhone || student.phone || "").trim(),
-    address: String(contact.address || student.contact_address || student.contactAddress || student.address || "").trim(),
+    address: String(
+      contact.address || student.contact_address || student.contactAddress || student.address || ""
+    ).trim()
   };
 }
 
 function resolveStudentAdminClassName(student = {}, adminClass = null) {
   return String(
     (adminClass && (adminClass.name || adminClass.code || adminClass._id)) ||
-    student.admin_class_name ||
-    student.adminClassName ||
-    student.adminClass ||
-    student.admin_class ||
-    ""
+      student.admin_class_name ||
+      student.adminClassName ||
+      student.adminClass ||
+      student.admin_class ||
+      ""
   ).trim();
 }
 
@@ -823,10 +908,7 @@ function studentMatchesPlanOffering(student, offering) {
   if (offering.major_id) {
     return Boolean(sameYear && sameMajor);
   }
-  return Boolean(
-    (student.training_plan_id && offering.training_plan_id === student.training_plan_id) ||
-    sameYear,
-  );
+  return Boolean((student.training_plan_id && offering.training_plan_id === student.training_plan_id) || sameYear);
 }
 
 function buildTeacherProfile({ teacher, session, offerings, enrollments, allowedOfferingIds }) {
@@ -835,9 +917,11 @@ function buildTeacherProfile({ teacher, session, offerings, enrollments, allowed
   }
   const studentCount = new Set(
     enrollments
-      .filter((item) => allowedOfferingIds.has(item.course_offering_id || item.courseOfferingId) && item.status !== "dropped")
-      .map((item) => item.student_id || item.studentId)
-      .filter(Boolean),
+      .filter(
+        item => allowedOfferingIds.has(item.course_offering_id || item.courseOfferingId) && item.status !== "dropped"
+      )
+      .map(item => item.student_id || item.studentId)
+      .filter(Boolean)
   ).size;
   return {
     teacherId: teacher._id,
@@ -849,19 +933,21 @@ function buildTeacherProfile({ teacher, session, offerings, enrollments, allowed
     researchFields: Array.isArray(teacher.research_fields) ? teacher.research_fields : [],
     teachingExperience: teacher.teaching_experience || "",
     studentCount,
-    courseCount: offerings.filter((item) => allowedOfferingIds.has(item._id)).length,
+    courseCount: offerings.filter(item => allowedOfferingIds.has(item._id)).length
   };
 }
 
 function buildCourseStudents({ role, allowedOfferingIds, enrollments, students, teacher, sessionUserId }) {
   const studentMap = mapById(students);
   return enrollments
-    .filter((item) => allowedOfferingIds.has(item.course_offering_id || item.courseOfferingId) && item.status !== "dropped")
-    .filter((item) => {
+    .filter(
+      item => allowedOfferingIds.has(item.course_offering_id || item.courseOfferingId) && item.status !== "dropped"
+    )
+    .filter(item => {
       if (role !== "teacher") return true;
       return enrollmentBelongsToTeacher(item, teacher, sessionUserId);
     })
-    .map((item) => {
+    .map(item => {
       const student = studentMap.get(item.student_id || item.studentId) || {};
       return {
         studentId: item.student_id || item.studentId || "",
@@ -871,7 +957,7 @@ function buildCourseStudents({ role, allowedOfferingIds, enrollments, students, 
         enrollmentStatus: item.status || "enrolled",
         selectedTeacherId: item.selected_teacher_id || "",
         selectedTeacherUserId: item.selected_teacher_user_id || "",
-        selectedTeacherName: item.selected_teacher_name || "",
+        selectedTeacherName: item.selected_teacher_name || ""
       };
     });
 }
@@ -881,7 +967,7 @@ function buildModuleCredits({ planOfferings, completedOfferings, courseMap }) {
     general: { current: 0, total: 0 },
     majorRequired: { current: 0, total: 0 },
     majorElective: { current: 0, total: 0 },
-    practice: { current: 0, total: 0 },
+    practice: { current: 0, total: 0 }
   };
   for (const offering of planOfferings) {
     const course = courseMap.get(offering.course_id) || {};
@@ -903,20 +989,22 @@ function moduleKey(value) {
 }
 
 function calculateAttendanceStats({ studentIds, enrolledOfferingIds, classSessions, attendance, now = Date.now() }) {
-  const pastSessions = classSessions.filter((item) =>
-    enrolledOfferingIds.has(item.course_offering_id || item.courseOfferingId) &&
-    getSessionEndAt(item) < now &&
-    item.status !== "cancelled",
+  const pastSessions = classSessions.filter(
+    item =>
+      enrolledOfferingIds.has(item.course_offering_id || item.courseOfferingId) &&
+      getSessionEndAt(item) < now &&
+      item.status !== "cancelled"
   );
   let attended = 0;
   let leave = 0;
   for (const classSession of pastSessions) {
     const offeringId = classSession.course_offering_id || classSession.courseOfferingId;
     const sessionDate = classSession.session_date || classSession.sessionDate;
-    const record = attendance.find((item) =>
-      studentIds.has(String(item.student_id || item.studentId || "").trim()) &&
-      String(item.course_offering_id || item.courseOfferingId || "") === offeringId &&
-      String(item.attendance_date || item.date || "") === sessionDate,
+    const record = attendance.find(
+      item =>
+        studentIds.has(String(item.student_id || item.studentId || "").trim()) &&
+        String(item.course_offering_id || item.courseOfferingId || "") === offeringId &&
+        String(item.attendance_date || item.date || "") === sessionDate
     );
     if (record && record.status === "on_leave") {
       leave += 1;
@@ -930,7 +1018,7 @@ function calculateAttendanceStats({ studentIds, enrolledOfferingIds, classSessio
     leaveSessions: leave,
     pastSessions: pastSessions.length,
     countedSessions: counted,
-    attendanceRate: counted ? Math.round((attended / counted) * 100) : 0,
+    attendanceRate: counted ? Math.round((attended / counted) * 100) : 0
   };
 }
 
@@ -941,7 +1029,7 @@ function isOfferingStarted(offering, now = Date.now()) {
 
 function isOfferingCompleted(offering, sessions = [], now = Date.now()) {
   if (sessions.length) {
-    return sessions.every((item) => getSessionEndAt(item) && getSessionEndAt(item) < now);
+    return sessions.every(item => getSessionEndAt(item) && getSessionEndAt(item) < now);
   }
   const endAt = buildDateTime(offering.course_end_date, offering.class_end_time || "23:59");
   return Boolean(endAt && endAt < now);
@@ -965,7 +1053,7 @@ function buildDateTime(date, time) {
 }
 
 function mapById(rows) {
-  return new Map(rows.filter((item) => item && item._id).map((item) => [item._id, item]));
+  return new Map(rows.filter(item => item && item._id).map(item => [item._id, item]));
 }
 
 function groupBy(items, field) {

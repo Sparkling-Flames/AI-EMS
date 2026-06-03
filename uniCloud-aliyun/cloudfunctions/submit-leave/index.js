@@ -68,7 +68,7 @@ exports.main = async (event = {}) => {
     review_comment: "",
     reviewed_at: 0,
     created_at: now,
-    updated_at: now,
+    updated_at: now
   };
 
   const result = await db.collection("leave_requests").add(leave);
@@ -93,8 +93,8 @@ exports.main = async (event = {}) => {
       reviewComment: "",
       reviewedAt: 0,
       createdAt: now,
-      updatedAt: now,
-    },
+      updatedAt: now
+    }
   };
 };
 
@@ -110,7 +110,11 @@ async function findById(collection, id) {
 
 async function findByField(collection, field, value) {
   try {
-    const result = await db.collection(collection).where({ [field]: value }).limit(1).get();
+    const result = await db
+      .collection(collection)
+      .where({ [field]: value })
+      .limit(1)
+      .get();
     return result.data && result.data[0] ? result.data[0] : null;
   } catch (error) {
     console.warn(`[submit-leave] ${collection} lookup failed.`, error);
@@ -183,7 +187,7 @@ function buildLeaveRange(leaveDate) {
 
   return {
     startAt: start.getTime(),
-    endAt: end.getTime(),
+    endAt: end.getTime()
   };
 }
 
@@ -196,7 +200,7 @@ async function writeAudit(action, session, targetId, before, after) {
       target_id: targetId,
       before,
       after,
-      created_at: Date.now(),
+      created_at: Date.now()
     });
   } catch (error) {
     console.warn("[submit-leave] audit write skipped.", error);

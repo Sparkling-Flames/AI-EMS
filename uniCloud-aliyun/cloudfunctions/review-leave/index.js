@@ -36,7 +36,7 @@ exports.main = async (event = {}) => {
     reviewer_user_id: session.userId,
     review_comment: reviewComment,
     reviewed_at: now,
-    updated_at: now,
+    updated_at: now
   };
 
   await db.collection("leave_requests").doc(leaveId).update(update);
@@ -51,7 +51,7 @@ exports.main = async (event = {}) => {
   return {
     ok: true,
     leave: buildLeaveView({ ...leave, ...update, _id: leaveId }),
-    sync,
+    sync
   };
 };
 
@@ -89,7 +89,7 @@ async function syncAttendance(leave, now) {
       status: "on_leave",
       source: "leave_auto",
       leave_request_id: leave._id,
-      updated_at: now,
+      updated_at: now
     });
   } else {
     const result = await db.collection("attendance_records").add({
@@ -101,7 +101,7 @@ async function syncAttendance(leave, now) {
       source: "leave_auto",
       leave_request_id: leave._id,
       created_at: now,
-      updated_at: now,
+      updated_at: now
     });
     attendanceRecordId = result.id;
   }
@@ -113,14 +113,14 @@ async function syncAttendance(leave, now) {
     previous_status: previousStatus,
     previous_source: previousSource,
     created_at: now,
-    updated_at: now,
+    updated_at: now
   });
 
   return {
     attendanceRecordId,
     classSessionId,
     previousStatus,
-    previousSource,
+    previousSource
   };
 }
 
@@ -129,7 +129,7 @@ async function upsertLeaveSession(link) {
     .collection("leave_request_sessions")
     .where({
       leave_request_id: link.leave_request_id,
-      class_session_id: link.class_session_id,
+      class_session_id: link.class_session_id
     })
     .limit(1)
     .get();
@@ -140,7 +140,7 @@ async function upsertLeaveSession(link) {
       attendance_record_id: link.attendance_record_id,
       previous_status: link.previous_status,
       previous_source: link.previous_source,
-      updated_at: link.updated_at,
+      updated_at: link.updated_at
     });
   } else {
     await db.collection("leave_request_sessions").add(link);
@@ -163,7 +163,7 @@ async function findAttendance(studentId, courseOfferingId, attendanceDate) {
     .where({
       student_id: studentId,
       course_offering_id: courseOfferingId,
-      attendance_date: attendanceDate,
+      attendance_date: attendanceDate
     })
     .limit(1)
     .get();
@@ -185,7 +185,11 @@ async function findById(collection, id) {
 }
 
 async function findByField(collection, field, value) {
-  const result = await db.collection(collection).where({ [field]: value }).limit(1).get();
+  const result = await db
+    .collection(collection)
+    .where({ [field]: value })
+    .limit(1)
+    .get();
   return result.data && result.data[0] ? result.data[0] : null;
 }
 
@@ -248,7 +252,7 @@ function buildLeaveView(leave) {
     reviewComment: leave.review_comment || "",
     reviewedAt: Number(leave.reviewed_at || 0),
     createdAt: Number(leave.created_at || 0),
-    updatedAt: Number(leave.updated_at || 0),
+    updatedAt: Number(leave.updated_at || 0)
   };
 }
 
@@ -266,7 +270,7 @@ async function writeAudit(action, session, targetId, before, after) {
       target_id: targetId,
       before,
       after,
-      created_at: Date.now(),
+      created_at: Date.now()
     });
   } catch (error) {
     console.warn("[review-leave] audit write skipped.", error);

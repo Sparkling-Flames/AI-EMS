@@ -1,10 +1,6 @@
 <template>
   <view class="page">
-    <PageHeader
-      title="Admin Dashboard"
-      :displayName="session.displayName"
-      :username="session.username"
-    >
+    <PageHeader title="Admin Dashboard" :display-name="session.displayName" :username="session.username">
       <button class="secondary-btn refresh-btn" :loading="loading" @click="refresh">Refresh</button>
     </PageHeader>
 
@@ -28,11 +24,7 @@
     <view class="section">
       <text class="section-title">System Metrics</text>
       <view class="metric-grid">
-        <view
-          v-for="m in metricList"
-          :key="m.label"
-          class="metric-card"
-        >
+        <view v-for="m in metricList" :key="m.label" class="metric-card">
           <text class="metric-value">{{ m.value }}</text>
           <text class="metric-label">{{ m.label }}</text>
         </view>
@@ -44,35 +36,31 @@
       <template v-if="!data.profileChangeRequests.length">
         <text class="muted">No pending profile changes.</text>
       </template>
-      <view
-        v-for="item in data.profileChangeRequests"
-        :key="item._id"
-        class="profile-review-card"
-      >
+      <view v-for="item in data.profileChangeRequests" :key="item._id" class="profile-review-card">
         <view class="review-card-head">
           <view class="review-card-title">
             <text class="value">{{ profileRequestTitle(item) }}</text>
-            <text class="muted">{{ formatDate(item.createdAt) || 'Date unavailable' }}</text>
+            <text class="muted">{{ formatDate(item.createdAt) || "Date unavailable" }}</text>
           </view>
           <StatusBadge :status="item.status" />
         </view>
         <view class="change-grid">
-          <view
-            v-for="change in profileChangeItems(item)"
-            :key="change.key"
-            class="change-cell"
-          >
+          <view v-for="change in profileChangeItems(item)" :key="change.key" class="change-cell">
             <text class="label">{{ change.label }}</text>
             <view class="change-values">
-              <text class="old-value">{{ change.oldValue || 'Empty' }}</text>
+              <text class="old-value">{{ change.oldValue || "Empty" }}</text>
               <text class="change-arrow">to</text>
-              <text class="new-value">{{ change.newValue || 'Empty' }}</text>
+              <text class="new-value">{{ change.newValue || "Empty" }}</text>
             </view>
           </view>
         </view>
         <view class="comment-control">
-          <view class="comment-toggle" :class="{ active: isProfileCommentEnabled(item) }" @tap="toggleProfileComment(item)">
-            <text>{{ isProfileCommentEnabled(item) ? 'With comment' : 'No comment' }}</text>
+          <view
+            class="comment-toggle"
+            :class="{ active: isProfileCommentEnabled(item) }"
+            @tap="toggleProfileComment(item)"
+          >
+            <text>{{ isProfileCommentEnabled(item) ? "With comment" : "No comment" }}</text>
           </view>
           <textarea
             v-if="isProfileCommentEnabled(item)"
@@ -118,13 +106,13 @@
 </template>
 
 <script>
-import PageHeader from '../../components/PageHeader.vue'
-import NavTabs from '../../components/NavTabs.vue'
-import DataCard from '../../components/DataCard.vue'
-import StatCard from '../../components/StatCard.vue'
-import StatusBadge from '../../components/StatusBadge.vue'
-import { callAiemsFunction } from '../../common/api.js'
-import { getSession, requireRole } from '../../common/session.js'
+import PageHeader from "../../components/PageHeader.vue";
+import NavTabs from "../../components/NavTabs.vue";
+import DataCard from "../../components/DataCard.vue";
+import StatCard from "../../components/StatCard.vue";
+import StatusBadge from "../../components/StatusBadge.vue";
+import { callAiemsFunction } from "../../common/api.js";
+import { getSession, requireRole } from "../../common/session.js";
 
 export default {
   components: { PageHeader, NavTabs, DataCard, StatCard, StatusBadge },
@@ -135,16 +123,16 @@ export default {
       lastUpdatedAt: 0,
       profileReviewDrafts: {},
       leaveReviewDrafts: {},
-      deletingLeaveId: '',
+      deletingLeaveId: "",
       leaveFilterCourseIndex: 0,
       leaveFilterTeacherIndex: 0,
-      leaveFilterStartDate: '',
-      leaveFilterEndDate: '',
+      leaveFilterStartDate: "",
+      leaveFilterEndDate: "",
       reasonTypes: [
-        { value: 'sick', label: 'Sick Leave' },
-        { value: 'personal', label: 'Personal Leave' },
-        { value: 'official', label: 'Official Duty' },
-        { value: 'other', label: 'Other' }
+        { value: "sick", label: "Sick Leave" },
+        { value: "personal", label: "Personal Leave" },
+        { value: "official", label: "Official Duty" },
+        { value: "other", label: "Other" }
       ],
       sysStats: {
         totalStudents: 0,
@@ -158,76 +146,76 @@ export default {
         atRiskStudents: [],
         metrics: { courses: 0, pendingLeaves: 0, evaluations: 0, profileChanges: 0, riskStudents: 0 }
       }
-    }
+    };
   },
   computed: {
     metricList() {
       return [
-        { label: 'Courses', value: this.data.metrics.courses },
-        { label: 'Pending Leaves', value: this.data.metrics.pendingLeaves },
-        { label: 'Evaluations Submitted', value: this.data.metrics.evaluations },
-        { label: 'Profile Reviews', value: this.data.metrics.profileChanges },
-        { label: 'At-Risk Students', value: this.data.metrics.riskStudents }
-      ]
+        { label: "Courses", value: this.data.metrics.courses },
+        { label: "Pending Leaves", value: this.data.metrics.pendingLeaves },
+        { label: "Evaluations Submitted", value: this.data.metrics.evaluations },
+        { label: "Profile Reviews", value: this.data.metrics.profileChanges },
+        { label: "At-Risk Students", value: this.data.metrics.riskStudents }
+      ];
     },
     lastUpdatedText() {
-      return this.lastUpdatedAt ? 'Updated ' + this.formatTime(this.lastUpdatedAt) : ''
+      return this.lastUpdatedAt ? "Updated " + this.formatTime(this.lastUpdatedAt) : "";
     },
     leaveFilterCourses() {
-      const seen = new Set()
-      const courses = [{ value: '', label: 'All Courses' }]
-      const requests = this.data.leaveRequests || []
+      const seen = new Set();
+      const courses = [{ value: "", label: "All Courses" }];
+      const requests = this.data.leaveRequests || [];
       requests.forEach(item => {
-        const value = this.leaveCourseFilterValue(item)
-        if (!value || seen.has(value)) return
-        seen.add(value)
-        courses.push({ value, label: item.courseName || value })
-      })
-      return courses
+        const value = this.leaveCourseFilterValue(item);
+        if (!value || seen.has(value)) return;
+        seen.add(value);
+        courses.push({ value, label: item.courseName || value });
+      });
+      return courses;
     },
     leaveFilterCourseLabels() {
-      return this.leaveFilterCourses.map(item => item.label)
+      return this.leaveFilterCourses.map(item => item.label);
     },
     selectedLeaveFilterCourseLabel() {
-      return this.leaveFilterCourseLabels[this.leaveFilterCourseIndex] || 'All Courses'
+      return this.leaveFilterCourseLabels[this.leaveFilterCourseIndex] || "All Courses";
     },
     leaveFilterTeachers() {
-      const seen = new Set()
-      const teachers = [{ value: '', label: 'All Teachers' }]
-      const requests = this.data.leaveRequests || []
+      const seen = new Set();
+      const teachers = [{ value: "", label: "All Teachers" }];
+      const requests = this.data.leaveRequests || [];
       requests.forEach(item => {
         this.leaveTeacherOptions(item).forEach(option => {
-          if (!option.value || seen.has(option.value)) return
-          seen.add(option.value)
-          teachers.push(option)
-        })
-      })
-      return teachers
+          if (!option.value || seen.has(option.value)) return;
+          seen.add(option.value);
+          teachers.push(option);
+        });
+      });
+      return teachers;
     },
     leaveFilterTeacherLabels() {
-      return this.leaveFilterTeachers.map(item => item.label)
+      return this.leaveFilterTeachers.map(item => item.label);
     },
     selectedLeaveFilterTeacherLabel() {
-      return this.leaveFilterTeacherLabels[this.leaveFilterTeacherIndex] || 'All Teachers'
+      return this.leaveFilterTeacherLabels[this.leaveFilterTeacherIndex] || "All Teachers";
     },
     filteredLeaveRequests() {
-      return (this.data.leaveRequests || []).filter(item => this.matchesLeaveFilters(item))
+      return (this.data.leaveRequests || []).filter(item => this.matchesLeaveFilters(item));
     }
   },
   onShow() {
-    const session = requireRole(['admin'])
-    if (!session) return
-    this.session = session
-    this.load(true)
+    const session = requireRole(["admin"]);
+    if (!session) return;
+    this.session = session;
+    this.load(true);
   },
   methods: {
     async load(forceRefresh = false) {
-      this.loading = true
-      const result = await callAiemsFunction('get-dashboard-data', {
+      this.loading = true;
+      const result = await callAiemsFunction("get-dashboard-data", {
         session: getSession(),
         forceRefresh
-      })
-      this.loading = false
+      });
+      this.loading = false;
       if (result.ok) {
         this.data = {
           ...this.data,
@@ -237,14 +225,14 @@ export default {
           evaluationSummary: result.data.evaluationSummary || [],
           atRiskStudents: result.data.atRiskStudents || [],
           metrics: this.normalizeMetrics(result.data.metrics)
-        }
-        this.sysStats = result.data.systemStats || this.sysStats
-        this.lastUpdatedAt = Date.now()
-        this.normalizeLeaveFilterSelection()
+        };
+        this.sysStats = result.data.systemStats || this.sysStats;
+        this.lastUpdatedAt = Date.now();
+        this.normalizeLeaveFilterSelection();
       }
     },
     refresh() {
-      this.load(true)
+      this.load(true);
     },
     normalizeMetrics(metrics = {}) {
       return {
@@ -253,129 +241,154 @@ export default {
         evaluations: Number(metrics.evaluations || 0),
         profileChanges: Number(metrics.profileChanges || 0),
         riskStudents: Number(metrics.riskStudents || 0)
-      }
+      };
     },
     async reviewLeave(item, decision) {
-      const draft = this.leaveReviewDraftFor(item)
-      const result = await callAiemsFunction('review-leave', {
+      const draft = this.leaveReviewDraftFor(item);
+      const result = await callAiemsFunction("review-leave", {
         session: getSession(),
         leaveId: item._id,
         decision,
-        reviewComment: draft.enabled ? draft.comment.trim() : ''
-      })
-      this.afterReview(result, decision)
+        reviewComment: draft.enabled ? draft.comment.trim() : ""
+      });
+      this.afterReview(result, decision);
     },
     async reviewProfile(item, decision) {
-      const draft = this.profileReviewDraftFor(item)
-      const result = await callAiemsFunction('review-profile-change', {
+      const draft = this.profileReviewDraftFor(item);
+      const result = await callAiemsFunction("review-profile-change", {
         session: getSession(),
         requestId: item._id,
         decision,
-        reviewComment: draft.enabled ? draft.comment.trim() : ''
-      })
-      this.afterReview(result, decision)
+        reviewComment: draft.enabled ? draft.comment.trim() : ""
+      });
+      this.afterReview(result, decision);
     },
     deleteLeave(item) {
       uni.showModal({
-        title: 'Delete leave request',
-        content: 'This will remove the request from admin, teacher, and student views.',
-        confirmText: 'Delete',
-        success: async (modal) => {
-          if (!modal.confirm) return
-          this.deletingLeaveId = item._id
-          const result = await callAiemsFunction('delete-leave', {
+        title: "Delete leave request",
+        content: "This will remove the request from admin, teacher, and student views.",
+        confirmText: "Delete",
+        success: async modal => {
+          if (!modal.confirm) return;
+          this.deletingLeaveId = item._id;
+          const result = await callAiemsFunction("delete-leave", {
             session: getSession(),
             leaveId: item._id
-          })
-          this.deletingLeaveId = ''
+          });
+          this.deletingLeaveId = "";
           if (result.ok) {
-            uni.showToast({ title: 'Deleted', icon: 'success' })
-            this.load(true)
-            return
+            uni.showToast({ title: "Deleted", icon: "success" });
+            this.load(true);
+            return;
           }
-          uni.showToast({ title: result.message || 'Delete failed.', icon: 'none' })
+          uni.showToast({ title: result.message || "Delete failed.", icon: "none" });
         }
-      })
+      });
     },
     afterReview(result, decision) {
       if (result.ok) {
-        uni.showToast({ title: decision === 'approved' ? 'Approved' : 'Rejected', icon: 'success' })
-        this.load(true)
-        return
+        uni.showToast({ title: decision === "approved" ? "Approved" : "Rejected", icon: "success" });
+        this.load(true);
+        return;
       }
-      uni.showToast({ title: result.message || 'Review failed.', icon: 'none' })
+      uni.showToast({ title: result.message || "Review failed.", icon: "none" });
     },
     profileRequestTitle(item) {
-      return [item.requesterName || item.requester_user_id, item.targetType || item.target_type].filter(Boolean).join(' - ')
+      return [item.requesterName || item.requester_user_id, item.targetType || item.target_type]
+        .filter(Boolean)
+        .join(" - ");
     },
     profileChangeItems(item) {
-      const changes = item.changes || {}
+      const changes = item.changes || {};
       return Object.keys(changes).map(key => {
-        const change = changes[key] || {}
+        const change = changes[key] || {};
         return {
           key,
           label: change.label || change.field || key,
-          oldValue: String(change.oldValue || ''),
-          newValue: String(change.newValue || '')
-        }
-      })
+          oldValue: String(change.oldValue || ""),
+          newValue: String(change.newValue || "")
+        };
+      });
     },
     formatChangeRequest(item) {
-      const changes = item.changes || {}
-      return Object.keys(changes).map(key => {
-        const change = changes[key] || {}
-        return (change.label || change.field || key) + ': ' + change.oldValue + ' -> ' + change.newValue
-      }).join('; ')
+      const changes = item.changes || {};
+      return Object.keys(changes)
+        .map(key => {
+          const change = changes[key] || {};
+          return (change.label || change.field || key) + ": " + change.oldValue + " -> " + change.newValue;
+        })
+        .join("; ");
     },
     changeLeaveFilterCourse(event) {
-      this.leaveFilterCourseIndex = Number(event.detail.value)
+      this.leaveFilterCourseIndex = Number(event.detail.value);
     },
     changeLeaveFilterTeacher(event) {
-      this.leaveFilterTeacherIndex = Number(event.detail.value)
+      this.leaveFilterTeacherIndex = Number(event.detail.value);
     },
     changeLeaveFilterStartDate(event) {
-      this.leaveFilterStartDate = event.detail.value
+      this.leaveFilterStartDate = event.detail.value;
     },
     changeLeaveFilterEndDate(event) {
-      this.leaveFilterEndDate = event.detail.value
+      this.leaveFilterEndDate = event.detail.value;
     },
     resetLeaveFilters() {
-      this.leaveFilterCourseIndex = 0
-      this.leaveFilterTeacherIndex = 0
-      this.leaveFilterStartDate = ''
-      this.leaveFilterEndDate = ''
+      this.leaveFilterCourseIndex = 0;
+      this.leaveFilterTeacherIndex = 0;
+      this.leaveFilterStartDate = "";
+      this.leaveFilterEndDate = "";
     },
     normalizeLeaveFilterSelection() {
       if (this.leaveFilterCourseIndex >= this.leaveFilterCourses.length) {
-        this.leaveFilterCourseIndex = 0
+        this.leaveFilterCourseIndex = 0;
       }
       if (this.leaveFilterTeacherIndex >= this.leaveFilterTeachers.length) {
-        this.leaveFilterTeacherIndex = 0
+        this.leaveFilterTeacherIndex = 0;
       }
     },
     leaveCourseFilterValue(item) {
-      return String(item && (item.courseOfferingId || item.courseId || item.courseName) || '').trim()
+      return String((item && (item.courseOfferingId || item.courseId || item.courseName)) || "").trim();
     },
     leaveTeacherOptions(item) {
-      const selectedName = String(item && (item.selectedTeacherName || item.selected_teacher_name) || '').trim()
-      const selectedId = String(item && (item.selectedTeacherId || item.selected_teacher_id || item.selectedTeacherUserId || item.selected_teacher_user_id) || '').trim()
+      const selectedName = String((item && (item.selectedTeacherName || item.selected_teacher_name)) || "").trim();
+      const selectedId = String(
+        (item &&
+          (item.selectedTeacherId ||
+            item.selected_teacher_id ||
+            item.selectedTeacherUserId ||
+            item.selected_teacher_user_id)) ||
+          ""
+      ).trim();
       if (selectedName) {
-        return [{ value: selectedId || selectedName, label: selectedName }]
+        return [{ value: selectedId || selectedName, label: selectedName }];
       }
-      const ids = Array.isArray(item && item.teacherIds) ? item.teacherIds : Array.isArray(item && item.teacher_ids) ? item.teacher_ids : []
-      const userIds = Array.isArray(item && item.teacherUserIds) ? item.teacherUserIds : Array.isArray(item && item.teacher_user_ids) ? item.teacher_user_ids : []
-      const names = Array.isArray(item && item.teacherNames) ? item.teacherNames : Array.isArray(item && item.teacher_names) ? item.teacher_names : []
-      return names.map((name, index) => ({
-        value: String(ids[index] || userIds[index] || name || '').trim(),
-        label: String(name || ids[index] || userIds[index] || '').trim()
-      })).filter(option => option.value && option.label)
+      const ids = Array.isArray(item && item.teacherIds)
+        ? item.teacherIds
+        : Array.isArray(item && item.teacher_ids)
+          ? item.teacher_ids
+          : [];
+      const userIds = Array.isArray(item && item.teacherUserIds)
+        ? item.teacherUserIds
+        : Array.isArray(item && item.teacher_user_ids)
+          ? item.teacher_user_ids
+          : [];
+      const names = Array.isArray(item && item.teacherNames)
+        ? item.teacherNames
+        : Array.isArray(item && item.teacher_names)
+          ? item.teacher_names
+          : [];
+      return names
+        .map((name, index) => ({
+          value: String(ids[index] || userIds[index] || name || "").trim(),
+          label: String(name || ids[index] || userIds[index] || "").trim()
+        }))
+        .filter(option => option.value && option.label);
     },
     leaveTeacherFilterValues(item) {
-      const values = new Set()
+      const values = new Set();
       this.leaveTeacherOptions(item).forEach(option => {
-        values.add(option.value)
-        values.add(option.label)
-      })
+        values.add(option.value);
+        values.add(option.label);
+      });
       const directValues = [
         item && item.selectedTeacherId,
         item && item.selected_teacher_id,
@@ -383,112 +396,117 @@ export default {
         item && item.selected_teacher_user_id,
         item && item.selectedTeacherName,
         item && item.selected_teacher_name
-      ]
+      ];
       directValues.forEach(value => {
-        const normalized = String(value || '').trim()
-        if (normalized) values.add(normalized)
-      })
-      return values
+        const normalized = String(value || "").trim();
+        if (normalized) values.add(normalized);
+      });
+      return values;
     },
     matchesLeaveFilters(item) {
-      const selectedCourse = this.leaveFilterCourses[this.leaveFilterCourseIndex] || this.leaveFilterCourses[0]
+      const selectedCourse = this.leaveFilterCourses[this.leaveFilterCourseIndex] || this.leaveFilterCourses[0];
       if (selectedCourse && selectedCourse.value && this.leaveCourseFilterValue(item) !== selectedCourse.value) {
-        return false
+        return false;
       }
-      const selectedTeacher = this.leaveFilterTeachers[this.leaveFilterTeacherIndex] || this.leaveFilterTeachers[0]
+      const selectedTeacher = this.leaveFilterTeachers[this.leaveFilterTeacherIndex] || this.leaveFilterTeachers[0];
       if (selectedTeacher && selectedTeacher.value && !this.leaveTeacherFilterValues(item).has(selectedTeacher.value)) {
-        return false
+        return false;
       }
-      const leaveDate = String(item && item.date || '').trim()
+      const leaveDate = String((item && item.date) || "").trim();
       if (this.leaveFilterStartDate && (!leaveDate || leaveDate < this.leaveFilterStartDate)) {
-        return false
+        return false;
       }
       if (this.leaveFilterEndDate && (!leaveDate || leaveDate > this.leaveFilterEndDate)) {
-        return false
+        return false;
       }
-      return true
+      return true;
     },
     leaveTitle(item) {
-      return [item.studentName, item.courseName].filter(Boolean).join(' - ') || 'Leave request'
+      return [item.studentName, item.courseName].filter(Boolean).join(" - ") || "Leave request";
     },
     leaveTeacherLabel(item) {
-      return this.leaveTeacherOptions(item).map(option => option.label).filter(Boolean).join(', ') || 'Unassigned'
+      return (
+        this.leaveTeacherOptions(item)
+          .map(option => option.label)
+          .filter(Boolean)
+          .join(", ") || "Unassigned"
+      );
     },
     reasonTypeLabel(value) {
-      const type = this.reasonTypes.find(item => item.value === value)
-      return type ? type.label : value || 'Other'
+      const type = this.reasonTypes.find(item => item.value === value);
+      return type ? type.label : value || "Other";
     },
     profileReviewDraftKey(item) {
-      return String(item && item._id || '')
+      return String((item && item._id) || "");
     },
     profileReviewDraftFor(item) {
-      const key = this.profileReviewDraftKey(item)
-      return this.profileReviewDrafts[key] || { enabled: false, comment: '' }
+      const key = this.profileReviewDraftKey(item);
+      return this.profileReviewDrafts[key] || { enabled: false, comment: "" };
     },
     isProfileCommentEnabled(item) {
-      return this.profileReviewDraftFor(item).enabled
+      return this.profileReviewDraftFor(item).enabled;
     },
     profileReviewCommentFor(item) {
-      return this.profileReviewDraftFor(item).comment
+      return this.profileReviewDraftFor(item).comment;
     },
     toggleProfileComment(item) {
-      const key = this.profileReviewDraftKey(item)
-      const current = this.profileReviewDraftFor(item)
+      const key = this.profileReviewDraftKey(item);
+      const current = this.profileReviewDraftFor(item);
       this.profileReviewDrafts = {
         ...this.profileReviewDrafts,
         [key]: { ...current, enabled: !current.enabled }
-      }
+      };
     },
     changeProfileReviewComment(item, event) {
-      const key = this.profileReviewDraftKey(item)
-      const current = this.profileReviewDraftFor(item)
+      const key = this.profileReviewDraftKey(item);
+      const current = this.profileReviewDraftFor(item);
       this.profileReviewDrafts = {
         ...this.profileReviewDrafts,
         [key]: { ...current, comment: event.detail.value }
-      }
+      };
     },
     leaveReviewDraftKey(item) {
-      return String(item && item._id || '')
+      return String((item && item._id) || "");
     },
     leaveReviewDraftFor(item) {
-      const key = this.leaveReviewDraftKey(item)
-      return this.leaveReviewDrafts[key] || { enabled: false, comment: '' }
+      const key = this.leaveReviewDraftKey(item);
+      return this.leaveReviewDrafts[key] || { enabled: false, comment: "" };
     },
     isLeaveCommentEnabled(item) {
-      return this.leaveReviewDraftFor(item).enabled
+      return this.leaveReviewDraftFor(item).enabled;
     },
     leaveReviewCommentFor(item) {
-      return this.leaveReviewDraftFor(item).comment
+      return this.leaveReviewDraftFor(item).comment;
     },
     toggleLeaveComment(item) {
-      const key = this.leaveReviewDraftKey(item)
-      const current = this.leaveReviewDraftFor(item)
+      const key = this.leaveReviewDraftKey(item);
+      const current = this.leaveReviewDraftFor(item);
       this.leaveReviewDrafts = {
         ...this.leaveReviewDrafts,
         [key]: { ...current, enabled: !current.enabled }
-      }
+      };
     },
     changeLeaveReviewComment(item, event) {
-      const key = this.leaveReviewDraftKey(item)
-      const current = this.leaveReviewDraftFor(item)
+      const key = this.leaveReviewDraftKey(item);
+      const current = this.leaveReviewDraftFor(item);
       this.leaveReviewDrafts = {
         ...this.leaveReviewDrafts,
         [key]: { ...current, comment: event.detail.value }
-      }
+      };
     },
     formatDate(value) {
-      const timestamp = Number(value || 0)
-      return timestamp ? new Date(timestamp).toISOString().slice(0, 10) : ''
+      const timestamp = Number(value || 0);
+      return timestamp ? new Date(timestamp).toISOString().slice(0, 10) : "";
     },
     formatTime(value) {
-      const date = new Date(value)
-      return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+      const date = new Date(value);
+      return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
     },
     go(url) {
-      uni.navigateTo({ url })
+      uni.navigateTo({ url });
     }
   }
-}
+};
 </script>
 
 <style scoped>

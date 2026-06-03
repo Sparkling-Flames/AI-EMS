@@ -8,7 +8,7 @@ const {
   loadCloudFunction,
   loadFrontendApiModule,
   measurePerformance,
-  resetPerformanceMetrics,
+  resetPerformanceMetrics
 } = require("./test-utils.cjs");
 
 before(() => {
@@ -23,7 +23,7 @@ test("[Performance] admin dashboard aggregation completes within the local budge
     "Admin dashboard aggregation",
     1200,
     () => dashboard({ session: { role: "admin", userId: "user_admin_001" } }),
-    "160 students, 8 offerings, 5120 attendance records",
+    "160 students, 8 offerings, 5120 attendance records"
   );
 
   assert.equal(result.ok, true);
@@ -39,7 +39,7 @@ test("[Performance] teacher dashboard role filtering completes within the local 
     "Teacher dashboard role filtering",
     900,
     () => dashboard({ session: { role: "teacher", userId: "user_t_001" } }),
-    "120 students, 6 offerings, teacher-scoped data",
+    "120 students, 6 offerings, teacher-scoped data"
   );
 
   assert.equal(result.ok, true);
@@ -55,13 +55,13 @@ test("[Performance] frontend fallback dashboard cache responds within the local 
     "Frontend fallback dashboard first read",
     250,
     () => api.callAiemsFunction("get-dashboard-data", { session, forceRefresh: true }),
-    "Local fallback without uniCloud",
+    "Local fallback without uniCloud"
   );
   const second = await measurePerformance(
     "Frontend fallback dashboard cached read",
     80,
     () => api.callAiemsFunction("get-dashboard-data", { session }),
-    "Local fallback response cache",
+    "Local fallback response cache"
   );
 
   assert.equal(first.result.ok, true);

@@ -2,11 +2,7 @@
 
 const assert = require("node:assert/strict");
 const test = require("node:test");
-const {
-  createAcademicSeed,
-  createMockDb,
-  loadCloudFunction,
-} = require("./test-utils.cjs");
+const { createAcademicSeed, createMockDb, loadCloudFunction } = require("./test-utils.cjs");
 
 test("[Functional] auth-login validates an active database account", async () => {
   const db = createMockDb(createAcademicSeed());
@@ -18,7 +14,10 @@ test("[Functional] auth-login validates an active database account", async () =>
   assert.equal(result.user.userId, "user_s_001");
   assert.equal(result.user.role, "student");
   assert.equal(result.user.displayName, "Alice Chen");
-  assert.equal(db.snapshot("audit_logs").some((row) => row.action === "login"), true);
+  assert.equal(
+    db.snapshot("audit_logs").some(row => row.action === "login"),
+    true
+  );
 });
 
 test("[Functional] leave approval synchronizes attendance to on_leave", async () => {
@@ -33,7 +32,7 @@ test("[Functional] leave approval synchronizes attendance to on_leave", async ()
     courseOfferingId: "co_future",
     leaveDate: "2099-06-15",
     reasonType: "sick",
-    reasonDetail: "Medical appointment.",
+    reasonDetail: "Medical appointment."
   });
 
   assert.equal(submitted.ok, true);
@@ -43,13 +42,13 @@ test("[Functional] leave approval synchronizes attendance to on_leave", async ()
     session: teacherSession,
     leaveId: submitted.leave._id,
     decision: "approved",
-    reviewComment: "Approved.",
+    reviewComment: "Approved."
   });
 
   assert.equal(reviewed.ok, true);
   assert.equal(reviewed.leave.status, "approved");
 
-  const attendance = db.snapshot("attendance_records").find((row) => row._id === "att_future_absent");
+  const attendance = db.snapshot("attendance_records").find(row => row._id === "att_future_absent");
   assert.equal(attendance.status, "on_leave");
   assert.equal(attendance.source, "leave_auto");
   assert.equal(attendance.leave_request_id, submitted.leave._id);
@@ -75,8 +74,8 @@ test("[Functional] anonymous course evaluation stores no student identifier", as
       difficulty: 4,
       workload: 4,
       achievement: 5,
-      overall: 5,
-    },
+      overall: 5
+    }
   });
 
   assert.equal(result.code, 200);
@@ -95,7 +94,7 @@ test("[Functional] AI assistant answers from the local knowledge base", async ()
 
   const result = await askAssistant({
     session: { role: "student", userId: "user_s_001", displayName: "Alice Chen" },
-    query: "What credits should I check before graduation?",
+    query: "What credits should I check before graduation?"
   });
 
   assert.equal(result.ok, true);

@@ -1,15 +1,15 @@
 <script>
 export default {
   onLaunch() {
-    console.log('AI-EMS launch')
+    console.log("AI-EMS launch");
   },
   onShow() {
-    console.log('AI-EMS show')
+    console.log("AI-EMS show");
   },
   onHide() {
-    console.log('AI-EMS hide')
+    console.log("AI-EMS hide");
   }
-}
+};
 </script>
 
 <style>

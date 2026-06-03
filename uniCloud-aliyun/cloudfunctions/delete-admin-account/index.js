@@ -16,35 +16,26 @@ exports.main = async (event = {}) => {
     return { ok: false, message: "You cannot delete the current admin account." };
   }
 
-  const [
-    users,
-    students,
-    teachers,
-    enrollments,
-    leaveRequests,
-    attendanceRecords,
-    evaluations,
-    materials,
-    offerings,
-  ] = await Promise.all([
-    readCollection("users"),
-    readCollection("students"),
-    readCollection("teachers"),
-    readCollection("enrollments"),
-    readCollection("leave_requests"),
-    readCollection("attendance_records"),
-    readCollection("course_evaluations"),
-    readCollection("course_materials"),
-    readCollection("course_offerings"),
-  ]);
+  const [users, students, teachers, enrollments, leaveRequests, attendanceRecords, evaluations, materials, offerings] =
+    await Promise.all([
+      readCollection("users"),
+      readCollection("students"),
+      readCollection("teachers"),
+      readCollection("enrollments"),
+      readCollection("leave_requests"),
+      readCollection("attendance_records"),
+      readCollection("course_evaluations"),
+      readCollection("course_materials"),
+      readCollection("course_offerings")
+    ]);
 
-  const user = users.find((item) => item._id === userId) || null;
+  const user = users.find(item => item._id === userId) || null;
   if (!user) {
     return { ok: false, message: "Account was not found." };
   }
 
-  const student = students.find((item) => item.user_id === userId) || null;
-  const teacher = teachers.find((item) => item.user_id === userId) || null;
+  const student = students.find(item => item.user_id === userId) || null;
+  const teacher = teachers.find(item => item.user_id === userId) || null;
   const now = Date.now();
   const removed = {
     users: 0,
@@ -54,24 +45,37 @@ exports.main = async (event = {}) => {
     leaveRequests: 0,
     attendanceRecords: 0,
     evaluations: 0,
-    materials: 0,
+    materials: 0
   };
 
   if (student) {
     const studentId = student._id;
-    removed.enrollments = await removeMatching("enrollments", enrollments, (item) => item.student_id === studentId);
-    removed.leaveRequests = await removeMatching("leave_requests", leaveRequests, (item) => item.student_id === studentId);
-    removed.attendanceRecords = await removeMatching("attendance_records", attendanceRecords, (item) => item.student_id === studentId);
-    removed.evaluations = await removeMatching("course_evaluations", evaluations, (item) => item.student_id === studentId);
+    removed.enrollments = await removeMatching("enrollments", enrollments, item => item.student_id === studentId);
+    removed.leaveRequests = await removeMatching(
+      "leave_requests",
+      leaveRequests,
+      item => item.student_id === studentId
+    );
+    removed.attendanceRecords = await removeMatching(
+      "attendance_records",
+      attendanceRecords,
+      item => item.student_id === studentId
+    );
+    removed.evaluations = await removeMatching(
+      "course_evaluations",
+      evaluations,
+      item => item.student_id === studentId
+    );
     await db.collection("students").doc(studentId).remove();
     removed.students = 1;
   }
 
   if (teacher) {
     const teacherId = teacher._id;
-    removed.materials = await removeMatching("course_materials", materials, (item) =>
-      item.teacher_id === teacherId ||
-      item.uploader_user_id === userId,
+    removed.materials = await removeMatching(
+      "course_materials",
+      materials,
+      item => item.teacher_id === teacherId || item.uploader_user_id === userId
     );
     await removeTeacherFromOfferings(teacherId, userId, offerings, now);
     await db.collection("teachers").doc(teacherId).remove();
@@ -81,18 +85,24 @@ exports.main = async (event = {}) => {
   await db.collection("users").doc(userId).remove();
   removed.users = 1;
 
-  await writeAudit("admin.user.delete", session, userId, {
-    user,
-    student,
-    teacher,
-  }, removed);
+  await writeAudit(
+    "admin.user.delete",
+    session,
+    userId,
+    {
+      user,
+      student,
+      teacher
+    },
+    removed
+  );
 
   return {
     ok: true,
     data: {
       deletedAccountId: userId,
-      removed,
-    },
+      removed
+    }
   };
 };
 
@@ -117,13 +127,13 @@ async function removeMatching(collectionName, rows, predicate) {
 async function removeTeacherFromOfferings(teacherId, userId, offerings, now) {
   for (const offering of offerings || []) {
     const teacherIds = Array.isArray(offering.teacher_ids) ? offering.teacher_ids : [];
-    const nextTeacherIds = teacherIds.filter((id) => id !== teacherId && id !== userId);
+    const nextTeacherIds = teacherIds.filter(id => id !== teacherId && id !== userId);
     if (nextTeacherIds.length === teacherIds.length) {
       continue;
     }
     await db.collection("course_offerings").doc(offering._id).update({
       teacher_ids: nextTeacherIds,
-      updated_at: now,
+      updated_at: now
     });
   }
 }
@@ -139,7 +149,7 @@ async function writeAudit(action, session, targetId, before, after) {
       after: after || {},
       ip: session.ip || "",
       user_agent: session.userAgent || "",
-      created_at: Date.now(),
+      created_at: Date.now()
     });
   } catch (error) {
     console.warn("[delete-admin-account] audit write skipped.", error);

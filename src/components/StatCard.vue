@@ -11,7 +11,7 @@ export default {
     value: { type: [String, Number], required: true },
     label: { type: String, required: true }
   }
-}
+};
 </script>
 
 <style scoped>

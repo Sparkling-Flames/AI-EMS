@@ -1,13 +1,6 @@
 {
   "bsonType": "object",
-  "required": [
-    "user_id",
-    "scenario",
-    "message_count",
-    "status",
-    "created_at",
-    "updated_at"
-  ],
+  "required": ["user_id", "scenario", "message_count", "status", "created_at", "updated_at"],
   "permission": {
     "read": false,
     "create": false,

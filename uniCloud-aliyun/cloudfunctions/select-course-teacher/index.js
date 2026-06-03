@@ -17,7 +17,7 @@ exports.main = async (event = {}) => {
   const [students, offering, teacher] = await Promise.all([
     readCollection("students"),
     findById("course_offerings", courseOfferingId),
-    findById("teachers", teacherId),
+    findById("teachers", teacherId)
   ]);
   const student = findByUserId(students, session.userId);
   if (!student) {
@@ -31,7 +31,7 @@ exports.main = async (event = {}) => {
   }
 
   const teacherIds = Array.isArray(offering.teacher_ids)
-    ? offering.teacher_ids.map((item) => String(item || "").trim())
+    ? offering.teacher_ids.map(item => String(item || "").trim())
     : [];
   if (!teacherIds.includes(teacherId)) {
     return { ok: false, message: "This teacher is not assigned to the selected course." };
@@ -41,7 +41,7 @@ exports.main = async (event = {}) => {
   }
 
   const enrollments = await findEnrollments(courseOfferingId);
-  const enrollment = enrollments.find((item) => item.student_id === student._id) || null;
+  const enrollment = enrollments.find(item => item.student_id === student._id) || null;
   if (!enrollment) {
     return { ok: false, message: "You are not in the cohort for this course offering." };
   }
@@ -49,7 +49,9 @@ exports.main = async (event = {}) => {
     return { ok: false, message: "This course has been dropped." };
   }
   const selectedTeacherId = String(enrollment.selected_teacher_id || enrollment.selectedTeacherId || "").trim();
-  const selectedTeacherUserId = String(enrollment.selected_teacher_user_id || enrollment.selectedTeacherUserId || "").trim();
+  const selectedTeacherUserId = String(
+    enrollment.selected_teacher_user_id || enrollment.selectedTeacherUserId || ""
+  ).trim();
   if (selectedTeacherId || selectedTeacherUserId) {
     return { ok: false, message: "Teacher selection is locked after you choose once." };
   }
@@ -67,7 +69,7 @@ exports.main = async (event = {}) => {
     selected_teacher_name: teacher.name || teacher.teacher_no || teacher._id,
     teacher_selected_at: now,
     status: "enrolled",
-    updated_at: now,
+    updated_at: now
   };
   if (!Number(enrollment.selected_at || 0)) {
     update.selected_at = now;
@@ -84,8 +86,8 @@ exports.main = async (event = {}) => {
   return {
     ok: true,
     data: {
-      enrollment: buildEnrollmentView({ ...enrollment, ...update }),
-    },
+      enrollment: buildEnrollmentView({ ...enrollment, ...update })
+    }
   };
 };
 
@@ -125,11 +127,7 @@ async function findEnrollment(studentId, courseOfferingId) {
 
 async function findEnrollments(courseOfferingId) {
   try {
-    const result = await db
-      .collection("enrollments")
-      .where({ course_offering_id: courseOfferingId })
-      .limit(1000)
-      .get();
+    const result = await db.collection("enrollments").where({ course_offering_id: courseOfferingId }).limit(1000).get();
     return result.data || [];
   } catch (error) {
     console.warn("[select-course-teacher] enrollments lookup failed.", error);
@@ -139,21 +137,20 @@ async function findEnrollments(courseOfferingId) {
 
 function hasSelectedTeacher(enrollment) {
   return Boolean(
-    String(enrollment && (enrollment.selected_teacher_id || enrollment.selectedTeacherId) || "").trim() ||
-    String(enrollment && (enrollment.selected_teacher_user_id || enrollment.selectedTeacherUserId) || "").trim()
+    String((enrollment && (enrollment.selected_teacher_id || enrollment.selectedTeacherId)) || "").trim() ||
+    String((enrollment && (enrollment.selected_teacher_user_id || enrollment.selectedTeacherUserId)) || "").trim()
   );
 }
 
 function countSelectedEnrollments(enrollments) {
-  return (enrollments || []).filter((item) =>
-    item.status !== "dropped" &&
-    (item.status === "enrolled" || hasSelectedTeacher(item)),
+  return (enrollments || []).filter(
+    item => item.status !== "dropped" && (item.status === "enrolled" || hasSelectedTeacher(item))
   ).length;
 }
 
 function findByUserId(rows, userId) {
   const keys = buildUserKeys(userId);
-  return rows.find((item) => keys.has(String(item.user_id || item.userId || "").trim())) || null;
+  return rows.find(item => keys.has(String(item.user_id || item.userId || "").trim())) || null;
 }
 
 function buildUserKeys(userId) {
@@ -195,7 +192,7 @@ function buildEnrollmentView(enrollment) {
     selectedTeacherName: enrollment.selected_teacher_name || "",
     teacherSelectedAt: Number(enrollment.teacher_selected_at || 0),
     selectedAt: Number(enrollment.selected_at || 0),
-    updatedAt: Number(enrollment.updated_at || 0),
+    updatedAt: Number(enrollment.updated_at || 0)
   };
 }
 
@@ -208,7 +205,7 @@ async function writeAudit(action, session, targetId, before, after) {
       target_id: targetId,
       before,
       after,
-      created_at: Date.now(),
+      created_at: Date.now()
     });
   } catch (error) {
     console.warn("[select-course-teacher] audit write skipped.", error);

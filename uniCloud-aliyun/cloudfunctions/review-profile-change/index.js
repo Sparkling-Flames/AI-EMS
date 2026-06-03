@@ -30,7 +30,7 @@ exports.main = async (event = {}) => {
     reviewer_user_id: session.userId,
     review_comment: reviewComment,
     reviewed_at: now,
-    updated_at: now,
+    updated_at: now
   };
 
   let applied = null;
@@ -47,10 +47,10 @@ exports.main = async (event = {}) => {
       request: {
         _id: requestId,
         ...request,
-        ...update,
+        ...update
       },
-      applied,
-    },
+      applied
+    }
   };
 };
 
@@ -79,7 +79,7 @@ async function applyChanges(request, now) {
     updated: true,
     collection,
     targetId: target._id,
-    fields: Object.entries(request.changes || {}).map(([key, change]) => change && change.field ? change.field : key),
+    fields: Object.entries(request.changes || {}).map(([key, change]) => (change && change.field ? change.field : key))
   };
 }
 
@@ -127,7 +127,7 @@ async function findById(collection, id) {
 function setByPath(object, path, value) {
   const keys = String(path).split(".");
   let current = object;
-  keys.slice(0, -1).forEach((key) => {
+  keys.slice(0, -1).forEach(key => {
     if (!current[key] || typeof current[key] !== "object") {
       current[key] = {};
     }
@@ -145,7 +145,7 @@ function stableStringify(value) {
   }
   return `{${Object.keys(value)
     .sort()
-    .map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`)
+    .map(key => `${JSON.stringify(key)}:${stableStringify(value[key])}`)
     .join(",")}}`;
 }
 
@@ -162,7 +162,7 @@ async function writeAudit(action, session, targetId, before, after) {
       target_id: targetId,
       before,
       after,
-      created_at: Date.now(),
+      created_at: Date.now()
     });
   } catch (error) {
     console.warn("[review-profile-change] audit write skipped.", error);

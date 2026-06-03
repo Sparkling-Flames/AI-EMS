@@ -41,7 +41,7 @@ exports.main = async (event = {}) => {
     is_public_to_students: payload.isPublicToStudents,
     knowledge_document_id: payload.knowledgeDocumentId,
     available_at: payload.availableAt || now,
-    updated_at: now,
+    updated_at: now
   };
 
   let materialId = payload.materialId;
@@ -66,19 +66,25 @@ exports.main = async (event = {}) => {
   } else {
     const result = await db.collection("course_materials").add({
       ...materialData,
-      created_at: now,
+      created_at: now
     });
     materialId = result.id;
   }
 
   const saved = { ...before, ...materialData, _id: materialId, created_at: before ? before.created_at : now };
-  await writeAudit(payload.materialId ? "course_material.update" : "course_material.create", session, materialId, before, saved);
+  await writeAudit(
+    payload.materialId ? "course_material.update" : "course_material.create",
+    session,
+    materialId,
+    before,
+    saved
+  );
 
   return {
     ok: true,
     data: {
-      material: buildMaterialView(saved, offering),
-    },
+      material: buildMaterialView(saved, offering)
+    }
   };
 };
 
@@ -95,7 +101,7 @@ function normalizePayload(event) {
     isPublicToStudents: event.isPublicToStudents !== false,
     knowledgeDocumentId: String(event.knowledgeDocumentId || "").trim(),
     availableAt: Number(event.availableAt || 0),
-    teacherId: String(event.teacherId || event.teacher_id || "").trim(),
+    teacherId: String(event.teacherId || event.teacher_id || "").trim()
   };
 }
 
@@ -106,7 +112,7 @@ async function canManageOffering(session, offering) {
 
   const teacher = await findByField("teachers", "user_id", session.userId);
   const teacherIds = Array.isArray(offering.teacher_ids)
-    ? offering.teacher_ids.map((item) => String(item || "").trim())
+    ? offering.teacher_ids.map(item => String(item || "").trim())
     : [];
   if (teacher && teacherIds.includes(String(teacher._id || "").trim())) {
     return true;
@@ -126,7 +132,11 @@ async function findById(collection, id) {
 
 async function findByField(collection, field, value) {
   try {
-    const result = await db.collection(collection).where({ [field]: value }).limit(1).get();
+    const result = await db
+      .collection(collection)
+      .where({ [field]: value })
+      .limit(1)
+      .get();
     return result.data && result.data[0] ? result.data[0] : null;
   } catch (error) {
     console.warn(`[save-course-material] ${collection} lookup failed.`, error);
@@ -151,12 +161,16 @@ function buildMaterialView(item, offering) {
     knowledgeDocumentId: item.knowledge_document_id || "",
     timelineAt: Number(item.available_at || item.updated_at || 0),
     createdAt: Number(item.created_at || 0),
-    updatedAt: Number(item.updated_at || 0),
+    updatedAt: Number(item.updated_at || 0)
   };
 }
 
 function inferFileType(value) {
-  const ext = String(value || "").split("?")[0].split(".").pop().toLowerCase();
+  const ext = String(value || "")
+    .split("?")[0]
+    .split(".")
+    .pop()
+    .toLowerCase();
   if (["pdf", "doc", "docx", "xls", "xlsx", "txt"].includes(ext)) return "document";
   if (["ppt", "pptx"].includes(ext)) return "slide";
   if (["mp4", "mov", "avi", "mkv"].includes(ext)) return "video";
@@ -169,7 +183,7 @@ function materialBelongsToTeacher(material, teacher, sessionUserId) {
   const uploaderUserId = String(material.uploader_user_id || "").trim();
   return Boolean(
     (teacherId && teacher && teacherId === String(teacher._id || "").trim()) ||
-    (uploaderUserId && uploaderUserId === String(sessionUserId || "").trim()),
+    (uploaderUserId && uploaderUserId === String(sessionUserId || "").trim())
   );
 }
 
@@ -182,7 +196,7 @@ async function writeAudit(action, session, targetId, before, after) {
       target_id: targetId,
       before,
       after,
-      created_at: Date.now(),
+      created_at: Date.now()
     });
   } catch (error) {
     console.warn("[save-course-material] audit write skipped.", error);

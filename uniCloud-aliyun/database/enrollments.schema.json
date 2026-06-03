@@ -1,13 +1,6 @@
 {
   "bsonType": "object",
-  "required": [
-    "student_id",
-    "course_offering_id",
-    "status",
-    "selected_at",
-    "created_at",
-    "updated_at"
-  ],
+  "required": ["student_id", "course_offering_id", "status", "selected_at", "created_at", "updated_at"],
   "permission": {
     "read": false,
     "create": false,

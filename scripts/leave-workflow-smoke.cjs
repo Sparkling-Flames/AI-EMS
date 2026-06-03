@@ -36,7 +36,7 @@ function createMockDb(seed = {}) {
     let current = items.slice();
     return {
       where(query) {
-        current = current.filter((doc) => matchDoc(doc, query));
+        current = current.filter(doc => matchDoc(doc, query));
         return this;
       },
       limit(count) {
@@ -45,7 +45,7 @@ function createMockDb(seed = {}) {
       },
       get() {
         return Promise.resolve({ data: current.map(clone) });
-      },
+      }
     };
   }
 
@@ -64,30 +64,30 @@ function createMockDb(seed = {}) {
         doc(id) {
           return {
             get() {
-              const item = docs.find((doc) => doc._id === id);
+              const item = docs.find(doc => doc._id === id);
               return Promise.resolve({ data: item ? [clone(item)] : [] });
             },
             update(updateDoc) {
-              const item = docs.find((doc) => doc._id === id);
+              const item = docs.find(doc => doc._id === id);
               if (item) Object.assign(item, clone(updateDoc));
               return Promise.resolve({ updated: item ? 1 : 0 });
-            },
+            }
           };
         },
         where(query) {
-          return queryBuilder(docs.filter((doc) => matchDoc(doc, query)));
+          return queryBuilder(docs.filter(doc => matchDoc(doc, query)));
         },
         limit(count) {
           return queryBuilder(docs).limit(count);
         },
         get() {
           return Promise.resolve({ data: docs.map(clone) });
-        },
+        }
       };
     },
     snapshot(name) {
       return ensureCollection(name).map(clone);
-    },
+    }
   };
 }
 
@@ -99,7 +99,7 @@ function loadCloudFunction(filePath, mockDb) {
     uniCloud: {
       database() {
         return mockDb;
-      },
+      }
     },
     console,
     Date,
@@ -117,7 +117,7 @@ function loadCloudFunction(filePath, mockDb) {
     Buffer,
     require,
     __dirname: path.dirname(filePath),
-    __filename: filePath,
+    __filename: filePath
   };
   vm.createContext(sandbox);
   vm.runInContext(code, sandbox, { filename: filePath });
@@ -142,7 +142,7 @@ function loadFallbackModule(filePath) {
     clearTimeout,
     Buffer,
     require,
-    globalThis: {},
+    globalThis: {}
   };
   vm.createContext(sandbox);
   vm.runInContext(code, sandbox, { filename: filePath });
@@ -164,8 +164,8 @@ async function main() {
         enrolled_count: 30,
         selection_status: "open",
         created_at: 1,
-        updated_at: 1,
-      },
+        updated_at: 1
+      }
     ],
     enrollments: [
       {
@@ -175,8 +175,8 @@ async function main() {
         status: "enrolled",
         selected_at: 1,
         created_at: 1,
-        updated_at: 1,
-      },
+        updated_at: 1
+      }
     ],
     class_sessions: [
       {
@@ -185,8 +185,8 @@ async function main() {
         session_date: "2026-05-25",
         status: "scheduled",
         created_at: 1,
-        updated_at: 1,
-      },
+        updated_at: 1
+      }
     ],
     attendance_records: [
       {
@@ -198,12 +198,12 @@ async function main() {
         status: "absent",
         source: "location",
         created_at: 1,
-        updated_at: 1,
-      },
+        updated_at: 1
+      }
     ],
     leave_requests: [],
     leave_request_sessions: [],
-    audit_logs: [],
+    audit_logs: []
   });
 
   const cloudRoot = path.join(__dirname, "..", "uniCloud-aliyun", "cloudfunctions");
@@ -219,7 +219,7 @@ async function main() {
     courseOfferingId: "co_software_design",
     leaveDate: "2026-05-25",
     reasonType: "sick",
-    reasonDetail: "Fever and doctor visit.",
+    reasonDetail: "Fever and doctor visit."
   });
   assert.strictEqual(submitResult.ok, true, "submit should succeed");
   assert.strictEqual(submitResult.leave.status, "pending");
@@ -229,17 +229,17 @@ async function main() {
     session: teacherSession,
     leaveId,
     decision: "approved",
-    reviewComment: "Approved for one day sick leave.",
+    reviewComment: "Approved for one day sick leave."
   });
   assert.strictEqual(reviewResult.ok, true, "review should succeed");
 
-  const approvedAttendance = db.snapshot("attendance_records").find((item) => item._id === "att_001");
+  const approvedAttendance = db.snapshot("attendance_records").find(item => item._id === "att_001");
   assert.strictEqual(approvedAttendance.status, "on_leave", "attendance should be on_leave after approval");
 
   const cancelResult = await cancelLeave({ session: studentSession, leaveId });
   assert.strictEqual(cancelResult.ok, true, "cancel should succeed");
 
-  const restoredAttendance = db.snapshot("attendance_records").find((item) => item._id === "att_001");
+  const restoredAttendance = db.snapshot("attendance_records").find(item => item._id === "att_001");
   assert.strictEqual(restoredAttendance.status, "absent", "attendance should be restored after cancel");
   assert.strictEqual(restoredAttendance.source, "location", "attendance source should be restored after cancel");
 
@@ -249,17 +249,17 @@ async function main() {
     courseOfferingId: "co_process_management",
     leaveDate: "2026-05-27",
     reasonType: "personal",
-    reasonDetail: "Family errand.",
+    reasonDetail: "Family errand."
   });
   const fallbackReview = await fallbackModule.callAiemsFunction("review-leave", {
     session: teacherSession,
     leaveId: fallbackSubmit.leave._id,
     decision: "approved",
-    reviewComment: "Approved in fallback flow.",
+    reviewComment: "Approved in fallback flow."
   });
   const fallbackCancel = await fallbackModule.callAiemsFunction("cancel-leave", {
     session: studentSession,
-    leaveId: fallbackSubmit.leave._id,
+    leaveId: fallbackSubmit.leave._id
   });
 
   assert.strictEqual(fallbackSubmit.ok, true, "fallback submit should succeed");
@@ -269,7 +269,7 @@ async function main() {
   console.log("leave workflow smoke ok");
 }
 
-main().catch((error) => {
+main().catch(error => {
   console.error(error);
   process.exitCode = 1;
 });

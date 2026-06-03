@@ -1,10 +1,6 @@
 <template>
   <view class="page">
-    <PageHeader
-      title="Teacher Dashboard"
-      :displayName="session.displayName"
-      :username="session.username"
-    >
+    <PageHeader title="Teacher Dashboard" :display-name="session.displayName" :username="session.username">
       <button class="secondary-btn refresh-btn" :loading="loading" @click="refresh">Refresh</button>
     </PageHeader>
 
@@ -81,14 +77,24 @@
         <view class="attendance-controls">
           <view class="field">
             <text class="label">Course</text>
-            <picker class="picker-shell" :range="attendanceCourseLabels" :value="attendanceCourseIndex" @change="changeAttendanceCourse">
-              <view class="picker-value">{{ attendanceCourseLabels[attendanceCourseIndex] || 'Select course' }}</view>
+            <picker
+              class="picker-shell"
+              :range="attendanceCourseLabels"
+              :value="attendanceCourseIndex"
+              @change="changeAttendanceCourse"
+            >
+              <view class="picker-value">{{ attendanceCourseLabels[attendanceCourseIndex] || "Select course" }}</view>
             </picker>
           </view>
           <view class="field">
             <text class="label">Class Session</text>
-            <picker class="picker-shell" :range="attendanceSessionLabels" :value="attendanceSessionIndex" @change="changeAttendanceSession">
-              <view class="picker-value">{{ attendanceSessionLabels[attendanceSessionIndex] || 'No sessions' }}</view>
+            <picker
+              class="picker-shell"
+              :range="attendanceSessionLabels"
+              :value="attendanceSessionIndex"
+              @change="changeAttendanceSession"
+            >
+              <view class="picker-value">{{ attendanceSessionLabels[attendanceSessionIndex] || "No sessions" }}</view>
             </picker>
           </view>
         </view>
@@ -112,7 +118,9 @@
             <StatusBadge v-else status="on_leave" />
           </view>
         </view>
-        <button class="primary-btn attendance-save-btn" :loading="savingAttendance" @tap="saveAttendance">Save Attendance</button>
+        <button class="primary-btn attendance-save-btn" :loading="savingAttendance" @tap="saveAttendance">
+          Save Attendance
+        </button>
       </template>
     </view>
 
@@ -137,60 +145,65 @@
       <view class="leave-filter-panel">
         <view class="field">
           <text class="label">Course</text>
-          <picker class="picker-shell" :range="leaveFilterCourseLabels" :value="leaveFilterCourseIndex" @change="changeLeaveFilterCourse">
+          <picker
+            class="picker-shell"
+            :range="leaveFilterCourseLabels"
+            :value="leaveFilterCourseIndex"
+            @change="changeLeaveFilterCourse"
+          >
             <view class="picker-value">{{ selectedLeaveFilterCourseLabel }}</view>
           </picker>
         </view>
         <view class="field">
           <text class="label">Start Date</text>
           <picker mode="date" class="picker-shell" :value="leaveFilterStartDate" @change="changeLeaveFilterStartDate">
-            <view class="picker-value">{{ leaveFilterStartDate || 'All dates' }}</view>
+            <view class="picker-value">{{ leaveFilterStartDate || "All dates" }}</view>
           </picker>
         </view>
         <view class="field">
           <text class="label">End Date</text>
           <picker mode="date" class="picker-shell" :value="leaveFilterEndDate" @change="changeLeaveFilterEndDate">
-            <view class="picker-value">{{ leaveFilterEndDate || 'All dates' }}</view>
+            <view class="picker-value">{{ leaveFilterEndDate || "All dates" }}</view>
           </picker>
         </view>
         <button class="secondary-btn leave-filter-reset-btn" @click="resetLeaveFilters">Reset</button>
       </view>
       <template v-if="!pendingLeaveRequests.length">
-        <text class="muted">{{ unfilteredPendingLeaveRequests.length ? 'No pending leave requests match the selected filters.' : 'No pending leave requests.' }}</text>
+        <text class="muted">{{
+          unfilteredPendingLeaveRequests.length
+            ? "No pending leave requests match the selected filters."
+            : "No pending leave requests."
+        }}</text>
       </template>
-      <view
-        v-for="item in pendingLeaveRequests"
-        :key="item._id"
-        class="leave-review-card"
-      >
+      <view v-for="item in pendingLeaveRequests" :key="item._id" class="leave-review-card">
         <view class="leave-review-head">
           <view>
             <text class="value">{{ leaveTitle(item) }}</text>
-            <text class="muted">{{ [item.studentNo, item.date].filter(Boolean).join(' - ') }}</text>
+            <text class="muted">{{ [item.studentNo, item.date].filter(Boolean).join(" - ") }}</text>
           </view>
           <StatusBadge :status="item.status" />
         </view>
         <view class="leave-review-grid">
           <view class="info-cell">
             <text class="label">Course</text>
-            <text class="value">{{ item.courseName || 'Course unavailable' }}</text>
+            <text class="value">{{ item.courseName || "Course unavailable" }}</text>
           </view>
           <view class="info-cell">
             <text class="label">Leave Date</text>
-            <text class="value">{{ item.date || 'Not set' }}</text>
+            <text class="value">{{ item.date || "Not set" }}</text>
           </view>
           <view class="info-cell">
             <text class="label">Reason Type</text>
-            <text class="value">{{ item.reasonType || 'Other' }}</text>
+            <text class="value">{{ item.reasonType || "Other" }}</text>
           </view>
         </view>
         <view class="note-box">
           <text class="label">Leave Reason</text>
-          <text class="note-text">{{ item.reasonDetail || item.reason || 'No reason provided.' }}</text>
+          <text class="note-text">{{ item.reasonDetail || item.reason || "No reason provided." }}</text>
         </view>
         <view class="comment-control">
           <view class="comment-toggle" :class="{ active: isLeaveCommentEnabled(item) }" @tap="toggleLeaveComment(item)">
-            <text>{{ isLeaveCommentEnabled(item) ? 'With comment' : 'No comment' }}</text>
+            <text>{{ isLeaveCommentEnabled(item) ? "With comment" : "No comment" }}</text>
           </view>
           <textarea
             v-if="isLeaveCommentEnabled(item)"
@@ -210,16 +223,16 @@
     <view class="section">
       <text class="section-title">Leave Review History</text>
       <template v-if="!leaveReviewHistory.length">
-        <text class="muted">{{ unfilteredLeaveReviewHistory.length ? 'No reviewed leave records match the selected filters.' : 'No reviewed leave records yet.' }}</text>
+        <text class="muted">{{
+          unfilteredLeaveReviewHistory.length
+            ? "No reviewed leave records match the selected filters."
+            : "No reviewed leave records yet."
+        }}</text>
       </template>
-      <view
-        v-for="item in leaveReviewHistory"
-        :key="item._id"
-        class="leave-history-row"
-      >
+      <view v-for="item in leaveReviewHistory" :key="item._id" class="leave-history-row">
         <view class="history-main">
           <text class="value">{{ leaveTitle(item) }}</text>
-          <text class="muted">{{ [item.date, item.reasonType || item.reason].filter(Boolean).join(' - ') }}</text>
+          <text class="muted">{{ [item.date, item.reasonType || item.reason].filter(Boolean).join(" - ") }}</text>
           <text v-if="item.reviewComment" class="history-comment">Comment: {{ item.reviewComment }}</text>
         </view>
         <StatusBadge :status="item.status" />
@@ -239,13 +252,13 @@
 </template>
 
 <script>
-import PageHeader from '../../components/PageHeader.vue'
-import NavTabs from '../../components/NavTabs.vue'
-import DataCard from '../../components/DataCard.vue'
-import StatusBadge from '../../components/StatusBadge.vue'
-import StatCard from '../../components/StatCard.vue'
-import { callAiemsFunction } from '../../common/api.js'
-import { getSession, requireRole } from '../../common/session.js'
+import PageHeader from "../../components/PageHeader.vue";
+import NavTabs from "../../components/NavTabs.vue";
+import DataCard from "../../components/DataCard.vue";
+import StatusBadge from "../../components/StatusBadge.vue";
+import StatCard from "../../components/StatCard.vue";
+import { callAiemsFunction } from "../../common/api.js";
+import { getSession, requireRole } from "../../common/session.js";
 
 export default {
   components: { PageHeader, NavTabs, DataCard, StatusBadge, StatCard },
@@ -260,23 +273,23 @@ export default {
       attendanceCourseIndex: 0,
       attendanceSessionIndex: 0,
       leaveFilterCourseIndex: 0,
-      leaveFilterStartDate: '',
-      leaveFilterEndDate: '',
+      leaveFilterStartDate: "",
+      leaveFilterEndDate: "",
       attendanceDrafts: {},
       attendanceStatuses: [
-        { value: 'present', label: 'Present' },
-        { value: 'late', label: 'Late' },
-        { value: 'absent', label: 'Absent' },
-        { value: 'excused', label: 'Excused' }
+        { value: "present", label: "Present" },
+        { value: "late", label: "Late" },
+        { value: "absent", label: "Absent" },
+        { value: "excused", label: "Excused" }
       ],
       profileForm: {
-        office: '',
-        researchFields: '',
-        teachingExperience: ''
+        office: "",
+        researchFields: "",
+        teachingExperience: ""
       },
       teacherProfile: {
-        department: '',
-        title: '',
+        department: "",
+        title: "",
         studentCount: 0,
         researchFields: []
       },
@@ -291,26 +304,24 @@ export default {
         atRiskStudents: [],
         metrics: { courses: 0, pendingLeaves: 0, evaluations: 0 }
       }
-    }
+    };
   },
   computed: {
     riskStudents() {
       if (this.data.atRiskStudents && this.data.atRiskStudents.length) {
-        return this.data.atRiskStudents
+        return this.data.atRiskStudents;
       }
-      const courseOfferingIds = this.data.courses.map(c => c.courseOfferingId)
-      const relevantAttendance = this.data.attendance.filter(a =>
-        courseOfferingIds.includes(a.courseOfferingId)
-      )
-      const grouped = {}
+      const courseOfferingIds = this.data.courses.map(c => c.courseOfferingId);
+      const relevantAttendance = this.data.attendance.filter(a => courseOfferingIds.includes(a.courseOfferingId));
+      const grouped = {};
       relevantAttendance.forEach(a => {
-        if (a.status !== 'absent') return
+        if (a.status !== "absent") return;
         if (!grouped[a.studentId]) {
-          grouped[a.studentId] = { count: 0, courseIds: new Set(), name: a.studentName || a.studentId }
+          grouped[a.studentId] = { count: 0, courseIds: new Set(), name: a.studentName || a.studentId };
         }
-        grouped[a.studentId].count++
-        grouped[a.studentId].courseIds.add(a.courseOfferingId)
-      })
+        grouped[a.studentId].count++;
+        grouped[a.studentId].courseIds.add(a.courseOfferingId);
+      });
       return Object.entries(grouped)
         .filter(([, d]) => d.count >= 3)
         .map(([studentId, d]) => ({
@@ -318,94 +329,98 @@ export default {
           studentName: d.name,
           absenceCount: d.count,
           courseCount: d.courseIds.size,
-          severity: d.count >= 5 ? 'critical' : 'high'
-        }))
+          severity: d.count >= 5 ? "critical" : "high"
+        }));
     },
     lastUpdatedText() {
-      return this.lastUpdatedAt ? 'Updated ' + this.formatTime(this.lastUpdatedAt) : ''
+      return this.lastUpdatedAt ? "Updated " + this.formatTime(this.lastUpdatedAt) : "";
     },
     attendanceCourses() {
-      return this.data.courses || []
+      return this.data.courses || [];
     },
     attendanceCourseLabels() {
-      return this.attendanceCourses.map(course => [course.code, course.name].filter(Boolean).join(' '))
+      return this.attendanceCourses.map(course => [course.code, course.name].filter(Boolean).join(" "));
     },
     selectedAttendanceCourse() {
-      return this.attendanceCourses[this.attendanceCourseIndex] || null
+      return this.attendanceCourses[this.attendanceCourseIndex] || null;
     },
     attendanceSessionsForCourse() {
-      const course = this.selectedAttendanceCourse
-      if (!course) return []
-      return (this.data.classSessions || []).filter(item => item.courseOfferingId === course.courseOfferingId)
+      const course = this.selectedAttendanceCourse;
+      if (!course) return [];
+      return (this.data.classSessions || []).filter(item => item.courseOfferingId === course.courseOfferingId);
     },
     attendanceSessionLabels() {
-      return this.attendanceSessionsForCourse.map(item => ['Session ' + item.sequenceNo, item.sessionDate, item.startTime + '-' + item.endTime].filter(Boolean).join(' - '))
+      return this.attendanceSessionsForCourse.map(item =>
+        ["Session " + item.sequenceNo, item.sessionDate, item.startTime + "-" + item.endTime]
+          .filter(Boolean)
+          .join(" - ")
+      );
     },
     selectedAttendanceSession() {
-      return this.attendanceSessionsForCourse[this.attendanceSessionIndex] || null
+      return this.attendanceSessionsForCourse[this.attendanceSessionIndex] || null;
     },
     attendanceStudents() {
-      const course = this.selectedAttendanceCourse
-      if (!course) return []
-      return (this.data.courseStudents || []).filter(item => item.courseOfferingId === course.courseOfferingId)
+      const course = this.selectedAttendanceCourse;
+      if (!course) return [];
+      return (this.data.courseStudents || []).filter(item => item.courseOfferingId === course.courseOfferingId);
     },
     attendanceStatusLabels() {
-      return this.attendanceStatuses.map(item => item.label)
+      return this.attendanceStatuses.map(item => item.label);
     },
     leaveFilterCourses() {
-      const seen = new Set()
-      const courses = [{ value: '', label: 'All Courses' }]
-      const requests = this.data.leaveRequests || []
+      const seen = new Set();
+      const courses = [{ value: "", label: "All Courses" }];
+      const requests = this.data.leaveRequests || [];
       requests.forEach(item => {
-        const value = this.leaveCourseFilterValue(item)
-        if (!value || seen.has(value)) return
-        seen.add(value)
+        const value = this.leaveCourseFilterValue(item);
+        if (!value || seen.has(value)) return;
+        seen.add(value);
         courses.push({
           value,
           label: item.courseName || value
-        })
-      })
-      return courses
+        });
+      });
+      return courses;
     },
     leaveFilterCourseLabels() {
-      return this.leaveFilterCourses.map(item => item.label)
+      return this.leaveFilterCourses.map(item => item.label);
     },
     selectedLeaveFilterCourseLabel() {
-      return this.leaveFilterCourseLabels[this.leaveFilterCourseIndex] || 'All Courses'
+      return this.leaveFilterCourseLabels[this.leaveFilterCourseIndex] || "All Courses";
     },
     filteredLeaveRequests() {
-      return (this.data.leaveRequests || []).filter(item => this.matchesLeaveFilters(item))
+      return (this.data.leaveRequests || []).filter(item => this.matchesLeaveFilters(item));
     },
     unfilteredPendingLeaveRequests() {
-      return (this.data.leaveRequests || []).filter(item => item.status === 'pending')
+      return (this.data.leaveRequests || []).filter(item => item.status === "pending");
     },
     unfilteredLeaveReviewHistory() {
-      return (this.data.leaveRequests || []).filter(item => item.status !== 'pending')
+      return (this.data.leaveRequests || []).filter(item => item.status !== "pending");
     },
     pendingLeaveRequests() {
-      return this.filteredLeaveRequests.filter(item => item.status === 'pending')
+      return this.filteredLeaveRequests.filter(item => item.status === "pending");
     },
     leaveReviewHistory() {
-      return this.filteredLeaveRequests.filter(item => item.status !== 'pending')
+      return this.filteredLeaveRequests.filter(item => item.status !== "pending");
     }
   },
   onShow() {
-    const session = requireRole(['teacher'])
-    if (!session) return
-    this.session = session
-    const now = Date.now()
+    const session = requireRole(["teacher"]);
+    if (!session) return;
+    this.session = session;
+    const now = Date.now();
     if (!this.lastUpdatedAt || now - this.lastUpdatedAt > 30000) {
-      this.load()
+      this.load();
     }
   },
   methods: {
     async load(forceRefresh = false) {
-      this.loading = true
-      const result = await callAiemsFunction('get-dashboard-data', {
+      this.loading = true;
+      const result = await callAiemsFunction("get-dashboard-data", {
         session: getSession(),
         forceRefresh
-      })
-      this.loading = false
+      });
+      this.loading = false;
       if (result.ok) {
         this.data = {
           ...this.data,
@@ -418,232 +433,247 @@ export default {
           evaluationSummary: result.data.evaluationSummary || [],
           profileChangeRequests: result.data.profileChangeRequests || [],
           atRiskStudents: result.data.atRiskStudents || []
-        }
+        };
         this.teacherProfile = {
           ...this.teacherProfile,
           ...(result.data.teacherProfile || {})
-        }
+        };
         this.profileForm = {
-          office: this.teacherProfile.office || '',
-          researchFields: (this.teacherProfile.researchFields || []).join(', '),
-          teachingExperience: this.teacherProfile.teachingExperience || ''
-        }
-        this.lastUpdatedAt = Date.now()
-        this.normalizeAttendanceSelection()
-        this.normalizeLeaveFilterSelection()
+          office: this.teacherProfile.office || "",
+          researchFields: (this.teacherProfile.researchFields || []).join(", "),
+          teachingExperience: this.teacherProfile.teachingExperience || ""
+        };
+        this.lastUpdatedAt = Date.now();
+        this.normalizeAttendanceSelection();
+        this.normalizeLeaveFilterSelection();
       }
     },
     refresh() {
-      this.load(true)
+      this.load(true);
     },
     async submitProfileChange() {
-      this.savingProfile = true
-      const result = await callAiemsFunction('submit-profile-change', {
+      this.savingProfile = true;
+      const result = await callAiemsFunction("submit-profile-change", {
         session: getSession(),
         changes: {
           office: this.profileForm.office,
-          researchFields: this.profileForm.researchFields.split(',').map(item => item.trim()).filter(Boolean),
+          researchFields: this.profileForm.researchFields
+            .split(",")
+            .map(item => item.trim())
+            .filter(Boolean),
           teachingExperience: this.profileForm.teachingExperience
         }
-      })
-      this.savingProfile = false
+      });
+      this.savingProfile = false;
       if (result.ok) {
-        uni.showToast({ title: 'Submitted', icon: 'success' })
-        this.load(true)
-        return
+        uni.showToast({ title: "Submitted", icon: "success" });
+        this.load(true);
+        return;
       }
-      uni.showToast({ title: result.message || 'Submit failed.', icon: 'none' })
+      uni.showToast({ title: result.message || "Submit failed.", icon: "none" });
     },
     async review(item, decision) {
-      const draft = this.leaveReviewDraftFor(item)
-      const result = await callAiemsFunction('review-leave', {
+      const draft = this.leaveReviewDraftFor(item);
+      const result = await callAiemsFunction("review-leave", {
         session: getSession(),
         leaveId: item._id,
         decision,
-        reviewComment: draft.enabled ? draft.comment.trim() : ''
-      })
+        reviewComment: draft.enabled ? draft.comment.trim() : ""
+      });
       if (result.ok) {
-        uni.showToast({ title: decision === 'approved' ? 'Approved' : 'Rejected', icon: 'success' })
-        this.load(true)
+        uni.showToast({ title: decision === "approved" ? "Approved" : "Rejected", icon: "success" });
+        this.load(true);
       } else {
-        uni.showToast({ title: result.message || 'Review failed.', icon: 'none' })
+        uni.showToast({ title: result.message || "Review failed.", icon: "none" });
       }
     },
     normalizeAttendanceSelection() {
-      if (this.attendanceCourseIndex >= this.attendanceCourses.length) this.attendanceCourseIndex = 0
-      if (this.attendanceSessionIndex >= this.attendanceSessionsForCourse.length) this.attendanceSessionIndex = 0
+      if (this.attendanceCourseIndex >= this.attendanceCourses.length) this.attendanceCourseIndex = 0;
+      if (this.attendanceSessionIndex >= this.attendanceSessionsForCourse.length) this.attendanceSessionIndex = 0;
     },
     changeAttendanceCourse(event) {
-      this.attendanceCourseIndex = Number(event.detail.value)
-      this.attendanceSessionIndex = 0
-      this.attendanceDrafts = {}
+      this.attendanceCourseIndex = Number(event.detail.value);
+      this.attendanceSessionIndex = 0;
+      this.attendanceDrafts = {};
     },
     changeAttendanceSession(event) {
-      this.attendanceSessionIndex = Number(event.detail.value)
-      this.attendanceDrafts = {}
+      this.attendanceSessionIndex = Number(event.detail.value);
+      this.attendanceDrafts = {};
     },
     changeLeaveFilterCourse(event) {
-      this.leaveFilterCourseIndex = Number(event.detail.value)
+      this.leaveFilterCourseIndex = Number(event.detail.value);
     },
     changeLeaveFilterStartDate(event) {
-      this.leaveFilterStartDate = event.detail.value
+      this.leaveFilterStartDate = event.detail.value;
     },
     changeLeaveFilterEndDate(event) {
-      this.leaveFilterEndDate = event.detail.value
+      this.leaveFilterEndDate = event.detail.value;
     },
     resetLeaveFilters() {
-      this.leaveFilterCourseIndex = 0
-      this.leaveFilterStartDate = ''
-      this.leaveFilterEndDate = ''
+      this.leaveFilterCourseIndex = 0;
+      this.leaveFilterStartDate = "";
+      this.leaveFilterEndDate = "";
     },
     attendanceRecord(student) {
-      const session = this.selectedAttendanceSession
-      if (!session) return null
-      const studentIds = [this.studentKey(student), student.userId].filter(Boolean)
-      return (this.data.attendance || []).find(item =>
-        studentIds.includes(item.studentId) &&
-        item.courseOfferingId === student.courseOfferingId &&
-        item.date === session.sessionDate
-      ) || null
+      const session = this.selectedAttendanceSession;
+      if (!session) return null;
+      const studentIds = [this.studentKey(student), student.userId].filter(Boolean);
+      return (
+        (this.data.attendance || []).find(
+          item =>
+            studentIds.includes(item.studentId) &&
+            item.courseOfferingId === student.courseOfferingId &&
+            item.date === session.sessionDate
+        ) || null
+      );
     },
     attendanceStatus(student) {
-      const key = this.studentKey(student)
-      if (this.attendanceDrafts[key]) return this.attendanceDrafts[key]
-      const record = this.attendanceRecord(student)
-      return record ? record.status : 'present'
+      const key = this.studentKey(student);
+      if (this.attendanceDrafts[key]) return this.attendanceDrafts[key];
+      const record = this.attendanceRecord(student);
+      return record ? record.status : "present";
     },
     attendanceStatusIndex(student) {
-      const status = this.attendanceStatus(student)
-      const index = this.attendanceStatuses.findIndex(item => item.value === status)
-      return index >= 0 ? index : 0
+      const status = this.attendanceStatus(student);
+      const index = this.attendanceStatuses.findIndex(item => item.value === status);
+      return index >= 0 ? index : 0;
     },
     attendanceStatusLabel(status) {
-      const item = this.attendanceStatuses.find(option => option.value === status)
-      return item ? item.label : status
+      const item = this.attendanceStatuses.find(option => option.value === status);
+      return item ? item.label : status;
     },
     changeAttendanceStatus(student, event) {
-      const option = this.attendanceStatuses[Number(event.detail.value)] || this.attendanceStatuses[0]
-      this.changeAttendanceStatusValue(student, option.value)
+      const option = this.attendanceStatuses[Number(event.detail.value)] || this.attendanceStatuses[0];
+      this.changeAttendanceStatusValue(student, option.value);
     },
     changeAttendanceStatusValue(student, status) {
-      const key = this.studentKey(student)
+      const key = this.studentKey(student);
       if (!key) {
-        uni.showToast({ title: 'Student id is missing.', icon: 'none' })
-        return
+        uni.showToast({ title: "Student id is missing.", icon: "none" });
+        return;
       }
-      this.attendanceDrafts = { ...this.attendanceDrafts, [key]: status }
+      this.attendanceDrafts = { ...this.attendanceDrafts, [key]: status };
     },
     async saveAttendance() {
-      const course = this.selectedAttendanceCourse
-      const session = this.selectedAttendanceSession
+      const course = this.selectedAttendanceCourse;
+      const session = this.selectedAttendanceSession;
       if (!course || !session) {
-        uni.showToast({ title: 'Course and session are required.', icon: 'none' })
-        return
+        uni.showToast({ title: "Course and session are required.", icon: "none" });
+        return;
       }
       const records = this.attendanceStudents
-        .filter(student => this.attendanceStatus(student) !== 'on_leave')
+        .filter(student => this.attendanceStatus(student) !== "on_leave")
         .map(student => ({
           studentId: this.studentKey(student),
           status: this.attendanceStatus(student)
         }))
-        .filter(record => record.studentId)
+        .filter(record => record.studentId);
       if (!records.length) {
-        uni.showToast({ title: 'No editable students.', icon: 'none' })
-        return
+        uni.showToast({ title: "No editable students.", icon: "none" });
+        return;
       }
-      this.savingAttendance = true
-      const result = await callAiemsFunction('save-attendance-records', {
+      this.savingAttendance = true;
+      const result = await callAiemsFunction("save-attendance-records", {
         session: getSession(),
         courseOfferingId: course.courseOfferingId,
         attendanceDate: session.sessionDate,
         records
-      })
-      this.savingAttendance = false
+      });
+      this.savingAttendance = false;
       if (result.ok) {
-        uni.showToast({ title: 'Attendance saved', icon: 'success' })
-        this.attendanceDrafts = {}
-        this.load(true)
-        return
+        uni.showToast({ title: "Attendance saved", icon: "success" });
+        this.attendanceDrafts = {};
+        this.load(true);
+        return;
       }
-      uni.showToast({ title: result.message || 'Save failed.', icon: 'none' })
+      uni.showToast({ title: result.message || "Save failed.", icon: "none" });
     },
     studentKey(student) {
-      return String(student && (student.studentId || student.userId || student.studentNo) || '').trim()
+      return String((student && (student.studentId || student.userId || student.studentNo)) || "").trim();
     },
     courseSubtitle(course) {
-      return [course.schedule, course.credits ? course.credits + ' credits' : '', course.totalSessions ? course.totalSessions + ' sessions' : '', course.materialUploadDeadlineAt ? 'Materials until ' + this.formatDate(course.materialUploadDeadlineAt) : ''].filter(Boolean).join(' - ')
+      return [
+        course.schedule,
+        course.credits ? course.credits + " credits" : "",
+        course.totalSessions ? course.totalSessions + " sessions" : "",
+        course.materialUploadDeadlineAt ? "Materials until " + this.formatDate(course.materialUploadDeadlineAt) : ""
+      ]
+        .filter(Boolean)
+        .join(" - ");
     },
     formatChangeRequest(item) {
-      const changes = item.changes || {}
-      return Object.keys(changes).map(key => {
-        const change = changes[key] || {}
-        return (change.label || key) + ': ' + change.newValue
-      }).join('; ')
+      const changes = item.changes || {};
+      return Object.keys(changes)
+        .map(key => {
+          const change = changes[key] || {};
+          return (change.label || key) + ": " + change.newValue;
+        })
+        .join("; ");
     },
     formatDate(value) {
-      const timestamp = Number(value || 0)
-      return timestamp ? new Date(timestamp).toISOString().slice(0, 10) : ''
+      const timestamp = Number(value || 0);
+      return timestamp ? new Date(timestamp).toISOString().slice(0, 10) : "";
     },
     formatTime(value) {
-      const date = new Date(value)
-      return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+      const date = new Date(value);
+      return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
     },
     leaveTitle(item) {
-      return [item.studentName, item.courseName].filter(Boolean).join(' - ') || 'Leave request'
+      return [item.studentName, item.courseName].filter(Boolean).join(" - ") || "Leave request";
     },
     normalizeLeaveFilterSelection() {
       if (this.leaveFilterCourseIndex >= this.leaveFilterCourses.length) {
-        this.leaveFilterCourseIndex = 0
+        this.leaveFilterCourseIndex = 0;
       }
     },
     leaveCourseFilterValue(item) {
-      return String(item && (item.courseOfferingId || item.courseId || item.courseName) || '').trim()
+      return String((item && (item.courseOfferingId || item.courseId || item.courseName)) || "").trim();
     },
     matchesLeaveFilters(item) {
-      const selectedCourse = this.leaveFilterCourses[this.leaveFilterCourseIndex] || this.leaveFilterCourses[0]
+      const selectedCourse = this.leaveFilterCourses[this.leaveFilterCourseIndex] || this.leaveFilterCourses[0];
       if (selectedCourse && selectedCourse.value && this.leaveCourseFilterValue(item) !== selectedCourse.value) {
-        return false
+        return false;
       }
-      const leaveDate = String(item && item.date || '').trim()
+      const leaveDate = String((item && item.date) || "").trim();
       if (this.leaveFilterStartDate && (!leaveDate || leaveDate < this.leaveFilterStartDate)) {
-        return false
+        return false;
       }
       if (this.leaveFilterEndDate && (!leaveDate || leaveDate > this.leaveFilterEndDate)) {
-        return false
+        return false;
       }
-      return true
+      return true;
     },
     leaveReviewDraftKey(item) {
-      return String(item && item._id || '')
+      return String((item && item._id) || "");
     },
     leaveReviewDraftFor(item) {
-      const key = this.leaveReviewDraftKey(item)
-      return this.reviewDrafts[key] || { enabled: false, comment: '' }
+      const key = this.leaveReviewDraftKey(item);
+      return this.reviewDrafts[key] || { enabled: false, comment: "" };
     },
     isLeaveCommentEnabled(item) {
-      return this.leaveReviewDraftFor(item).enabled
+      return this.leaveReviewDraftFor(item).enabled;
     },
     leaveReviewCommentFor(item) {
-      return this.leaveReviewDraftFor(item).comment
+      return this.leaveReviewDraftFor(item).comment;
     },
     toggleLeaveComment(item) {
-      const key = this.leaveReviewDraftKey(item)
-      const current = this.leaveReviewDraftFor(item)
+      const key = this.leaveReviewDraftKey(item);
+      const current = this.leaveReviewDraftFor(item);
       this.reviewDrafts = {
         ...this.reviewDrafts,
         [key]: { ...current, enabled: !current.enabled }
-      }
+      };
     },
     changeLeaveReviewComment(item, event) {
-      const key = this.leaveReviewDraftKey(item)
-      const current = this.leaveReviewDraftFor(item)
+      const key = this.leaveReviewDraftKey(item);
+      const current = this.leaveReviewDraftFor(item);
       this.reviewDrafts = {
         ...this.reviewDrafts,
         [key]: { ...current, comment: event.detail.value }
-      }
+      };
     }
   }
-}
+};
 </script>
 
 <style scoped>

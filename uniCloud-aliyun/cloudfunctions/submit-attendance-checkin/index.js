@@ -33,7 +33,8 @@ exports.main = async (event = {}) => {
   }
 
   const classSession = await resolveClassSession(courseOfferingId, attendanceDate);
-  const classroom = classSession && classSession.classroom_id ? await findById("classrooms", classSession.classroom_id) : null;
+  const classroom =
+    classSession && classSession.classroom_id ? await findById("classrooms", classSession.classroom_id) : null;
   const geofence = buildGeofence(classroom);
   const distance = distanceMeters(latitude, longitude, geofence.latitude, geofence.longitude);
   const withinGeofence = distance <= geofence.radius;
@@ -51,7 +52,7 @@ exports.main = async (event = {}) => {
     distance_to_classroom_m: Math.round(distance),
     source: "location",
     remark: withinGeofence ? "" : "Outside classroom geofence.",
-    updated_at: now,
+    updated_at: now
   };
 
   let attendanceId = "";
@@ -62,7 +63,7 @@ exports.main = async (event = {}) => {
     const result = await db.collection("attendance_records").add({
       ...payload,
       leave_request_id: "",
-      created_at: now,
+      created_at: now
     });
     attendanceId = result.id;
   }
@@ -80,12 +81,12 @@ exports.main = async (event = {}) => {
         status: payload.status,
         source: payload.source,
         distanceToClassroomM: payload.distance_to_classroom_m,
-        checkinAt: payload.checkin_at,
+        checkinAt: payload.checkin_at
       },
       withinGeofence,
       distanceMeters: payload.distance_to_classroom_m,
-      radiusMeters: geofence.radius,
-    },
+      radiusMeters: geofence.radius
+    }
   };
 };
 
@@ -99,11 +100,7 @@ async function resolveClassSession(courseOfferingId, attendanceDate) {
     return exact.data[0];
   }
 
-  const fallback = await db
-    .collection("class_sessions")
-    .where({ course_offering_id: courseOfferingId })
-    .limit(1)
-    .get();
+  const fallback = await db.collection("class_sessions").where({ course_offering_id: courseOfferingId }).limit(1).get();
   return fallback.data && fallback.data[0] ? fallback.data[0] : null;
 }
 
@@ -111,7 +108,7 @@ function buildGeofence(classroom) {
   return {
     latitude: Number(classroom && classroom.latitude) || 31.230416,
     longitude: Number(classroom && classroom.longitude) || 121.473701,
-    radius: Number(classroom && classroom.geofence_radius_m) || 50,
+    radius: Number(classroom && classroom.geofence_radius_m) || 50
   };
 }
 
@@ -131,7 +128,7 @@ async function findAttendance(studentId, courseOfferingId, attendanceDate) {
     .where({
       student_id: studentId,
       course_offering_id: courseOfferingId,
-      attendance_date: attendanceDate,
+      attendance_date: attendanceDate
     })
     .limit(1)
     .get();
@@ -150,7 +147,11 @@ async function findById(collection, id) {
 
 async function findByField(collection, field, value) {
   try {
-    const result = await db.collection(collection).where({ [field]: value }).limit(1).get();
+    const result = await db
+      .collection(collection)
+      .where({ [field]: value })
+      .limit(1)
+      .get();
     return result.data && result.data[0] ? result.data[0] : null;
   } catch (error) {
     console.warn(`[submit-attendance-checkin] ${collection} lookup failed.`, error);
@@ -201,15 +202,14 @@ function addRoleAliases(keys, value, roleName, roleCode) {
 
 function distanceMeters(lat1, lon1, lat2, lon2) {
   const values = [lat1, lon1, lat2, lon2].map(Number);
-  if (values.some((value) => !Number.isFinite(value))) {
+  if (values.some(value => !Number.isFinite(value))) {
     return Number.POSITIVE_INFINITY;
   }
-  const [aLat, aLon, bLat, bLon] = values.map((value) => (value * Math.PI) / 180);
+  const [aLat, aLon, bLat, bLon] = values.map(value => (value * Math.PI) / 180);
   const dLat = bLat - aLat;
   const dLon = bLon - aLon;
   const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(aLat) * Math.cos(bLat) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(aLat) * Math.cos(bLat) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
   return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
@@ -222,7 +222,7 @@ async function writeAudit(action, session, targetId, before, after) {
       target_id: targetId,
       before,
       after,
-      created_at: Date.now(),
+      created_at: Date.now()
     });
   } catch (error) {
     console.warn("[submit-attendance-checkin] audit write skipped.", error);

@@ -15,23 +15,23 @@ export default {
   props: {
     current: { type: Number, required: true },
     total: { type: Number, required: true },
-    label: { type: String, default: '' }
+    label: { type: String, default: "" }
   },
   computed: {
     percentage() {
-      if (!this.total) return 0
-      return Math.round(this.current / this.total * 100)
+      if (!this.total) return 0;
+      return Math.round((this.current / this.total) * 100);
     },
     barColor() {
-      if (this.percentage < 60) return '#dc2626'
-      if (this.percentage < 80) return '#ca8a04'
-      return '#16a34a'
+      if (this.percentage < 60) return "#dc2626";
+      if (this.percentage < 80) return "#ca8a04";
+      return "#16a34a";
     },
     fillStyle() {
-      return `width:${this.percentage}%;background:${this.barColor}`
+      return `width:${this.percentage}%;background:${this.barColor}`;
     }
   }
-}
+};
 </script>
 
 <style scoped>

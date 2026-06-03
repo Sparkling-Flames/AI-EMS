@@ -28,7 +28,7 @@ function createMockDb(seed = {}) {
     let current = items.slice();
     return {
       where(next) {
-        current = current.filter((doc) => match(doc, next));
+        current = current.filter(doc => match(doc, next));
         return this;
       },
       limit(count) {
@@ -37,7 +37,7 @@ function createMockDb(seed = {}) {
       },
       get() {
         return Promise.resolve({ data: current.map(clone) });
-      },
+      }
     };
   }
 
@@ -54,35 +54,35 @@ function createMockDb(seed = {}) {
         doc(id) {
           return {
             get() {
-              const row = docs.find((doc) => doc._id === id);
+              const row = docs.find(doc => doc._id === id);
               return Promise.resolve({ data: row ? [clone(row)] : [] });
             },
             update(updateDoc) {
-              const row = docs.find((doc) => doc._id === id);
+              const row = docs.find(doc => doc._id === id);
               if (row) Object.assign(row, clone(updateDoc));
               return Promise.resolve({ updated: row ? 1 : 0 });
             },
             remove() {
-              const index = docs.findIndex((doc) => doc._id === id);
+              const index = docs.findIndex(doc => doc._id === id);
               if (index >= 0) docs.splice(index, 1);
               return Promise.resolve({ deleted: index >= 0 ? 1 : 0 });
-            },
+            }
           };
         },
         where(next) {
-          return query(docs.filter((doc) => match(doc, next)));
+          return query(docs.filter(doc => match(doc, next)));
         },
         limit(count) {
           return query(docs).limit(count);
         },
         get() {
           return Promise.resolve({ data: docs.map(clone) });
-        },
+        }
       };
     },
     snapshot(name) {
       return ensure(name).map(clone);
-    },
+    }
   };
 }
 
@@ -108,7 +108,7 @@ function loadCloudFunction(filePath, mockDb) {
     Buffer,
     require,
     __dirname: path.dirname(filePath),
-    __filename: filePath,
+    __filename: filePath
   };
   vm.createContext(sandbox);
   vm.runInContext(code, sandbox, { filename: filePath });
@@ -125,18 +125,50 @@ async function main() {
         title: "Graduation credit requirement",
         keywords: ["graduation", "credit"],
         content: "Track total credits, module credits, GPA trend and remaining required courses.",
-        category: "policy",
-      },
+        category: "policy"
+      }
     ],
     ai_conversations: [
-      { _id: "conv_old", user_id: "user_s_001", title: "Old", scenario: "other", message_count: 2, status: "active", created_at: old, updated_at: old },
-      { _id: "conv_other_user", user_id: "user_t_001", title: "Teacher", scenario: "other", message_count: 2, status: "active", created_at: now, updated_at: now },
+      {
+        _id: "conv_old",
+        user_id: "user_s_001",
+        title: "Old",
+        scenario: "other",
+        message_count: 2,
+        status: "active",
+        created_at: old,
+        updated_at: old
+      },
+      {
+        _id: "conv_other_user",
+        user_id: "user_t_001",
+        title: "Teacher",
+        scenario: "other",
+        message_count: 2,
+        status: "active",
+        created_at: now,
+        updated_at: now
+      }
     ],
     ai_messages: [
-      { _id: "msg_old", conversation_id: "conv_old", role: "user", content: "old", fallback_used: false, created_at: old },
-      { _id: "msg_other_user", conversation_id: "conv_other_user", role: "user", content: "teacher private", fallback_used: false, created_at: now },
+      {
+        _id: "msg_old",
+        conversation_id: "conv_old",
+        role: "user",
+        content: "old",
+        fallback_used: false,
+        created_at: old
+      },
+      {
+        _id: "msg_other_user",
+        conversation_id: "conv_other_user",
+        role: "user",
+        content: "teacher private",
+        fallback_used: false,
+        created_at: now
+      }
     ],
-    audit_logs: [],
+    audit_logs: []
   });
 
   const root = path.join(__dirname, "..", "uniCloud-aliyun", "cloudfunctions");
@@ -152,14 +184,23 @@ async function main() {
   assert.equal(historyResult.ok, true);
   assert.equal(historyResult.data.userId, "user_s_001");
   assert.ok(historyResult.data.messages.length >= 2);
-  assert.equal(historyResult.data.messages.some((item) => item.content === "teacher private"), false);
-  assert.equal(db.snapshot("ai_messages").some((item) => item._id === "msg_old"), false);
-  assert.equal(db.snapshot("ai_conversations").some((item) => item._id === "conv_old"), false);
+  assert.equal(
+    historyResult.data.messages.some(item => item.content === "teacher private"),
+    false
+  );
+  assert.equal(
+    db.snapshot("ai_messages").some(item => item._id === "msg_old"),
+    false
+  );
+  assert.equal(
+    db.snapshot("ai_conversations").some(item => item._id === "conv_old"),
+    false
+  );
 
   console.log("ai history smoke ok");
 }
 
-main().catch((error) => {
+main().catch(error => {
   console.error(error);
   process.exitCode = 1;
 });

@@ -1,12 +1,6 @@
 {
   "bsonType": "object",
-  "required": [
-    "conversation_id",
-    "role",
-    "content",
-    "fallback_used",
-    "created_at"
-  ],
+  "required": ["conversation_id", "role", "content", "fallback_used", "created_at"],
   "permission": {
     "read": false,
     "create": false,

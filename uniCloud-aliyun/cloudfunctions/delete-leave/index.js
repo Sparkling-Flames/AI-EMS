@@ -33,7 +33,7 @@ exports.main = async (event = {}) => {
     ok: true,
     leaveId,
     deletedLeave: buildLeaveView(leaveWithId),
-    restore,
+    restore
   };
 };
 
@@ -53,13 +53,13 @@ async function restoreAttendance(leave, now) {
       status: previousStatus,
       source: previousSource,
       leave_request_id: "",
-      updated_at: now,
+      updated_at: now
     });
 
     restored.push({
       attendanceId: attendance._id,
       previousStatus,
-      previousSource,
+      previousSource
     });
   }
 
@@ -80,7 +80,7 @@ async function findAttendanceByLink(leave, link) {
     .where({
       student_id: leave.student_id,
       course_offering_id: leave.course_offering_id,
-      attendance_date: date,
+      attendance_date: date
     })
     .limit(1)
     .get();
@@ -97,10 +97,7 @@ async function removeLeaveSessionLinks(leaveId) {
 }
 
 async function findLeaveSessionLinks(leaveId) {
-  const result = await db
-    .collection("leave_request_sessions")
-    .where({ leave_request_id: leaveId })
-    .get();
+  const result = await db.collection("leave_request_sessions").where({ leave_request_id: leaveId }).get();
   return result.data || [];
 }
 
@@ -127,7 +124,7 @@ function buildLeaveView(leave) {
     reviewComment: leave.review_comment || "",
     reviewedAt: Number(leave.reviewed_at || 0),
     createdAt: Number(leave.created_at || 0),
-    updatedAt: Number(leave.updated_at || 0),
+    updatedAt: Number(leave.updated_at || 0)
   };
 }
 
@@ -145,7 +142,7 @@ async function writeAudit(action, session, targetId, before, after) {
       target_id: targetId,
       before,
       after,
-      created_at: Date.now(),
+      created_at: Date.now()
     });
   } catch (error) {
     console.warn("[delete-leave] audit write skipped.", error);

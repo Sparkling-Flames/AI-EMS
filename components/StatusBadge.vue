@@ -4,36 +4,36 @@
 
 <script>
 const STYLE_MAP = {
-  present:  { bg: '#dcfce7', text: '#16a34a' },
-  approved: { bg: '#dcfce7', text: '#16a34a' },
-  absent:   { bg: '#fee2e2', text: '#dc2626' },
-  rejected: { bg: '#fee2e2', text: '#dc2626' },
-  on_leave: { bg: '#fff7ed', text: '#ea580c' },
-  pending:  { bg: '#fefce8', text: '#ca8a04' },
-  late:     { bg: '#ffedd5', text: '#c2410c' },
-  excused:  { bg: '#e0f2fe', text: '#0369a1' },
-  new:      { bg: '#dbeafe', text: '#2563eb' },
-  high:     { bg: '#fee2e2', text: '#dc2626' },
-  critical: { bg: '#7f1d1d', text: '#ffffff' },
-  medium:   { bg: '#fef3c7', text: '#b45309' },
-  low:      { bg: '#e0f2fe', text: '#0369a1' }
-}
+  present: { bg: "#dcfce7", text: "#16a34a" },
+  approved: { bg: "#dcfce7", text: "#16a34a" },
+  absent: { bg: "#fee2e2", text: "#dc2626" },
+  rejected: { bg: "#fee2e2", text: "#dc2626" },
+  on_leave: { bg: "#fff7ed", text: "#ea580c" },
+  pending: { bg: "#fefce8", text: "#ca8a04" },
+  late: { bg: "#ffedd5", text: "#c2410c" },
+  excused: { bg: "#e0f2fe", text: "#0369a1" },
+  new: { bg: "#dbeafe", text: "#2563eb" },
+  high: { bg: "#fee2e2", text: "#dc2626" },
+  critical: { bg: "#7f1d1d", text: "#ffffff" },
+  medium: { bg: "#fef3c7", text: "#b45309" },
+  low: { bg: "#e0f2fe", text: "#0369a1" }
+};
 
 const LABEL_MAP = {
-  present: 'Present',
-  approved: 'Approved',
-  absent: 'Absent',
-  rejected: 'Rejected',
-  on_leave: 'On Leave',
-  pending: 'Pending',
-  late: 'Late',
-  excused: 'Excused',
-  new: 'New',
-  high: 'High',
-  critical: 'Critical',
-  medium: 'Medium',
-  low: 'Low'
-}
+  present: "Present",
+  approved: "Approved",
+  absent: "Absent",
+  rejected: "Rejected",
+  on_leave: "On Leave",
+  pending: "Pending",
+  late: "Late",
+  excused: "Excused",
+  new: "New",
+  high: "High",
+  critical: "Critical",
+  medium: "Medium",
+  low: "Low"
+};
 
 export default {
   props: {
@@ -41,14 +41,14 @@ export default {
   },
   computed: {
     label() {
-      return LABEL_MAP[this.status] || this.status
+      return LABEL_MAP[this.status] || this.status;
     },
     badgeStyle() {
-      const s = STYLE_MAP[this.status] || { bg: '#f1f5f9', text: '#475569' }
-      return `background:${s.bg};color:${s.text}`
+      const s = STYLE_MAP[this.status] || { bg: "#f1f5f9", text: "#475569" };
+      return `background:${s.bg};color:${s.text}`;
     }
   }
-}
+};
 </script>
 
 <style scoped>

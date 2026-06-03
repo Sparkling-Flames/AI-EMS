@@ -1,14 +1,6 @@
 {
   "bsonType": "object",
-  "required": [
-    "requester_user_id",
-    "target_type",
-    "target_id",
-    "changes",
-    "status",
-    "created_at",
-    "updated_at"
-  ],
+  "required": ["requester_user_id", "target_type", "target_id", "changes", "status", "created_at", "updated_at"],
   "permission": {
     "read": false,
     "create": false,

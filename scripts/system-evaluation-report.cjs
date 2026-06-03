@@ -1,16 +1,16 @@
 #!/usr/bin/env node
-'use strict';
+"use strict";
 
-const fs = require('node:fs');
-const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+const fs = require("node:fs");
+const path = require("node:path");
+const { spawnSync } = require("node:child_process");
 
-const root = path.join(__dirname, '..');
-const reportDir = path.join(root, 'tests', 'reports');
+const root = path.join(__dirname, "..");
+const reportDir = path.join(root, "tests", "reports");
 const generatedAt = new Date();
 
 function relative(filePath) {
-  return path.relative(root, filePath).replace(/\\/g, '/');
+  return path.relative(root, filePath).replace(/\\/g, "/");
 }
 
 function listFiles(dir, predicate, output = []) {
@@ -29,20 +29,20 @@ function runCommand(command, args) {
   const startedAt = Date.now();
   const result = spawnSync(command, args, {
     cwd: root,
-    encoding: 'utf8',
-    windowsHide: true,
+    encoding: "utf8",
+    windowsHide: true
   });
   return {
-    command: [command, ...args].join(' '),
+    command: [command, ...args].join(" "),
     status: result.status === null ? 1 : result.status,
     durationMs: Date.now() - startedAt,
-    stdout: result.stdout || '',
-    stderr: result.stderr || '',
+    stdout: result.stdout || "",
+    stderr: result.stderr || ""
   };
 }
 
 function parseTap(output) {
-  const lines = String(output || '').split(/\r?\n/);
+  const lines = String(output || "").split(/\r?\n/);
   const tests = [];
   let current = null;
 
@@ -51,8 +51,8 @@ function parseTap(output) {
     if (testMatch) {
       current = {
         name: testMatch[2].trim(),
-        status: testMatch[1] === 'ok' ? 'passed' : 'failed',
-        durationMs: 0,
+        status: testMatch[1] === "ok" ? "passed" : "failed",
+        durationMs: 0
       };
       tests.push(current);
       continue;
@@ -66,28 +66,28 @@ function parseTap(output) {
     }
   }
 
-  return tests.map((item) => ({
+  return tests.map(item => ({
     ...item,
-    category: categorizeTest(item.name),
+    category: categorizeTest(item.name)
   }));
 }
 
 function categorizeTest(name) {
-  const value = String(name || '').toLowerCase();
-  if (/evaluation|feedback|score|anonymous/.test(value)) return 'Course Evaluation';
-  if (/assistant|ai history|roster|knowledge/.test(value)) return 'AI Assistant';
-  if (/dashboard|profile/.test(value)) return 'Dashboard & Profile';
-  if (/leave|attendance/.test(value)) return 'Leave & Attendance';
-  if (/material|file/.test(value)) return 'Course Materials';
-  if (/admin|course/.test(value)) return 'Admin Management';
-  if (/frontend|ui|student materials/.test(value)) return 'Frontend UI';
-  return 'Core Workflow';
+  const value = String(name || "").toLowerCase();
+  if (/evaluation|feedback|score|anonymous/.test(value)) return "Course Evaluation";
+  if (/assistant|ai history|roster|knowledge/.test(value)) return "AI Assistant";
+  if (/dashboard|profile/.test(value)) return "Dashboard & Profile";
+  if (/leave|attendance/.test(value)) return "Leave & Attendance";
+  if (/material|file/.test(value)) return "Course Materials";
+  if (/admin|course/.test(value)) return "Admin Management";
+  if (/frontend|ui|student materials/.test(value)) return "Frontend UI";
+  return "Core Workflow";
 }
 
 function summarize(items) {
   const total = items.length;
-  const passed = items.filter((item) => item.status === 'passed').length;
-  const failed = items.filter((item) => item.status === 'failed').length;
+  const passed = items.filter(item => item.status === "passed").length;
+  const failed = items.filter(item => item.status === "failed").length;
   return { total, passed, failed, passRate: total ? Math.round((passed / total) * 1000) / 10 : 0 };
 }
 
@@ -105,11 +105,11 @@ function groupByCategory(tests) {
 }
 
 function escapeHtml(value) {
-  return String(value || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 function renderBar(value, total, color) {
@@ -121,16 +121,22 @@ function renderHtml(report) {
   const testSummary = report.summary.tests;
   const syntaxSummary = report.summary.syntaxChecks;
   const overallOk = report.summary.failed === 0;
-  const categoryRows = report.categories.map((item) => `
+  const categoryRows = report.categories
+    .map(
+      item => `
     <tr>
       <td>${escapeHtml(item.category)}</td>
       <td>${item.total}</td>
       <td>${item.passed}</td>
       <td>${item.failed}</td>
-      <td>${renderBar(item.passed, item.total, '#16a34a')}</td>
+      <td>${renderBar(item.passed, item.total, "#16a34a")}</td>
     </tr>
-  `).join('');
-  const testRows = report.tests.map((item, index) => `
+  `
+    )
+    .join("");
+  const testRows = report.tests
+    .map(
+      (item, index) => `
     <tr>
       <td>${index + 1}</td>
       <td>${escapeHtml(item.category)}</td>
@@ -138,15 +144,21 @@ function renderHtml(report) {
       <td><span class="pill ${item.status}">${item.status}</span></td>
       <td>${item.durationMs.toFixed(1)} ms</td>
     </tr>
-  `).join('');
-  const syntaxRows = report.syntaxChecks.map((item, index) => `
+  `
+    )
+    .join("");
+  const syntaxRows = report.syntaxChecks
+    .map(
+      (item, index) => `
     <tr>
       <td>${index + 1}</td>
       <td>${escapeHtml(item.file)}</td>
       <td><span class="pill ${item.status}">${item.status}</span></td>
       <td>${item.durationMs} ms</td>
     </tr>
-  `).join('');
+  `
+    )
+    .join("");
 
   return `<!doctype html>
 <html lang="en">
@@ -163,7 +175,7 @@ function renderHtml(report) {
     h1 { margin: 0 0 8px; font-size: 30px; }
     h2 { margin: 0 0 14px; font-size: 20px; }
     p { margin: 0; color: var(--muted); line-height: 1.55; }
-    .status { padding: 10px 14px; border-radius: 8px; font-weight: 700; background: ${overallOk ? '#dcfce7' : '#fee2e2'}; color: ${overallOk ? '#166534' : '#991b1b'}; }
+    .status { padding: 10px 14px; border-radius: 8px; font-weight: 700; background: ${overallOk ? "#dcfce7" : "#fee2e2"}; color: ${overallOk ? "#166534" : "#991b1b"}; }
     .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 20px 0; }
     .card, section { background: white; border: 1px solid var(--line); border-radius: 8px; padding: 18px; }
     .metric { font-size: 30px; font-weight: 800; margin-top: 8px; }
@@ -189,12 +201,12 @@ function renderHtml(report) {
         <h1>AI-EMS System Evaluation Report</h1>
         <p>Generated at ${escapeHtml(report.generatedAt)}. Command: <code>npm run test:system</code></p>
       </div>
-      <div class="status">${overallOk ? 'PASS' : 'FAIL'}</div>
+      <div class="status">${overallOk ? "PASS" : "FAIL"}</div>
     </header>
 
     <div class="grid">
       <div class="card"><div class="metric-label">Automated Tests</div><div class="metric">${testSummary.total}</div><p>${testSummary.passed} passed, ${testSummary.failed} failed</p></div>
-      <div class="card"><div class="metric-label">Test Pass Rate</div><div class="metric">${testSummary.passRate}%</div>${renderBar(testSummary.passed, testSummary.total, '#16a34a')}</div>
+      <div class="card"><div class="metric-label">Test Pass Rate</div><div class="metric">${testSummary.passRate}%</div>${renderBar(testSummary.passed, testSummary.total, "#16a34a")}</div>
       <div class="card"><div class="metric-label">Cloud Syntax Checks</div><div class="metric">${syntaxSummary.total}</div><p>${syntaxSummary.passed} passed, ${syntaxSummary.failed} failed</p></div>
       <div class="card"><div class="metric-label">Total Runtime</div><div class="metric">${Math.round(report.summary.durationMs)} ms</div><p>Node automated evaluation</p></div>
     </div>
@@ -229,51 +241,59 @@ function renderHtml(report) {
 
 function renderMarkdown(report) {
   const lines = [
-    '# AI-EMS System Evaluation Summary',
-    '',
+    "# AI-EMS System Evaluation Summary",
+    "",
     `Generated at: ${report.generatedAt}`,
-    '',
-    '| Metric | Result |',
-    '|---|---:|',
+    "",
+    "| Metric | Result |",
+    "|---|---:|",
     `| Automated tests | ${report.summary.tests.total} |`,
     `| Passed tests | ${report.summary.tests.passed} |`,
     `| Failed tests | ${report.summary.tests.failed} |`,
     `| Test pass rate | ${report.summary.tests.passRate}% |`,
     `| Cloud syntax checks | ${report.summary.syntaxChecks.total} |`,
-    '',
-    '## Evaluation Areas',
-    '',
-    '| Area | Total | Passed | Failed | Pass Rate |',
-    '|---|---:|---:|---:|---:|',
-    ...report.categories.map((item) => `| ${item.category} | ${item.total} | ${item.passed} | ${item.failed} | ${item.passRate}% |`),
-    '',
-    '## How to Reproduce',
-    '',
-    '```bash',
-    'npm run test:system',
-    '```',
-    '',
-    `HTML visualization: ${relative(path.join(reportDir, 'system-evaluation-report.html'))}`,
-    `JSON result data: ${relative(path.join(reportDir, 'system-evaluation-results.json'))}`,
+    "",
+    "## Evaluation Areas",
+    "",
+    "| Area | Total | Passed | Failed | Pass Rate |",
+    "|---|---:|---:|---:|---:|",
+    ...report.categories.map(
+      item => `| ${item.category} | ${item.total} | ${item.passed} | ${item.failed} | ${item.passRate}% |`
+    ),
+    "",
+    "## How to Reproduce",
+    "",
+    "```bash",
+    "npm run test:system",
+    "```",
+    "",
+    `HTML visualization: ${relative(path.join(reportDir, "system-evaluation-report.html"))}`,
+    `JSON result data: ${relative(path.join(reportDir, "system-evaluation-results.json"))}`
   ];
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 function main() {
   fs.mkdirSync(reportDir, { recursive: true });
 
-  const testFiles = listFiles(path.join(root, 'tests'), (file) => file.endsWith('.cjs') && !file.includes(`${path.sep}reports${path.sep}`));
-  const cloudFunctionFiles = listFiles(path.join(root, 'uniCloud-aliyun', 'cloudfunctions'), (file) => path.basename(file) === 'index.js');
+  const testFiles = listFiles(
+    path.join(root, "tests"),
+    file => file.endsWith(".cjs") && !file.includes(`${path.sep}reports${path.sep}`)
+  );
+  const cloudFunctionFiles = listFiles(
+    path.join(root, "uniCloud-aliyun", "cloudfunctions"),
+    file => path.basename(file) === "index.js"
+  );
 
-  const testRun = runCommand(process.execPath, ['--test', '--test-reporter=tap', ...testFiles.map(relative)]);
+  const testRun = runCommand(process.execPath, ["--test", "--test-reporter=tap", ...testFiles.map(relative)]);
   const tests = parseTap(`${testRun.stdout}\n${testRun.stderr}`);
-  const syntaxChecks = cloudFunctionFiles.map((file) => {
-    const check = runCommand(process.execPath, ['--check', relative(file)]);
+  const syntaxChecks = cloudFunctionFiles.map(file => {
+    const check = runCommand(process.execPath, ["--check", relative(file)]);
     return {
       file: relative(file),
-      status: check.status === 0 ? 'passed' : 'failed',
+      status: check.status === 0 ? "passed" : "failed",
       durationMs: check.durationMs,
-      stderr: check.stderr.trim(),
+      stderr: check.stderr.trim()
     };
   });
 
@@ -287,26 +307,26 @@ function main() {
       total: testSummary.total + syntaxSummary.total,
       passed: testSummary.passed + syntaxSummary.passed,
       failed: testSummary.failed + syntaxSummary.failed,
-      durationMs: testRun.durationMs + syntaxChecks.reduce((sum, item) => sum + item.durationMs, 0),
+      durationMs: testRun.durationMs + syntaxChecks.reduce((sum, item) => sum + item.durationMs, 0)
     },
     commands: {
       tests: testRun.command,
-      syntaxCheckPattern: `${process.execPath} --check uniCloud-aliyun/cloudfunctions/*/index.js`,
+      syntaxCheckPattern: `${process.execPath} --check uniCloud-aliyun/cloudfunctions/*/index.js`
     },
     categories: groupByCategory(tests),
     tests,
     syntaxChecks,
     raw: {
       testStdout: testRun.stdout,
-      testStderr: testRun.stderr,
-    },
+      testStderr: testRun.stderr
+    }
   };
 
-  fs.writeFileSync(path.join(reportDir, 'system-evaluation-results.json'), JSON.stringify(report, null, 2));
-  fs.writeFileSync(path.join(reportDir, 'system-evaluation-report.html'), renderHtml(report));
-  fs.writeFileSync(path.join(reportDir, 'system-evaluation-summary.md'), renderMarkdown(report));
+  fs.writeFileSync(path.join(reportDir, "system-evaluation-results.json"), JSON.stringify(report, null, 2));
+  fs.writeFileSync(path.join(reportDir, "system-evaluation-report.html"), renderHtml(report));
+  fs.writeFileSync(path.join(reportDir, "system-evaluation-summary.md"), renderMarkdown(report));
 
-  console.log(`System evaluation report generated: ${relative(path.join(reportDir, 'system-evaluation-report.html'))}`);
+  console.log(`System evaluation report generated: ${relative(path.join(reportDir, "system-evaluation-report.html"))}`);
   console.log(`Automated tests: ${testSummary.passed}/${testSummary.total} passed`);
   console.log(`Cloud syntax checks: ${syntaxSummary.passed}/${syntaxSummary.total} passed`);
 

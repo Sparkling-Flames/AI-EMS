@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <PageHeader title="AI Assistant" :displayName="session.displayName" :username="session.username">
+    <PageHeader title="AI Assistant" :display-name="session.displayName" :username="session.username">
       <button class="secondary-btn" :disabled="loading" @click="newChat">New Chat</button>
     </PageHeader>
     <NavTabs :role="session.role" current="assistant" />
@@ -12,7 +12,7 @@
           <text class="section-title">Conversation</text>
           <text class="muted">{{ apiSettings.provider }} / {{ apiSettings.model }}</text>
         </view>
-        <text class="muted" v-if="messages.length">{{ messages.length }} messages</text>
+        <text v-if="messages.length" class="muted">{{ messages.length }} messages</text>
       </view>
 
       <scroll-view scroll-y class="chat-scroll" :scroll-into-view="scrollAnchor">
@@ -22,30 +22,30 @@
           <text class="muted">Questions are answered by DeepSeek with knowledge base retrieval.</text>
         </view>
 
-        <view
-          v-for="message in messages"
-          :id="message.id"
-          :key="message.id"
-          class="msg-row"
-          :class="message.role"
-        >
+        <view v-for="message in messages" :id="message.id" :key="message.id" class="msg-row" :class="message.role">
           <view class="msg-bubble">
             <view v-if="message.role === 'assistant' && message.blocks && message.blocks.length" class="msg-rendered">
               <block v-for="(block, blockIndex) in message.blocks" :key="blockIndex">
                 <text v-if="block.type === 'paragraph'" class="md-paragraph">{{ block.text }}</text>
                 <text v-else-if="block.type === 'heading'" class="md-heading">{{ block.text }}</text>
                 <view v-else-if="block.type === 'list'" class="md-list">
-                  <text v-for="(item, itemIndex) in block.items" :key="itemIndex" class="md-list-item">{{ block.ordered ? itemIndex + 1 + '. ' : '- ' }}{{ item }}</text>
+                  <text v-for="(item, itemIndex) in block.items" :key="itemIndex" class="md-list-item"
+                    >{{ block.ordered ? itemIndex + 1 + ". " : "- " }}{{ item }}</text
+                  >
                 </view>
                 <text v-else-if="block.type === 'quote'" class="md-quote">{{ block.text }}</text>
                 <text v-else-if="block.type === 'code'" class="md-code">{{ block.text }}</text>
                 <scroll-view v-else-if="block.type === 'table'" scroll-x class="md-table-scroll">
                   <view class="md-table" :style="{ minWidth: Math.max(block.headers.length * 190, 520) + 'rpx' }">
                     <view class="md-table-row md-table-head">
-                      <text v-for="(cell, cellIndex) in block.headers" :key="'h-' + cellIndex" class="md-table-cell">{{ cell }}</text>
+                      <text v-for="(cell, cellIndex) in block.headers" :key="'h-' + cellIndex" class="md-table-cell">{{
+                        cell
+                      }}</text>
                     </view>
                     <view v-for="(row, rowIndex) in block.rows" :key="'r-' + rowIndex" class="md-table-row">
-                      <text v-for="(cell, cellIndex) in block.headers" :key="'c-' + cellIndex" class="md-table-cell">{{ row[cellIndex] || '' }}</text>
+                      <text v-for="(cell, cellIndex) in block.headers" :key="'c-' + cellIndex" class="md-table-cell">{{
+                        row[cellIndex] || ""
+                      }}</text>
                     </view>
                   </view>
                 </scroll-view>
@@ -96,7 +96,7 @@
           <text class="muted">DeepSeek key and generation controls</text>
         </view>
         <button class="secondary-btn settings-toggle" @click="showSettings = !showSettings">
-          {{ showSettings ? 'Hide' : 'Configure' }}
+          {{ showSettings ? "Hide" : "Configure" }}
         </button>
       </view>
 
@@ -104,13 +104,8 @@
         <view class="settings-row">
           <view class="field setting-provider">
             <text class="label">Provider</text>
-            <picker
-              :value="providerIndex"
-              :range="providers"
-              class="picker-shell"
-              @change="onProviderChange"
-            >
-              <view class="input-box">{{ apiSettings.provider || 'Select provider' }}</view>
+            <picker :value="providerIndex" :range="providers" class="picker-shell" @change="onProviderChange">
+              <view class="input-box">{{ apiSettings.provider || "Select provider" }}</view>
             </picker>
           </view>
 
@@ -125,7 +120,7 @@
                 @input="onKeyInput"
               />
               <button class="secondary-btn compact-btn" @click="showKey = !showKey">
-                {{ showKey ? 'Hide' : 'Show' }}
+                {{ showKey ? "Hide" : "Show" }}
               </button>
             </view>
           </view>
@@ -137,19 +132,16 @@
             <button class="secondary-btn compact-btn" :loading="fetchingModels" @click="fetchModels">Refresh</button>
           </view>
           <view class="settings-row">
-            <picker
-              :value="modelIndex"
-              :range="modelOptions"
-              class="picker-shell flex-1"
-              @change="onModelChange"
-            >
-              <view class="input-box">{{ modelOptions.includes(apiSettings.model) ? apiSettings.model : 'Custom Model' }}</view>
+            <picker :value="modelIndex" :range="modelOptions" class="picker-shell flex-1" @change="onModelChange">
+              <view class="input-box">{{
+                modelOptions.includes(apiSettings.model) ? apiSettings.model : "Custom Model"
+              }}</view>
             </picker>
             <input
               :value="apiSettings.model"
               placeholder="Or type any model name..."
               class="input-box flex-1"
-              @input="e => apiSettings.model = e.detail.value"
+              @input="e => (apiSettings.model = e.detail.value)"
             />
           </view>
         </view>
@@ -163,7 +155,7 @@
               :max="2"
               :step="0.1"
               show-value
-              activeColor="#2563eb"
+              active-color="#2563eb"
               @change="onTempChange"
             />
           </view>
@@ -175,7 +167,7 @@
               :max="8192"
               :step="256"
               show-value
-              activeColor="#2563eb"
+              active-color="#2563eb"
               @change="onTokensChange"
             />
           </view>
@@ -193,180 +185,184 @@
 </template>
 
 <script>
-import { callAiemsFunction } from '../../common/api.js'
-import { getSession, requireRole } from '../../common/session.js'
-import PageHeader from '../../components/PageHeader.vue'
-import NavTabs from '../../components/NavTabs.vue'
+import { callAiemsFunction } from "../../common/api.js";
+import { getSession, requireRole } from "../../common/session.js";
+import PageHeader from "../../components/PageHeader.vue";
+import NavTabs from "../../components/NavTabs.vue";
 
-const SETTINGS_KEY = 'ai_ems_api_settings'
+const SETTINGS_KEY = "ai_ems_api_settings";
 
 const DEFAULT_SETTINGS = {
-  provider: 'deepseek',
-  apiKey: '',
-  model: 'deepseek-chat',
+  provider: "deepseek",
+  apiKey: "",
+  model: "deepseek-chat",
   temperature: 0.7,
-  maxTokens: 2048,
-}
+  maxTokens: 2048
+};
 
 export default {
   components: { PageHeader, NavTabs },
   data() {
     return {
       session: {},
-      activeSessionKey: '',
-      query: '',
+      activeSessionKey: "",
+      query: "",
       messages: [],
-      currentConversationId: '',
+      currentConversationId: "",
       loading: false,
-      scrollAnchor: '',
+      scrollAnchor: "",
       showSettings: false,
       showKey: false,
       apiSettings: { ...DEFAULT_SETTINGS },
-      providers: ['deepseek', 'openai'],
+      providers: ["deepseek", "openai"],
       fetchedModels: [],
-      fetchingModels: false,
-    }
+      fetchingModels: false
+    };
   },
   computed: {
     providerIndex() {
-      const idx = this.providers.indexOf(this.apiSettings.provider)
-      return idx >= 0 ? idx : 0
+      const idx = this.providers.indexOf(this.apiSettings.provider);
+      return idx >= 0 ? idx : 0;
     },
     modelOptions() {
-      const defaults = this.apiSettings.provider === 'openai'
-        ? ['gpt-4.1', 'gpt-4o', 'gpt-4o-mini', 'o3-mini', 'o1']
-        : ['deepseek-chat', 'deepseek-reasoner']
-      const merged = [...new Set([...defaults, ...this.fetchedModels])]
-      return merged
+      const defaults =
+        this.apiSettings.provider === "openai"
+          ? ["gpt-4.1", "gpt-4o", "gpt-4o-mini", "o3-mini", "o1"]
+          : ["deepseek-chat", "deepseek-reasoner"];
+      const merged = [...new Set([...defaults, ...this.fetchedModels])];
+      return merged;
     },
     modelIndex() {
-      const idx = this.modelOptions.indexOf(this.apiSettings.model)
-      return idx >= 0 ? idx : -1
-    },
+      const idx = this.modelOptions.indexOf(this.apiSettings.model);
+      return idx >= 0 ? idx : -1;
+    }
   },
   onShow() {
-    const session = requireRole(['student', 'teacher', 'admin'])
-    if (!session) return
-    const nextSessionKey = this.sessionStorageKey(session)
+    const session = requireRole(["student", "teacher", "admin"]);
+    if (!session) return;
+    const nextSessionKey = this.sessionStorageKey(session);
     if (this.activeSessionKey && this.activeSessionKey !== nextSessionKey) {
-      this.resetChatState()
+      this.resetChatState();
     }
-    this.activeSessionKey = nextSessionKey
-    this.session = session
-    this.loadSettings()
-    this.loadHistory(nextSessionKey)
+    this.activeSessionKey = nextSessionKey;
+    this.session = session;
+    this.loadSettings();
+    this.loadHistory(nextSessionKey);
   },
   methods: {
     loadSettings() {
       try {
-        const saved = uni.getStorageSync(this.settingsStorageKey())
+        const saved = uni.getStorageSync(this.settingsStorageKey());
         if (saved) {
-          this.apiSettings = { ...DEFAULT_SETTINGS, ...JSON.parse(saved) }
+          this.apiSettings = { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
         } else {
-          this.apiSettings = { ...DEFAULT_SETTINGS }
+          this.apiSettings = { ...DEFAULT_SETTINGS };
         }
       } catch (_) {
-        this.apiSettings = { ...DEFAULT_SETTINGS }
+        this.apiSettings = { ...DEFAULT_SETTINGS };
       }
     },
     saveSettings() {
       try {
-        uni.setStorageSync(this.settingsStorageKey(), JSON.stringify(this.apiSettings))
-        uni.showToast({ title: 'Settings saved.', icon: 'success' })
+        uni.setStorageSync(this.settingsStorageKey(), JSON.stringify(this.apiSettings));
+        uni.showToast({ title: "Settings saved.", icon: "success" });
       } catch (_) {
-        uni.showToast({ title: 'Failed to save settings.', icon: 'none' })
+        uni.showToast({ title: "Failed to save settings.", icon: "none" });
       }
     },
     onProviderChange(e) {
-      this.apiSettings.provider = this.providers[e.detail.value]
+      this.apiSettings.provider = this.providers[e.detail.value];
     },
     onKeyInput(e) {
-      this.apiSettings.apiKey = e.detail.value
+      this.apiSettings.apiKey = e.detail.value;
     },
     onModelChange(e) {
-      const val = this.modelOptions[e.detail.value]
-      if (val) this.apiSettings.model = val
+      const val = this.modelOptions[e.detail.value];
+      if (val) this.apiSettings.model = val;
     },
     async fetchModels() {
       if (!this.apiSettings.apiKey) {
-        uni.showToast({ title: 'Set API key first.', icon: 'none' })
-        return
+        uni.showToast({ title: "Set API key first.", icon: "none" });
+        return;
       }
-      this.fetchingModels = true
+      this.fetchingModels = true;
       try {
-        const result = await callAiemsFunction('ask-assistant', {
+        const result = await callAiemsFunction("ask-assistant", {
           session: getSession(),
-          query: '__list_models__',
+          query: "__list_models__",
           apiSettings: {
             provider: this.apiSettings.provider,
-            apiKey: this.apiSettings.apiKey,
-          },
-        })
+            apiKey: this.apiSettings.apiKey
+          }
+        });
         if (result.ok && result.data && Array.isArray(result.data.models)) {
-          this.fetchedModels = result.data.models
-          uni.showToast({ title: `Found ${this.fetchedModels.length} models.`, icon: 'success' })
+          this.fetchedModels = result.data.models;
+          uni.showToast({ title: `Found ${this.fetchedModels.length} models.`, icon: "success" });
         } else {
-          uni.showToast({ title: result.message || 'Failed to fetch models.', icon: 'none' })
+          uni.showToast({ title: result.message || "Failed to fetch models.", icon: "none" });
         }
       } catch (_) {
-        uni.showToast({ title: 'Failed to fetch models.', icon: 'none' })
+        uni.showToast({ title: "Failed to fetch models.", icon: "none" });
       }
-      this.fetchingModels = false
+      this.fetchingModels = false;
     },
     onTempChange(e) {
-      this.apiSettings.temperature = e.detail.value
+      this.apiSettings.temperature = e.detail.value;
     },
     onTokensChange(e) {
-      this.apiSettings.maxTokens = e.detail.value
+      this.apiSettings.maxTokens = e.detail.value;
     },
 
     async loadHistory(expectedSessionKey = this.activeSessionKey) {
-      const session = getSession()
-      if (!session || this.sessionStorageKey(session) !== expectedSessionKey) return
-      const result = await callAiemsFunction('get-ai-history', {
+      const session = getSession();
+      if (!session || this.sessionStorageKey(session) !== expectedSessionKey) return;
+      const result = await callAiemsFunction("get-ai-history", {
         session,
-        forceRefresh: true,
-      })
-      if (this.activeSessionKey !== expectedSessionKey) return
-      if (!result.ok) return
-      const data = result.data || {}
-      const responseOwnerKey = data.userId && data.role ? this.sessionStorageKey({ userId: data.userId, role: data.role }) : expectedSessionKey
+        forceRefresh: true
+      });
+      if (this.activeSessionKey !== expectedSessionKey) return;
+      if (!result.ok) return;
+      const data = result.data || {};
+      const responseOwnerKey =
+        data.userId && data.role
+          ? this.sessionStorageKey({ userId: data.userId, role: data.role })
+          : expectedSessionKey;
       if (responseOwnerKey !== expectedSessionKey) {
-        this.resetChatState()
-        return
+        this.resetChatState();
+        return;
       }
-      this.currentConversationId = data.activeConversationId || ''
-      this.messages = (data.messages || []).map((item) =>
+      this.currentConversationId = data.activeConversationId || "";
+      this.messages = (data.messages || []).map(item =>
         this.buildMessage(
           item.role,
           item.content,
-          item.citations && item.citations[0] ? item.citations[0].title || '' : '',
-          item._id,
-        ),
-      )
-      this.scrollToBottom()
+          item.citations && item.citations[0] ? item.citations[0].title || "" : "",
+          item._id
+        )
+      );
+      this.scrollToBottom();
     },
     async ask() {
-      const question = this.query.trim()
-      if (!question) return
-      const session = getSession()
+      const question = this.query.trim();
+      if (!question) return;
+      const session = getSession();
       if (!session) {
-        this.resetChatState()
-        return
+        this.resetChatState();
+        return;
       }
-      const nextSessionKey = this.sessionStorageKey(session)
+      const nextSessionKey = this.sessionStorageKey(session);
       if (nextSessionKey !== this.activeSessionKey) {
-        this.resetChatState()
-        this.activeSessionKey = nextSessionKey
-        this.session = session || {}
+        this.resetChatState();
+        this.activeSessionKey = nextSessionKey;
+        this.session = session || {};
       }
 
-      this.messages.push(this.buildMessage('user', question))
-      this.query = ''
-      this.loading = true
-      this.scrollToBottom()
+      this.messages.push(this.buildMessage("user", question));
+      this.query = "";
+      this.loading = true;
+      this.scrollToBottom();
 
-      const result = await callAiemsFunction('ask-assistant', {
+      const result = await callAiemsFunction("ask-assistant", {
         session,
         conversationId: this.currentConversationId,
         query: question,
@@ -376,288 +372,323 @@ export default {
           apiKey: this.apiSettings.apiKey,
           model: this.apiSettings.model,
           temperature: this.apiSettings.temperature,
-          maxTokens: this.apiSettings.maxTokens,
-        },
-      })
-      this.loading = false
-      if (this.activeSessionKey !== nextSessionKey) return
+          maxTokens: this.apiSettings.maxTokens
+        }
+      });
+      this.loading = false;
+      if (this.activeSessionKey !== nextSessionKey) return;
 
       if (result.ok) {
-        const data = result.data || {}
-        this.currentConversationId = data.conversationId || this.currentConversationId
-        this.messages.push(
-          this.buildMessage('assistant', data.answer || '', data.sourceTitle || ''),
-        )
-        this.scrollToBottom()
-        return
+        const data = result.data || {};
+        this.currentConversationId = data.conversationId || this.currentConversationId;
+        this.messages.push(this.buildMessage("assistant", data.answer || "", data.sourceTitle || ""));
+        this.scrollToBottom();
+        return;
       }
 
-      uni.showToast({ title: result.message || 'Query failed.', icon: 'none' })
+      uni.showToast({ title: result.message || "Query failed.", icon: "none" });
     },
     newChat() {
-      this.resetChatState()
+      this.resetChatState();
     },
     resetChatState() {
-      this.currentConversationId = ''
-      this.messages = []
-      this.query = ''
-      this.scrollAnchor = ''
+      this.currentConversationId = "";
+      this.messages = [];
+      this.query = "";
+      this.scrollAnchor = "";
     },
     settingsStorageKey() {
-      return `${SETTINGS_KEY}:${this.activeSessionKey || this.sessionStorageKey(this.session)}`
+      return `${SETTINGS_KEY}:${this.activeSessionKey || this.sessionStorageKey(this.session)}`;
     },
     sessionStorageKey(session) {
-      if (!session) return ''
-      return [String(session.role || '').trim(), this.normalizeAssistantUserId(session.userId || session.uid || session.user_id || '')].join(':')
+      if (!session) return "";
+      return [
+        String(session.role || "").trim(),
+        this.normalizeAssistantUserId(session.userId || session.uid || session.user_id || "")
+      ].join(":");
     },
     normalizeAssistantUserId(userId) {
-      const value = String(userId || '').trim()
-      if (/^u_student_/i.test(value)) return `user_s_${value.slice('u_student_'.length)}`
-      if (/^student_/i.test(value)) return `user_s_${value.slice('student_'.length)}`
-      if (/^u_teacher_/i.test(value)) return `user_t_${value.slice('u_teacher_'.length)}`
-      if (/^teacher_/i.test(value)) return `user_t_${value.slice('teacher_'.length)}`
-      if (/^u_admin_/i.test(value)) return `user_admin_${value.slice('u_admin_'.length)}`
-      return value
+      const value = String(userId || "").trim();
+      if (/^u_student_/i.test(value)) return `user_s_${value.slice("u_student_".length)}`;
+      if (/^student_/i.test(value)) return `user_s_${value.slice("student_".length)}`;
+      if (/^u_teacher_/i.test(value)) return `user_t_${value.slice("u_teacher_".length)}`;
+      if (/^teacher_/i.test(value)) return `user_t_${value.slice("teacher_".length)}`;
+      if (/^u_admin_/i.test(value)) return `user_admin_${value.slice("u_admin_".length)}`;
+      return value;
     },
-    buildMessage(role, content, sourceTitle = '', id = '') {
+    buildMessage(role, content, sourceTitle = "", id = "") {
       return {
         id: id || `${role}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
         role,
         content,
         sourceTitle,
-        renderHtml: role === 'assistant' ? this.renderMarkdown(content) : '',
-        blocks: role === 'assistant' ? this.parseMarkdownBlocks(content) : []
-      }
+        renderHtml: role === "assistant" ? this.renderMarkdown(content) : "",
+        blocks: role === "assistant" ? this.parseMarkdownBlocks(content) : []
+      };
     },
     parseMarkdownBlocks(content) {
-      const lines = String(content || '').replace(/\r\n/g, '\n').split('\n')
-      const blocks = []
-      let list = null
-      let inCode = false
-      let codeLines = []
+      const lines = String(content || "")
+        .replace(/\r\n/g, "\n")
+        .split("\n");
+      const blocks = [];
+      let list = null;
+      let inCode = false;
+      let codeLines = [];
       const flushList = () => {
-        if (!list) return
-        blocks.push(list)
-        list = null
-      }
+        if (!list) return;
+        blocks.push(list);
+        list = null;
+      };
       const flushCode = () => {
-        if (!inCode) return
-        blocks.push({ type: 'code', text: codeLines.join('\n') })
-        inCode = false
-        codeLines = []
-      }
+        if (!inCode) return;
+        blocks.push({ type: "code", text: codeLines.join("\n") });
+        inCode = false;
+        codeLines = [];
+      };
       for (let index = 0; index < lines.length; index += 1) {
-        const rawLine = lines[index]
-        const line = rawLine.trim()
-        if (line.startsWith('```')) {
+        const rawLine = lines[index];
+        const line = rawLine.trim();
+        if (line.startsWith("```")) {
           if (inCode) {
-            flushCode()
+            flushCode();
           } else {
-            flushList()
-            inCode = true
-            codeLines = []
+            flushList();
+            inCode = true;
+            codeLines = [];
           }
-          continue
+          continue;
         }
         if (inCode) {
-          codeLines.push(rawLine)
-          continue
+          codeLines.push(rawLine);
+          continue;
         }
         if (!line) {
-          flushList()
-          continue
+          flushList();
+          continue;
         }
         if (this.isMarkdownTableStart(lines, index)) {
-          flushList()
-          const table = this.parseMarkdownTableBlock(lines, index)
-          blocks.push(table.block)
-          index = table.nextIndex - 1
-          continue
+          flushList();
+          const table = this.parseMarkdownTableBlock(lines, index);
+          blocks.push(table.block);
+          index = table.nextIndex - 1;
+          continue;
         }
-        const heading = line.match(/^(#{1,3})\s+(.+)$/)
+        const heading = line.match(/^(#{1,3})\s+(.+)$/);
         if (heading) {
-          flushList()
-          blocks.push({ type: 'heading', text: this.stripInlineMarkdown(heading[2]) })
-          continue
+          flushList();
+          blocks.push({ type: "heading", text: this.stripInlineMarkdown(heading[2]) });
+          continue;
         }
-        const unordered = line.match(/^[-*]\s+(.+)$/)
-        const ordered = line.match(/^\d+\.\s+(.+)$/)
+        const unordered = line.match(/^[-*]\s+(.+)$/);
+        const ordered = line.match(/^\d+\.\s+(.+)$/);
         if (unordered || ordered) {
-          const orderedList = Boolean(ordered)
+          const orderedList = Boolean(ordered);
           if (!list || list.ordered !== orderedList) {
-            flushList()
-            list = { type: 'list', ordered: orderedList, items: [] }
+            flushList();
+            list = { type: "list", ordered: orderedList, items: [] };
           }
-          list.items.push(this.stripInlineMarkdown((unordered || ordered)[1]))
-          continue
+          list.items.push(this.stripInlineMarkdown((unordered || ordered)[1]));
+          continue;
         }
-        if (line.startsWith('>')) {
-          flushList()
-          blocks.push({ type: 'quote', text: this.stripInlineMarkdown(line.replace(/^>\s*/, '')) })
-          continue
+        if (line.startsWith(">")) {
+          flushList();
+          blocks.push({ type: "quote", text: this.stripInlineMarkdown(line.replace(/^>\s*/, "")) });
+          continue;
         }
-        flushList()
-        blocks.push({ type: 'paragraph', text: this.stripInlineMarkdown(line) })
+        flushList();
+        blocks.push({ type: "paragraph", text: this.stripInlineMarkdown(line) });
       }
-      flushList()
-      flushCode()
-      return blocks
+      flushList();
+      flushCode();
+      return blocks;
     },
     parseMarkdownTableBlock(lines, startIndex) {
-      const rows = []
-      let index = startIndex
-      while (index < lines.length && String(lines[index] || '').trim().includes('|')) {
-        rows.push(String(lines[index] || '').trim())
-        index += 1
+      const rows = [];
+      let index = startIndex;
+      while (
+        index < lines.length &&
+        String(lines[index] || "")
+          .trim()
+          .includes("|")
+      ) {
+        rows.push(String(lines[index] || "").trim());
+        index += 1;
       }
-      const headers = this.parseTableRow(rows[0]).map(this.stripInlineMarkdown)
+      const headers = this.parseTableRow(rows[0]).map(this.stripInlineMarkdown);
       const bodyRows = rows
         .slice(2)
         .map(row => this.parseTableRow(row).map(this.stripInlineMarkdown))
-        .filter(row => row.length)
+        .filter(row => row.length);
       return {
-        block: { type: 'table', headers, rows: bodyRows },
+        block: { type: "table", headers, rows: bodyRows },
         nextIndex: index
-      }
+      };
     },
     stripInlineMarkdown(value) {
-      return String(value || '')
-        .replace(/\*\*([^*]+)\*\*/g, '$1')
-        .replace(/`([^`]+)`/g, '$1')
-        .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '$1')
+      return String(value || "")
+        .replace(/\*\*([^*]+)\*\*/g, "$1")
+        .replace(/`([^`]+)`/g, "$1")
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, "$1");
     },
     renderMarkdown(content) {
-      const lines = String(content || '').replace(/\r\n/g, '\n').split('\n')
-      const html = []
-      let listType = ''
-      let listItems = []
-      let inCode = false
-      let codeLines = []
+      const lines = String(content || "")
+        .replace(/\r\n/g, "\n")
+        .split("\n");
+      const html = [];
+      let listType = "";
+      let listItems = [];
+      let inCode = false;
+      let codeLines = [];
       const flushList = () => {
-        if (!listType) return
-        html.push(`<${listType} style="margin:8px 0 8px 22px;padding:0;">${listItems.join('')}</${listType}>`)
-        listType = ''
-        listItems = []
-      }
+        if (!listType) return;
+        html.push(`<${listType} style="margin:8px 0 8px 22px;padding:0;">${listItems.join("")}</${listType}>`);
+        listType = "";
+        listItems = [];
+      };
       const flushCode = () => {
-        if (!inCode) return
-        html.push(`<pre style="margin:10px 0;padding:10px 12px;background:#0f172a;color:#e2e8f0;border-radius:6px;white-space:pre-wrap;word-break:break-word;font-size:13px;line-height:1.55;">${this.escapeHtml(codeLines.join('\n'))}</pre>`)
-        inCode = false
-        codeLines = []
-      }
+        if (!inCode) return;
+        html.push(
+          `<pre style="margin:10px 0;padding:10px 12px;background:#0f172a;color:#e2e8f0;border-radius:6px;white-space:pre-wrap;word-break:break-word;font-size:13px;line-height:1.55;">${this.escapeHtml(codeLines.join("\n"))}</pre>`
+        );
+        inCode = false;
+        codeLines = [];
+      };
       for (let index = 0; index < lines.length; index += 1) {
-        const rawLine = lines[index]
-        const line = rawLine.trim()
-        if (line.startsWith('```')) {
+        const rawLine = lines[index];
+        const line = rawLine.trim();
+        if (line.startsWith("```")) {
           if (inCode) {
-            flushCode()
+            flushCode();
           } else {
-            flushList()
-            inCode = true
-            codeLines = []
+            flushList();
+            inCode = true;
+            codeLines = [];
           }
-          return
+          return;
         }
         if (inCode) {
-          codeLines.push(rawLine)
-          continue
+          codeLines.push(rawLine);
+          continue;
         }
         if (!line) {
-          flushList()
-          html.push('<div style="height:6px;"></div>')
-          continue
+          flushList();
+          html.push('<div style="height:6px;"></div>');
+          continue;
         }
         if (this.isMarkdownTableStart(lines, index)) {
-          flushList()
-          const parsed = this.renderMarkdownTable(lines, index)
-          html.push(parsed.html)
-          index = parsed.nextIndex - 1
-          continue
+          flushList();
+          const parsed = this.renderMarkdownTable(lines, index);
+          html.push(parsed.html);
+          index = parsed.nextIndex - 1;
+          continue;
         }
-        const heading = line.match(/^(#{1,3})\s+(.+)$/)
+        const heading = line.match(/^(#{1,3})\s+(.+)$/);
         if (heading) {
-          flushList()
-          const size = heading[1].length === 1 ? 18 : heading[1].length === 2 ? 16 : 15
-          html.push(`<h${heading[1].length} style="margin:12px 0 6px;color:#0f172a;font-size:${size}px;font-weight:700;">${this.inlineMarkdown(heading[2])}</h${heading[1].length}>`)
-          continue
+          flushList();
+          const size = heading[1].length === 1 ? 18 : heading[1].length === 2 ? 16 : 15;
+          html.push(
+            `<h${heading[1].length} style="margin:12px 0 6px;color:#0f172a;font-size:${size}px;font-weight:700;">${this.inlineMarkdown(heading[2])}</h${heading[1].length}>`
+          );
+          continue;
         }
-        const unordered = line.match(/^[-*]\s+(.+)$/)
-        const ordered = line.match(/^\d+\.\s+(.+)$/)
+        const unordered = line.match(/^[-*]\s+(.+)$/);
+        const ordered = line.match(/^\d+\.\s+(.+)$/);
         if (unordered || ordered) {
-          const nextType = unordered ? 'ul' : 'ol'
-          if (listType && listType !== nextType) flushList()
-          listType = nextType
-          listItems.push(`<li style="margin:4px 0;line-height:1.65;">${this.inlineMarkdown((unordered || ordered)[1])}</li>`)
-          continue
+          const nextType = unordered ? "ul" : "ol";
+          if (listType && listType !== nextType) flushList();
+          listType = nextType;
+          listItems.push(
+            `<li style="margin:4px 0;line-height:1.65;">${this.inlineMarkdown((unordered || ordered)[1])}</li>`
+          );
+          continue;
         }
-        if (line.startsWith('>')) {
-          flushList()
-          html.push(`<blockquote style="margin:8px 0;padding:8px 12px;border-left:3px solid #2563eb;background:#eff6ff;color:#334155;">${this.inlineMarkdown(line.replace(/^>\s*/, ''))}</blockquote>`)
-          continue
+        if (line.startsWith(">")) {
+          flushList();
+          html.push(
+            `<blockquote style="margin:8px 0;padding:8px 12px;border-left:3px solid #2563eb;background:#eff6ff;color:#334155;">${this.inlineMarkdown(line.replace(/^>\s*/, ""))}</blockquote>`
+          );
+          continue;
         }
-        flushList()
-        html.push(`<p style="margin:6px 0;line-height:1.7;color:#1f2937;">${this.inlineMarkdown(line)}</p>`)
+        flushList();
+        html.push(`<p style="margin:6px 0;line-height:1.7;color:#1f2937;">${this.inlineMarkdown(line)}</p>`);
       }
-      flushList()
-      flushCode()
-      return html.join('')
+      flushList();
+      flushCode();
+      return html.join("");
     },
     isMarkdownTableStart(lines, index) {
-      const current = String(lines[index] || '').trim()
-      const next = String(lines[index + 1] || '').trim()
-      return current.includes('|') && /^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/.test(next)
+      const current = String(lines[index] || "").trim();
+      const next = String(lines[index + 1] || "").trim();
+      return current.includes("|") && /^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/.test(next);
     },
     renderMarkdownTable(lines, startIndex) {
-      const rows = []
-      let index = startIndex
-      while (index < lines.length && String(lines[index] || '').trim().includes('|')) {
-        rows.push(String(lines[index] || '').trim())
-        index += 1
+      const rows = [];
+      let index = startIndex;
+      while (
+        index < lines.length &&
+        String(lines[index] || "")
+          .trim()
+          .includes("|")
+      ) {
+        rows.push(String(lines[index] || "").trim());
+        index += 1;
       }
-      const header = this.parseTableRow(rows[0])
-      const body = rows.slice(2).map(row => this.parseTableRow(row)).filter(row => row.length)
+      const header = this.parseTableRow(rows[0]);
+      const body = rows
+        .slice(2)
+        .map(row => this.parseTableRow(row))
+        .filter(row => row.length);
       const headHtml = header
-        .map(cell => `<th style="padding:9px 10px;border:1px solid #cbd5e1;background:#eff6ff;color:#0f172a;text-align:left;font-weight:700;white-space:nowrap;">${this.inlineMarkdown(cell)}</th>`)
-        .join('')
+        .map(
+          cell =>
+            `<th style="padding:9px 10px;border:1px solid #cbd5e1;background:#eff6ff;color:#0f172a;text-align:left;font-weight:700;white-space:nowrap;">${this.inlineMarkdown(cell)}</th>`
+        )
+        .join("");
       const bodyHtml = body
-        .map(row => `<tr>${header.map((_, cellIndex) => `<td style="padding:9px 10px;border:1px solid #cbd5e1;color:#1f2937;vertical-align:top;">${this.inlineMarkdown(row[cellIndex] || '')}</td>`).join('')}</tr>`)
-        .join('')
+        .map(
+          row =>
+            `<tr>${header.map((_, cellIndex) => `<td style="padding:9px 10px;border:1px solid #cbd5e1;color:#1f2937;vertical-align:top;">${this.inlineMarkdown(row[cellIndex] || "")}</td>`).join("")}</tr>`
+        )
+        .join("");
       return {
-        html: `<div style="overflow-x:auto;margin:12px 0;"><table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.55;">${headHtml ? `<thead><tr>${headHtml}</tr></thead>` : ''}<tbody>${bodyHtml}</tbody></table></div>`,
+        html: `<div style="overflow-x:auto;margin:12px 0;"><table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.55;">${headHtml ? `<thead><tr>${headHtml}</tr></thead>` : ""}<tbody>${bodyHtml}</tbody></table></div>`,
         nextIndex: index
-      }
+      };
     },
     parseTableRow(row) {
-      return String(row || '')
-        .replace(/^\|/, '')
-        .replace(/\|$/, '')
-        .split('|')
-        .map(cell => cell.trim())
+      return String(row || "")
+        .replace(/^\|/, "")
+        .replace(/\|$/, "")
+        .split("|")
+        .map(cell => cell.trim());
     },
     inlineMarkdown(value) {
       return this.escapeHtml(value)
-        .replace(/`([^`]+)`/g, '<code style="padding:1px 5px;background:#e2e8f0;border-radius:4px;color:#0f172a;font-size:13px;">$1</code>')
+        .replace(
+          /`([^`]+)`/g,
+          '<code style="padding:1px 5px;background:#e2e8f0;border-radius:4px;color:#0f172a;font-size:13px;">$1</code>'
+        )
         .replace(/\*\*([^*]+)\*\*/g, '<strong style="font-weight:700;color:#0f172a;">$1</strong>')
-        .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" style="color:#2563eb;">$1</a>')
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" style="color:#2563eb;">$1</a>');
     },
     escapeHtml(value) {
-      return String(value || '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;')
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
     },
     scrollToBottom() {
       this.$nextTick(() => {
-        this.scrollAnchor = ''
+        this.scrollAnchor = "";
         setTimeout(() => {
-          this.scrollAnchor = 'bottomAnchor'
-        }, 20)
-      })
-    },
-  },
-}
+          this.scrollAnchor = "bottomAnchor";
+        }, 20);
+      });
+    }
+  }
+};
 </script>
 
 <style scoped>

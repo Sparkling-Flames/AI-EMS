@@ -1,0 +1,11 @@
+node_modules
+dist
+unpackage
+.hbuilderx
+.npm-cache
+uni_modules
+uniCloud-aliyun/**/node_modules
+uniCloud-aliyun/database/import/**/*.import.json
+test/reports/**
+.claude
+.playwright-mcp

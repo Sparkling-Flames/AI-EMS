@@ -8,7 +8,22 @@ exports.main = async (event = {}) => {
     return { ok: false, message: "Only administrators can manage accounts and courses." };
   }
 
-  const [users, roles, students, teachers, departments, majors, adminClasses, semesters, trainingPlans, courses, offerings, materials, classSessions, classrooms] = await Promise.all([
+  const [
+    users,
+    roles,
+    students,
+    teachers,
+    departments,
+    majors,
+    adminClasses,
+    semesters,
+    trainingPlans,
+    courses,
+    offerings,
+    materials,
+    classSessions,
+    classrooms
+  ] = await Promise.all([
     readCollection("users"),
     readCollection("roles"),
     readCollection("students"),
@@ -22,7 +37,7 @@ exports.main = async (event = {}) => {
     readCollection("course_offerings"),
     readCollection("course_materials"),
     readCollection("class_sessions"),
-    readCollection("classrooms"),
+    readCollection("classrooms")
   ]);
 
   const roleMap = mapById(roles);
@@ -42,106 +57,123 @@ exports.main = async (event = {}) => {
 
   const options = {
     roles: roles
-      .map((item) => ({
+      .map(item => ({
         value: item.code || item._id,
         label: item.name || item.code || item._id,
-        roleId: item._id,
+        roleId: item._id
       }))
       .sort((left, right) => String(left.label).localeCompare(String(right.label))),
     departments: departments
-      .map((item) => ({
+      .map(item => ({
         value: item._id,
-        label: item.name || item.code || item._id,
+        label: item.name || item.code || item._id
       }))
       .sort((left, right) => String(left.label).localeCompare(String(right.label))),
     majors: majors
-      .map((item) => ({
+      .map(item => ({
         value: item._id,
-        label: item.name || item.code || item._id,
+        label: item.name || item.code || item._id
       }))
       .sort((left, right) => String(left.label).localeCompare(String(right.label))),
     adminClasses: adminClasses
-      .map((item) => ({
+      .map(item => ({
         value: item._id,
         label: item.name || item.code || item._id,
         majorId: item.major_id || "",
-        gradeYear: Number(item.grade_year || 0),
+        gradeYear: Number(item.grade_year || 0)
       }))
       .sort((left, right) => String(left.label).localeCompare(String(right.label))),
     semesters: semesters
-      .map((item) => ({
+      .map(item => ({
         value: item._id,
-        label: item.name || item.term || item.code || item._id,
+        label: item.name || item.term || item.code || item._id
       }))
       .sort((left, right) => String(left.label).localeCompare(String(right.label))),
     trainingPlans: trainingPlans
-      .map((item) => ({
+      .map(item => ({
         value: item._id,
         label: item.name || item._id,
         majorId: item.major_id || "",
-        gradeYear: Number(item.grade_year || 0),
+        gradeYear: Number(item.grade_year || 0)
       }))
       .sort((left, right) => String(left.label).localeCompare(String(right.label))),
     teachers: teachers
-      .map((item) => {
+      .map(item => {
         const user = usersById.get(item.user_id) || {};
         const department = item.department_id ? departmentsById.get(item.department_id) : null;
         return {
           value: item._id,
           label: item.name || user.display_name || user.username || item.teacher_no || item._id,
-          subtitle: [item.teacher_no || "", department ? department.name || department.code || department._id : ""].filter(Boolean).join(" - "),
+          subtitle: [item.teacher_no || "", department ? department.name || department.code || department._id : ""]
+            .filter(Boolean)
+            .join(" - ")
         };
       })
       .sort((left, right) => String(left.label).localeCompare(String(right.label))),
     classrooms: classrooms
-      .map((item) => ({
+      .map(item => ({
         value: item._id,
-        label: [item.name || "", item.building && item.room_no ? `${item.building}-${item.room_no}` : ""].filter(Boolean).join(" / ") || item._id,
-        capacity: Number(item.capacity || 0),
+        label:
+          [item.name || "", item.building && item.room_no ? `${item.building}-${item.room_no}` : ""]
+            .filter(Boolean)
+            .join(" / ") || item._id,
+        capacity: Number(item.capacity || 0)
       }))
-      .sort((left, right) => String(left.label).localeCompare(String(right.label))),
+      .sort((left, right) => String(left.label).localeCompare(String(right.label)))
   };
 
   const accounts = users
-    .map((user) => buildAccountView(user, {
-      roleMap,
-      studentsByUserId,
-      teachersByUserId,
-      majorsById,
-      departmentsById,
-      adminClassesById,
-    }))
-    .sort((left, right) => String(left.displayName || left.username).localeCompare(String(right.displayName || right.username)));
+    .map(user =>
+      buildAccountView(user, {
+        roleMap,
+        studentsByUserId,
+        teachersByUserId,
+        majorsById,
+        departmentsById,
+        adminClassesById
+      })
+    )
+    .sort((left, right) =>
+      String(left.displayName || left.username).localeCompare(String(right.displayName || right.username))
+    );
 
   const courseViews = offerings
-    .map((offering) => buildCourseView(offering, {
-      coursesById,
-      teachersById,
-      usersById,
-      departmentsById,
-      majorsById,
-      semestersById,
-      materialsByOfferingId,
-      sessionsByOfferingId,
-      classroomsById,
-    }))
-    .sort((left, right) => String(left.courseCode || left.courseName).localeCompare(String(right.courseCode || right.courseName)));
+    .map(offering =>
+      buildCourseView(offering, {
+        coursesById,
+        teachersById,
+        usersById,
+        departmentsById,
+        majorsById,
+        semestersById,
+        materialsByOfferingId,
+        sessionsByOfferingId,
+        classroomsById
+      })
+    )
+    .sort((left, right) =>
+      String(left.courseCode || left.courseName).localeCompare(String(right.courseCode || right.courseName))
+    );
 
   const materialViews = materials
-    .map((item) => buildMaterialView(item, {
-      usersById,
-      teachersById,
-      offeringsById,
-      coursesById,
-    }))
+    .map(item =>
+      buildMaterialView(item, {
+        usersById,
+        teachersById,
+        offeringsById,
+        coursesById
+      })
+    )
     .sort((left, right) => Number(right.updatedAt || 0) - Number(left.updatedAt || 0));
   const classSessionViews = classSessions
-    .map((item) => buildClassSessionView(item, {
-      offeringsById,
-      coursesById,
-      majorsById,
-      classroomsById,
-    }))
+    .map(item =>
+      buildClassSessionView(item, {
+        offeringsById,
+        coursesById,
+        majorsById,
+        classroomsById
+      })
+    )
     .filter(Boolean)
     .sort((left, right) => {
       const dateCompare = String(left.sessionDate || "").localeCompare(String(right.sessionDate || ""));
@@ -164,13 +196,13 @@ exports.main = async (event = {}) => {
         offerings: offerings.length,
         materials: materials.length,
         trainingPlans: trainingPlans.length,
-        classrooms: classrooms.length,
+        classrooms: classrooms.length
       },
       meta: {
         source: "unicloud",
-        generatedAt: Date.now(),
-      },
-    },
+        generatedAt: Date.now()
+      }
+    }
   };
 };
 
@@ -208,7 +240,7 @@ function buildAccountView(user, indexes) {
     updatedAt: Number(user.updated_at || 0),
     linkedProfileType: student ? "student" : teacher ? "teacher" : "",
     studentProfile: student ? buildStudentProfile(student, indexes) : null,
-    teacherProfile: teacher ? buildTeacherProfile(teacher, indexes) : null,
+    teacherProfile: teacher ? buildTeacherProfile(teacher, indexes) : null
   };
 }
 
@@ -228,7 +260,7 @@ function buildStudentProfile(student, indexes) {
     trainingPlanId: student.training_plan_id || "",
     status: student.status || "active",
     contact: clone(student.contact || {}),
-    familyInfo: clone(student.family_info || {}),
+    familyInfo: clone(student.family_info || {})
   };
 }
 
@@ -245,7 +277,7 @@ function buildTeacherProfile(teacher, indexes) {
     researchFields: Array.isArray(teacher.research_fields) ? teacher.research_fields.slice() : [],
     teachingExperience: teacher.teaching_experience || "",
     office: teacher.office || "",
-    status: teacher.status || "active",
+    status: teacher.status || "active"
   };
 }
 
@@ -255,7 +287,7 @@ function buildCourseView(offering, indexes) {
   const major = offering.major_id ? indexes.majorsById.get(offering.major_id) : null;
   const semester = offering.semester_id ? indexes.semestersById.get(offering.semester_id) : null;
   const teacherNames = (offering.teacher_ids || [])
-    .map((teacherId) => {
+    .map(teacherId => {
       const teacher = indexes.teachersById.get(teacherId);
       if (!teacher) {
         return "";
@@ -290,7 +322,9 @@ function buildCourseView(offering, indexes) {
     trainingPlanId: offering.training_plan_id || "",
     gradeYear: Number(offering.grade_year || 0),
     classroomId,
-    classroomName: classroom ? classroom.name || [classroom.building, classroom.room_no].filter(Boolean).join("-") || classroom._id : "",
+    classroomName: classroom
+      ? classroom.name || [classroom.building, classroom.room_no].filter(Boolean).join("-") || classroom._id
+      : "",
     sectionNo: offering.section_no || "",
     teacherIds: Array.isArray(offering.teacher_ids) ? offering.teacher_ids.slice() : [],
     teacherNames,
@@ -310,7 +344,7 @@ function buildCourseView(offering, indexes) {
     materialCount,
     sessionCount,
     createdAt: Number(offering.created_at || 0),
-    updatedAt: Number(offering.updated_at || 0),
+    updatedAt: Number(offering.updated_at || 0)
   };
 }
 
@@ -331,7 +365,9 @@ function buildClassSessionView(item, indexes) {
     majorName: major ? major.name || major.code || major._id : "",
     gradeYear: Number(offering.grade_year || 0),
     classroomId,
-    classroomName: classroom ? classroom.name || [classroom.building, classroom.room_no].filter(Boolean).join("-") || classroom._id : classroomId,
+    classroomName: classroom
+      ? classroom.name || [classroom.building, classroom.room_no].filter(Boolean).join("-") || classroom._id
+      : classroomId,
     weekday: Number(item.weekday || 0),
     sessionDate: item.session_date || "",
     startTime: item.start_time || "",
@@ -339,26 +375,30 @@ function buildClassSessionView(item, indexes) {
     sessionStartAt: Number(item.session_start_at || 0),
     sessionEndAt: Number(item.session_end_at || 0),
     sequenceNo: Number(item.sequence_no || 0),
-    status: item.status || "scheduled",
+    status: item.status || "scheduled"
   };
 }
 
 function normalizeScheduleSlots(offering) {
   const explicit = Array.isArray(offering.schedule_slots) ? offering.schedule_slots : [];
-  const slots = explicit.length ? explicit : [{
-    weekday: offering.class_weekday,
-    startTime: offering.class_start_time,
-    endTime: offering.class_end_time,
-    classroomId: offering.classroom_id,
-  }];
+  const slots = explicit.length
+    ? explicit
+    : [
+        {
+          weekday: offering.class_weekday,
+          startTime: offering.class_start_time,
+          endTime: offering.class_end_time,
+          classroomId: offering.classroom_id
+        }
+      ];
   return slots
-    .map((slot) => ({
+    .map(slot => ({
       weekday: Number(slot.weekday || slot.class_weekday || 0),
       startTime: slot.startTime || slot.start_time || "",
       endTime: slot.endTime || slot.end_time || "",
-      classroomId: slot.classroomId || slot.classroom_id || "",
+      classroomId: slot.classroomId || slot.classroom_id || ""
     }))
-    .filter((slot) => slot.weekday && slot.startTime && slot.endTime && slot.classroomId);
+    .filter(slot => slot.weekday && slot.startTime && slot.endTime && slot.classroomId);
 }
 
 function buildMaterialView(item, indexes) {
@@ -382,21 +422,21 @@ function buildMaterialView(item, indexes) {
     isPublicToStudents: item.is_public_to_students === true,
     knowledgeDocumentId: item.knowledge_document_id || "",
     createdAt: Number(item.created_at || 0),
-    updatedAt: Number(item.updated_at || 0),
+    updatedAt: Number(item.updated_at || 0)
   };
 }
 
 function resolveRoleCodes(roleIds, roleMap) {
   return (roleIds || [])
-    .map((roleId) => roleMap.get(roleId))
+    .map(roleId => roleMap.get(roleId))
     .filter(Boolean)
-    .map((role) => role.code)
+    .map(role => role.code)
     .filter(Boolean);
 }
 
 function resolvePrimaryRole(roleCodes) {
   const priority = ["admin", "academic_staff", "teacher", "counselor", "student", "guardian"];
-  const code = priority.find((item) => roleCodes.includes(item));
+  const code = priority.find(item => roleCodes.includes(item));
   if (code === "academic_staff") {
     return "admin";
   }
@@ -407,7 +447,7 @@ function resolvePrimaryRole(roleCodes) {
 }
 
 function mapById(items) {
-  return new Map((items || []).filter((item) => item && item._id).map((item) => [item._id, item]));
+  return new Map((items || []).filter(item => item && item._id).map(item => [item._id, item]));
 }
 
 function mapByField(items, field) {
