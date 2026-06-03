@@ -1365,24 +1365,30 @@ function deleteAdminCourseFallback(session, data) {
     targetLeaveIds.has(item.leaveRequestId || item.leave_request_id) ||
     targetSessionIds.has(item.classSessionId || item.class_session_id),
   );
-  removed.attendanceRecords = removeFallbackRows("attendance", (item) => (item.courseOfferingId || item.course_offering_id) === targetOfferingId);
-  removed.leaveRequests = removeFallbackRows("leaves", (item) => (item.courseOfferingId || item.course_offering_id) === targetOfferingId);
-  removed.evaluations = removeFallbackRows("evaluations", (item) => (item.courseOfferingId || item.course_offering_id) === targetOfferingId);
-  removed.materials = removeFallbackRows("materials", (item) => (item.courseOfferingId || item.course_offering_id) === targetOfferingId);
-  removed.evaluationTokens = removeFallbackRows("evaluationTokens", (item) => (item.courseOfferingId || item.course_offering_id) === targetOfferingId);
+  removed.attendanceRecords = removeFallbackRows("attendance", (item) => matchesFallbackTargetOffering(item, targetOfferingId));
+  removed.leaveRequests = removeFallbackRows("leaves", (item) => matchesFallbackTargetOffering(item, targetOfferingId));
+  removed.evaluations = removeFallbackRows("evaluations", (item) =>
+    matchesFallbackTargetOffering(item, targetOfferingId) || (shouldRemoveCourse && matchesFallbackTargetCourse(item, targetCourseId))
+  );
+  removed.materials = removeFallbackRows("materials", (item) => matchesFallbackTargetOffering(item, targetOfferingId));
+  removed.evaluationTokens = removeFallbackRows("evaluationTokens", (item) =>
+    matchesFallbackTargetOffering(item, targetOfferingId) || (shouldRemoveCourse && matchesFallbackTargetCourse(item, targetCourseId))
+  );
   removed.evaluationSummaries = removeFallbackRows("evaluationSummaries", (item) =>
-    (item.courseOfferingId || item.course_offering_id) === targetOfferingId ||
-    (shouldRemoveCourse && (item.courseId || item.course_id) === targetCourseId),
+    matchesFallbackTargetOffering(item, targetOfferingId) ||
+    (shouldRemoveCourse && matchesFallbackTargetCourse(item, targetCourseId)),
   );
   removed.recommendations = removeFallbackRows("recommendations", (item) =>
-    (item.recommendedOfferingId || item.recommended_offering_id || item.courseOfferingId || item.course_offering_id) === targetOfferingId ||
-    (shouldRemoveCourse && (item.recommendedCourseId || item.recommended_course_id) === targetCourseId),
+    matchesFallbackTargetOffering(item, targetOfferingId) ||
+    matchesId(item.recommendedOfferingId || item.recommended_offering_id, targetOfferingId) ||
+    (shouldRemoveCourse && matchesFallbackTargetCourse(item, targetCourseId)) ||
+    (shouldRemoveCourse && matchesId(item.recommendedCourseId || item.recommended_course_id, targetCourseId)),
   );
-  removed.academicAlerts = removeFallbackRows("academicAlerts", (item) => (item.courseOfferingId || item.course_offering_id) === targetOfferingId);
-  removed.grades = removeFallbackRows("grades", (item) => (item.courseOfferingId || item.course_offering_id) === targetOfferingId);
-  removed.enrollments = removeFallbackRows("enrollments", (item) => item.courseOfferingId === targetOfferingId || item.course_offering_id === targetOfferingId);
-  removed.classSessions = removeFallbackRows("classSessions", (item) => (item.courseOfferingId || item.course_offering_id) === targetOfferingId);
-  removed.courseOfferings = removeFallbackRows("courses", (item) => item.courseOfferingId === targetOfferingId);
+  removed.academicAlerts = removeFallbackRows("academicAlerts", (item) => matchesFallbackTargetOffering(item, targetOfferingId));
+  removed.grades = removeFallbackRows("grades", (item) => matchesFallbackTargetOffering(item, targetOfferingId));
+  removed.enrollments = removeFallbackRows("enrollments", (item) => matchesFallbackTargetOffering(item, targetOfferingId));
+  removed.classSessions = removeFallbackRows("classSessions", (item) => matchesFallbackTargetOffering(item, targetOfferingId));
+  removed.courseOfferings = removeFallbackRows("courses", (item) => matchesId(item.courseOfferingId, targetOfferingId));
   removed.courses = shouldRemoveCourse && removed.courseOfferings ? 1 : 0;
 
   recordAudit("admin.course.delete", session.userId, "course_offerings", targetOfferingId, course, removed);
@@ -1413,6 +1419,18 @@ function resolveCourseForDeleteFallback(courseOfferingId, courseId) {
     return { ok: false, message: "Multiple offerings use this course. Select a specific course offering to delete." };
   }
   return { ok: true, course: matches[0] };
+}
+
+function matchesFallbackTargetOffering(item, targetOfferingId) {
+  return matchesId(item && (item.courseOfferingId || item.course_offering_id), targetOfferingId);
+}
+
+function matchesFallbackTargetCourse(item, targetCourseId) {
+  return matchesId(item && (item.courseId || item.course_id), targetCourseId);
+}
+
+function matchesId(left, right) {
+  return String(left || "").trim() === String(right || "").trim();
 }
 
 function removeFallbackRows(key, predicate) {

@@ -92,24 +92,28 @@ exports.main = async (event = {}) => {
     targetLeaveIds.has(item.leave_request_id) ||
     targetSessionIds.has(item.class_session_id),
   );
-  removed.attendanceRecords = await removeMatching("attendance_records", attendanceRecords, (item) => item.course_offering_id === targetOfferingId);
-  removed.leaveRequests = await removeMatching("leave_requests", leaveRequests, (item) => item.course_offering_id === targetOfferingId);
-  removed.evaluations = await removeMatching("course_evaluations", evaluations, (item) => item.course_offering_id === targetOfferingId);
-  removed.materials = await removeMatching("course_materials", materials, (item) => item.course_offering_id === targetOfferingId);
-  removed.evaluationTokens = await removeMatching("evaluation_tokens", evaluationTokens, (item) => item.course_offering_id === targetOfferingId);
+  removed.attendanceRecords = await removeMatching("attendance_records", attendanceRecords, (item) => matchesTargetOffering(item, targetOfferingId));
+  removed.leaveRequests = await removeMatching("leave_requests", leaveRequests, (item) => matchesTargetOffering(item, targetOfferingId));
+  removed.evaluations = await removeMatching("course_evaluations", evaluations, (item) =>
+    matchesTargetOffering(item, targetOfferingId) || (shouldRemoveCourse && matchesTargetCourse(item, targetCourseId))
+  );
+  removed.materials = await removeMatching("course_materials", materials, (item) => matchesTargetOffering(item, targetOfferingId));
+  removed.evaluationTokens = await removeMatching("evaluation_tokens", evaluationTokens, (item) =>
+    matchesTargetOffering(item, targetOfferingId) || (shouldRemoveCourse && matchesTargetCourse(item, targetCourseId))
+  );
   removed.evaluationSummaries = await removeMatching("course_evaluation_summaries", evaluationSummaries, (item) =>
-    item.course_offering_id === targetOfferingId ||
-    (shouldRemoveCourse && item.course_id === targetCourseId),
+    matchesTargetOffering(item, targetOfferingId) ||
+    (shouldRemoveCourse && matchesTargetCourse(item, targetCourseId)),
   );
   removed.recommendations = await removeMatching("course_recommendations", recommendations, (item) =>
-    item.recommended_offering_id === targetOfferingId ||
-    item.course_offering_id === targetOfferingId ||
-    (shouldRemoveCourse && item.recommended_course_id === targetCourseId),
+    matchesId(item.recommended_offering_id, targetOfferingId) ||
+    matchesTargetOffering(item, targetOfferingId) ||
+    (shouldRemoveCourse && matchesId(item.recommended_course_id, targetCourseId)),
   );
-  removed.academicAlerts = await removeMatching("academic_alerts", academicAlerts, (item) => item.course_offering_id === targetOfferingId);
-  removed.grades = await removeMatching("grades", grades, (item) => item.course_offering_id === targetOfferingId);
-  removed.enrollments = await removeMatching("enrollments", enrollments, (item) => item.course_offering_id === targetOfferingId);
-  removed.classSessions = await removeMatching("class_sessions", classSessions, (item) => item.course_offering_id === targetOfferingId);
+  removed.academicAlerts = await removeMatching("academic_alerts", academicAlerts, (item) => matchesTargetOffering(item, targetOfferingId));
+  removed.grades = await removeMatching("grades", grades, (item) => matchesTargetOffering(item, targetOfferingId));
+  removed.enrollments = await removeMatching("enrollments", enrollments, (item) => matchesTargetOffering(item, targetOfferingId));
+  removed.classSessions = await removeMatching("class_sessions", classSessions, (item) => matchesTargetOffering(item, targetOfferingId));
 
   await db.collection("course_offerings").doc(targetOfferingId).remove();
   removed.courseOfferings = 1;
@@ -169,6 +173,18 @@ async function removeMatching(collectionName, rows, predicate) {
     await db.collection(collectionName).doc(item._id).remove();
   }
   return matched.length;
+}
+
+function matchesTargetOffering(item, targetOfferingId) {
+  return matchesId(item && (item.course_offering_id || item.courseOfferingId), targetOfferingId);
+}
+
+function matchesTargetCourse(item, targetCourseId) {
+  return matchesId(item && (item.course_id || item.courseId), targetCourseId);
+}
+
+function matchesId(left, right) {
+  return String(left || "").trim() === String(right || "").trim();
 }
 
 async function writeAudit(action, session, targetId, before, after) {
