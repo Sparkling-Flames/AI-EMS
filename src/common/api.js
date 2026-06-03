@@ -17,6 +17,7 @@ const WRITE_FUNCTIONS = new Set([
   "submit-leave",
   "review-leave",
   "cancel-leave",
+  "delete-leave",
   "submit-evaluation",
   "save-course-material",
   "submit-profile-change",
@@ -35,6 +36,7 @@ const CLOUD_STRICT_FUNCTIONS = new Set([
   "submit-leave",
   "review-leave",
   "cancel-leave",
+  "delete-leave",
   "submit-evaluation",
   "save-course-material",
   "submit-profile-change",
@@ -691,6 +693,10 @@ function fallbackResult(name, data = {}) {
     return cancelLeaveFallback(session, data);
   }
 
+  if (name === "delete-leave") {
+    return deleteLeaveFallback(session, data);
+  }
+
   if (name === "submit-attendance-checkin") {
     return submitAttendanceCheckinFallback(session, data);
   }
@@ -1002,6 +1008,35 @@ function cancelLeaveFallback(session, data) {
   return { ok: true, leave: clone(leave), restore };
 }
 
+function deleteLeaveFallback(session, data) {
+  if (session.role !== "admin") {
+    return { ok: false, message: "Only administrators can delete leave requests." };
+  }
+
+  const leaveId = String(data.leaveId || data._id || "").trim();
+  if (!leaveId) {
+    return { ok: false, message: "Leave request id is required." };
+  }
+
+  const index = fallbackState.leaves.findIndex((item) => item._id === leaveId);
+  if (index < 0) {
+    return { ok: false, message: "Leave request not found." };
+  }
+
+  const now = Date.now();
+  const before = clone(fallbackState.leaves[index]);
+  let restore = null;
+  if (before.status === "approved") {
+    restore = restoreAttendanceFallback(before, now);
+  }
+
+  fallbackState.leaves.splice(index, 1);
+  fallbackState.leaveRequestSessions = fallbackState.leaveRequestSessions.filter((item) => item.leave_request_id !== leaveId);
+  recordAudit("leave.delete", session.userId, "leave_requests", leaveId, before, null);
+
+  return { ok: true, leaveId, deletedLeave: before, restore };
+}
+
 function submitAttendanceCheckinFallback(session, data) {
   if (session.role === "student") {
     return { ok: false, message: "Location check-in is not available to students." };
@@ -1097,7 +1132,12 @@ function getAdminManagementFallback(session) {
         ],
         departments: fallbackState.departments.map((item) => ({ value: item._id, label: item.name || item.code || item._id })),
         majors: fallbackState.majors.map((item) => ({ value: item._id, label: item.name || item.code || item._id })),
-        adminClasses: fallbackState.adminClasses.map((item) => ({ value: item._id, label: item.name || item.code || item._id, gradeYear: item.gradeYear })),
+        adminClasses: fallbackState.adminClasses.map((item) => ({
+          value: item._id,
+          label: item.name || item.code || item._id,
+          majorId: item.majorId || item.major_id || "",
+          gradeYear: item.gradeYear || item.grade_year || 0,
+        })),
         semesters: fallbackState.semesters.map((item) => ({ value: item._id, label: item.name || item._id })),
         trainingPlans: fallbackState.trainingPlans.map((item) => ({ value: item._id, label: item.name || item._id, gradeYear: item.gradeYear, majorId: item.majorId })),
         classrooms: fallbackState.classrooms.map((item) => ({
@@ -1172,6 +1212,7 @@ function saveAdminAccountFallback(session, data) {
     };
     const major = fallbackState.majors.find((item) => item._id === payload.majorId) || {};
     const adminClass = fallbackState.adminClasses.find((item) => item._id === payload.adminClassId) || {};
+    const adminClassName = String(payload.adminClassName || payload.adminClass || "").trim();
     Object.assign(student, {
       studentNo: String(payload.studentNo || student.studentNo || "").trim(),
       name: user.displayName,
@@ -1179,7 +1220,7 @@ function saveAdminAccountFallback(session, data) {
       majorId: payload.majorId || student.majorId || "",
       major: major.name || student.major || "",
       adminClassId: payload.adminClassId || student.adminClassId || "",
-      adminClass: adminClass.name || student.adminClass || "",
+      adminClass: adminClass.name || adminClassName || student.adminClass || "",
       enrollmentYear: Number(payload.enrollmentYear || student.enrollmentYear || adminClass.gradeYear || 0),
       trainingPlanId: payload.trainingPlanId || student.trainingPlanId || "",
       contact: { ...(student.contact || {}), email: user.email || "", phone: user.phone || "", address: payload.address || student.contact && student.contact.address || "" },
@@ -2742,15 +2783,24 @@ function resolveLeavesForSession(session) {
       if (session.role === "teacher") {
         const teacher = findTeacherBySession(session);
         const enrollment = findEnrollmentForStudentCourse(item.studentId, item.courseOfferingId);
-        return item.status === "pending" && canTeacherAccessCourse(session.userId, item.courseOfferingId) && enrollmentBelongsToTeacherFallback(enrollment, teacher, session.userId);
+        return canTeacherAccessCourse(session.userId, item.courseOfferingId) && enrollmentBelongsToTeacherFallback(enrollment, teacher, session.userId);
       }
-      return item.status === "pending";
+      return true;
     })
-    .map((item) => normalizeLeaveReviewView(item));
+    .map((item) => normalizeLeaveReviewView(item))
+    .sort((a, b) => {
+      if (a.status === "pending" && b.status !== "pending") return -1;
+      if (a.status !== "pending" && b.status === "pending") return 1;
+      return Number(b.createdAt || b.updatedAt || 0) - Number(a.createdAt || a.updatedAt || 0);
+    });
 }
 
 function normalizeLeaveReviewView(item) {
   const student = findStudentByAnyKey(item.studentId || item.student_id);
+  const courseOfferingId = item.courseOfferingId || item.course_offering_id || "";
+  const course = findCourse(courseOfferingId);
+  const enrollment = findEnrollmentForStudentCourse(item.studentId || item.student_id, courseOfferingId);
+  const teacherView = buildLeaveTeacherView(course, enrollment);
   return clone({
     ...item,
     studentId: item.studentId || item.student_id || "",
@@ -2759,7 +2809,51 @@ function normalizeLeaveReviewView(item) {
     student_name: item.student_name || item.studentName || student && student.name || item.studentId || item.student_id || "",
     studentNo: item.studentNo || item.student_no || student && student.studentNo || "",
     student_no: item.student_no || item.studentNo || student && student.studentNo || "",
+    courseOfferingId,
+    course_offering_id: item.course_offering_id || item.courseOfferingId || "",
+    courseName: item.courseName || item.course_name || buildCourseName(course, ""),
+    course_name: item.course_name || item.courseName || buildCourseName(course, ""),
+    ...teacherView,
   });
+}
+
+function buildLeaveTeacherView(course = {}, enrollment = {}) {
+  const teacherIds = Array.isArray(course && course.teacherIds) ? course.teacherIds.slice() : [];
+  const teacherOptions = teacherIds
+    .map((teacherId) => fallbackState.teachers.find((teacher) => teacher._id === teacherId || teacher.userId === teacherId))
+    .filter(Boolean)
+    .map((teacher) => ({
+      teacherId: teacher._id || "",
+      teacherUserId: teacher.userId || "",
+      teacherName: teacher.name || teacher.teacherNo || teacher._id || "",
+    }));
+  const selectedTeacherId = String(enrollment && (enrollment.selectedTeacherId || enrollment.selected_teacher_id) || "").trim();
+  const selectedTeacherUserId = String(enrollment && (enrollment.selectedTeacherUserId || enrollment.selected_teacher_user_id) || "").trim();
+  const selectedTeacher = teacherOptions.find((teacher) =>
+    (selectedTeacherId && teacher.teacherId === selectedTeacherId) ||
+    (selectedTeacherUserId && teacher.teacherUserId === selectedTeacherUserId)
+  ) || null;
+  const selectedTeacherName = String(enrollment && (enrollment.selectedTeacherName || enrollment.selected_teacher_name) || selectedTeacher && selectedTeacher.teacherName || "").trim();
+  const teacherNames = selectedTeacherName
+    ? [selectedTeacherName]
+    : teacherOptions.map((teacher) => teacher.teacherName).filter(Boolean);
+  const teacherUserIds = teacherOptions.map((teacher) => teacher.teacherUserId).filter(Boolean);
+  return {
+    teacherIds,
+    teacher_ids: teacherIds,
+    teacherUserIds,
+    teacher_user_ids: teacherUserIds,
+    teacherNames,
+    teacher_names: teacherNames,
+    teacherName: teacherNames.join(", "),
+    teacher_name: teacherNames.join(", "),
+    selectedTeacherId,
+    selected_teacher_id: selectedTeacherId,
+    selectedTeacherUserId,
+    selected_teacher_user_id: selectedTeacherUserId,
+    selectedTeacherName,
+    selected_teacher_name: selectedTeacherName,
+  };
 }
 
 function findStudentByAnyKey(value) {
@@ -2809,9 +2903,15 @@ function resolveProfileChangeRequests(session) {
 
 function normalizeProfileRequestView(item = {}) {
   const requesterUserId = String(item.requesterUserId || item.requester_user_id || "").trim();
-  const requesterName = String(item.requesterName || item.requester_name || requesterUserId).trim();
   const targetType = String(item.targetType || item.target_type || "").trim();
   const targetId = String(item.targetId || item.target_id || "").trim();
+  const rawRequesterName = String(item.requesterName || item.requester_name || "").trim();
+  const requesterName = resolveProfileRequesterNameFallback({
+    requesterUserId,
+    requesterName: rawRequesterName,
+    targetType,
+    targetId,
+  });
   const status = normalizeProfileRequestStatus(item.status || "pending");
   return clone({
     ...item,
@@ -2838,8 +2938,43 @@ function normalizeProfileRequestView(item = {}) {
   });
 }
 
+function resolveProfileRequesterNameFallback({ requesterUserId, requesterName, targetType, targetId }) {
+  const requesterKeys = buildUserKeySet(requesterUserId);
+  const target = String(targetId || "").trim();
+  const collection = targetType === "teacher" ? fallbackState.teachers : fallbackState.students;
+  const matched = (collection || []).find((item) =>
+    requesterKeys.has(String(item.userId || item.user_id || "").trim()) ||
+    requesterKeys.has(String(item._id || "").trim()) ||
+    (target && String(item._id || "").trim() === target)
+  );
+  const resolved = matched && (matched.name || matched.studentNo || matched.teacherNo || matched._id);
+  return String(resolved || requesterName || requesterUserId || "").trim();
+}
+
 function normalizeProfileRequestStatus(status) {
   return String(status || "").trim().toLowerCase();
+}
+
+function resolveStudentContact(student = {}) {
+  const contact = student && student.contact && typeof student.contact === "object" && !Array.isArray(student.contact)
+    ? student.contact
+    : {};
+  return {
+    email: String(contact.email || student.contact_email || student.contactEmail || student.email || "").trim(),
+    phone: String(contact.phone || student.contact_phone || student.contactPhone || student.phone || "").trim(),
+    address: String(contact.address || student.contact_address || student.contactAddress || student.address || "").trim(),
+  };
+}
+
+function resolveStudentAdminClassName(student = {}, adminClass = null) {
+  return String(
+    (adminClass && (adminClass.name || adminClass.code || adminClass._id)) ||
+    student.admin_class_name ||
+    student.adminClassName ||
+    student.adminClass ||
+    student.admin_class ||
+    ""
+  ).trim();
 }
 
 function buildStudentProfile(session) {
@@ -2855,13 +2990,16 @@ function buildStudentProfile(session) {
   }
   const progress = calculateStudentProgress(student);
   const attendanceStats = calculateAttendanceStatsForStudent(student);
+  const contact = resolveStudentContact(student);
+  const adminClassName = resolveStudentAdminClassName(student);
   return clone({
     studentId: student._id,
     studentNo: student.studentNo,
     name: student.name,
     gender: student.gender,
     major: student.major,
-    adminClass: student.adminClass,
+    adminClass: adminClassName,
+    adminClassName,
     gpa: student.gpa,
     creditsEarned: progress.creditsEarned,
     totalCredits: progress.totalCredits,
@@ -2869,7 +3007,8 @@ function buildStudentProfile(session) {
     attendanceRate: attendanceStats.attendanceRate,
     attendanceStats,
     enrollmentYear: student.enrollmentYear,
-    contact: student.contact,
+    contact,
+    contactAddress: contact.address,
     familyInfo: student.familyInfo,
     moduleCredits: progress.moduleCredits,
     gpaTrend: student.gpaTrend,
@@ -3223,7 +3362,6 @@ function normalizeProfileChanges(role, target, raw) {
           "contact.phone": "Phone",
           "contact.address": "Address",
           "familyInfo.guardianName": "Guardian Name",
-          "familyInfo.guardianPhone": "Guardian Phone",
         }
       : {
           office: "Office",

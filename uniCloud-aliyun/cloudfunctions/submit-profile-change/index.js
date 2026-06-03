@@ -8,9 +8,7 @@ const EDITABLE_FIELDS = {
     "contact.phone": "Phone",
     "contact.address": "Address",
     "family_info.guardianName": "Guardian Name",
-    "family_info.guardianPhone": "Guardian Phone",
     "familyInfo.guardianName": "Guardian Name",
-    "familyInfo.guardianPhone": "Guardian Phone",
   },
   teacher: {
     office: "Office",

@@ -64,6 +64,8 @@ exports.main = async (event = {}) => {
       .map((item) => ({
         value: item._id,
         label: item.name || item.code || item._id,
+        majorId: item.major_id || "",
+        gradeYear: Number(item.grade_year || 0),
       }))
       .sort((left, right) => String(left.label).localeCompare(String(right.label))),
     semesters: semesters

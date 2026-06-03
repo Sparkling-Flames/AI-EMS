@@ -109,14 +109,25 @@ picker {
   box-sizing: border-box;
   width: 100%;
   margin-top: 10rpx;
-  padding: 18rpx;
+  padding: 0 18rpx;
   background: #ffffff;
   border: 1rpx solid #cbd5e1;
   border-radius: 8rpx;
   font-size: 28rpx;
 }
 
+input {
+  height: 88rpx;
+  line-height: 88rpx;
+}
+
 textarea {
   min-height: 160rpx;
+  padding: 18rpx;
+  line-height: 1.5;
+}
+
+picker {
+  padding: 18rpx;
 }
 </style>

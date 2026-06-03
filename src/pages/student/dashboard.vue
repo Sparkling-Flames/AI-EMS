@@ -68,43 +68,107 @@
 
     <view class="section">
       <text class="section-title">Profile Review</text>
-      <view class="info-grid">
-        <view class="info-cell">
-          <text class="label">Student ID</text>
-          <text class="value">{{ profile.studentNo }}</text>
+      <view class="profile-summary-card">
+        <view class="profile-summary-head">
+          <view>
+            <text class="profile-name">{{ profile.name || session.displayName || 'Student' }}</text>
+            <text class="muted">{{ profile.studentNo || 'Student ID unavailable' }}</text>
+          </view>
+          <StatusBadge :status="profile.status || 'present'" />
         </view>
-        <view class="info-cell">
-          <text class="label">Major</text>
-          <text class="value">{{ profile.major }}</text>
+        <view class="profile-summary-grid">
+          <view class="profile-info-cell">
+            <text class="label">Student ID</text>
+            <text class="value">{{ profile.studentNo || 'Not set' }}</text>
+          </view>
+          <view class="profile-info-cell">
+            <text class="label">Major</text>
+            <text class="value">{{ profile.major || 'Not set' }}</text>
+          </view>
+          <view class="profile-info-cell">
+            <text class="label">Class</text>
+            <text class="value">{{ profile.adminClass || 'Not set' }}</text>
+          </view>
+          <view class="profile-info-cell">
+            <text class="label">Email</text>
+            <text class="value">{{ profile.contact && profile.contact.email || 'Not set' }}</text>
+          </view>
+          <view class="profile-info-cell">
+            <text class="label">Phone</text>
+            <text class="value">{{ profile.contact && profile.contact.phone || 'Not set' }}</text>
+          </view>
+          <view class="profile-info-cell">
+            <text class="label">Address</text>
+            <text class="value">{{ profile.contact && profile.contact.address || 'Not set' }}</text>
+          </view>
         </view>
       </view>
-      <view class="field">
-        <text class="label">Email</text>
-        <input v-model="profileForm.contact.email" />
+      <view class="profile-form-panel">
+        <view class="profile-form-grid">
+          <view class="field">
+            <text class="label">Email</text>
+            <input v-model="profileForm.contact.email" placeholder="Email" />
+          </view>
+          <view class="field">
+            <text class="label">Phone</text>
+            <input v-model="profileForm.contact.phone" placeholder="Phone" />
+          </view>
+          <view class="field">
+            <text class="label">Address</text>
+            <input v-model="profileForm.contact.address" placeholder="Address" />
+          </view>
+        </view>
+        <button class="primary-btn full-btn" :loading="savingProfile" @click="submitProfileChange">
+          Save
+        </button>
       </view>
-      <view class="field">
-        <text class="label">Phone</text>
-        <input v-model="profileForm.contact.phone" />
-      </view>
-      <view class="field">
-        <text class="label">Address</text>
-        <input v-model="profileForm.contact.address" />
-      </view>
-      <view class="field">
-        <text class="label">Guardian Phone</text>
-        <input v-model="profileForm.familyInfo.guardianPhone" />
-      </view>
-      <button class="primary-btn full-btn" :loading="savingProfile" @click="submitProfileChange">
-        Save
-      </button>
-      <DataCard
-        v-for="item in data.profileChangeRequests"
+      <template v-if="!visibleProfileChangeRequests.length">
+        <text class="muted">No profile change requests.</text>
+      </template>
+      <view
+        v-for="item in visibleProfileChangeRequests"
         :key="item._id"
-        :title="formatChangeRequest(item)"
-        :subtitle="[item.status, formatDate(item.createdAt)].filter(Boolean).join(' - ')"
+        class="profile-request-card"
       >
-        <StatusBadge :status="item.status" />
-      </DataCard>
+        <view class="profile-request-head">
+          <view class="profile-request-title">
+            <text class="request-name">{{ profileRequestTitle(item) }}</text>
+            <text class="request-meta">{{ profileRequestMeta(item) }}</text>
+          </view>
+          <StatusBadge :status="item.status" />
+        </view>
+        <view class="profile-change-grid">
+          <view
+            v-for="change in profileChangeItems(item)"
+            :key="change.key"
+            class="profile-change-cell"
+          >
+            <text class="label">{{ change.label }}</text>
+            <view class="profile-change-values">
+              <text class="profile-change-old">{{ change.oldValue || 'Empty' }}</text>
+              <text class="profile-change-arrow">to</text>
+              <text class="profile-change-new">{{ change.newValue || 'Empty' }}</text>
+            </view>
+          </view>
+        </view>
+        <view class="profile-request-actions">
+          <button
+            v-if="item.reviewComment"
+            class="profile-action-btn"
+            :class="{ active: isProfileCommentVisible(item) }"
+            @click="toggleProfileComment(item)"
+          >
+            {{ isProfileCommentVisible(item) ? 'Hide comment' : 'Show comment' }}
+          </button>
+          <button v-if="isProfileChangeHistory(item)" class="profile-action-btn danger" @click="hideProfileChangeRequest(item)">
+            Delete history
+          </button>
+        </view>
+        <view v-if="item.reviewComment && isProfileCommentVisible(item)" class="profile-review-note">
+          <text class="label">Review Comment</text>
+          <text class="note-text">{{ item.reviewComment }}</text>
+        </view>
+      </view>
     </view>
 
     <view class="section">
@@ -205,6 +269,8 @@ export default {
       loading: false,
       savingProfile: false,
       lastUpdatedAt: 0,
+      profileCommentVisibility: {},
+      hiddenProfileRequestIds: {},
       profile: {
         major: '',
         gpa: '0.0',
@@ -217,8 +283,7 @@ export default {
         interestTags: []
       },
       profileForm: {
-        contact: { email: '', phone: '', address: '' },
-        familyInfo: { guardianPhone: '' }
+        contact: { email: '', phone: '', address: '' }
       },
       data: {
         courses: [],
@@ -264,12 +329,16 @@ export default {
     },
     lastUpdatedText() {
       return this.lastUpdatedAt ? 'Updated ' + this.formatTime(this.lastUpdatedAt) : ''
+    },
+    visibleProfileChangeRequests() {
+      return (this.data.profileChangeRequests || []).filter(item => !this.hiddenProfileRequestIds[this.profileRequestKey(item)])
     }
   },
   onShow() {
     const session = requireRole(['student'])
     if (!session) return
     this.session = session
+    this.loadHiddenProfileRequestIds()
     const now = Date.now()
     if (!this.lastUpdatedAt || now - this.lastUpdatedAt > 30000) {
       this.load()
@@ -291,8 +360,7 @@ export default {
     },
     emptyProfileForm() {
       return {
-        contact: { email: '', phone: '', address: '' },
-        familyInfo: { guardianPhone: '' }
+        contact: { email: '', phone: '', address: '' }
       }
     },
     async load(forceRefresh = false) {
@@ -320,9 +388,6 @@ export default {
             email: this.profile.contact && this.profile.contact.email || '',
             phone: this.profile.contact && this.profile.contact.phone || '',
             address: this.profile.contact && this.profile.contact.address || ''
-          },
-          familyInfo: {
-            guardianPhone: this.profile.familyInfo && this.profile.familyInfo.guardianPhone || ''
           }
         }
         if (!this.data.courses.length) {
@@ -352,9 +417,6 @@ export default {
             email: this.profileForm.contact.email,
             phone: this.profileForm.contact.phone,
             address: this.profileForm.contact.address
-          },
-          familyInfo: {
-            guardianPhone: this.profileForm.familyInfo.guardianPhone
           }
         }
       })
@@ -417,6 +479,78 @@ export default {
         return (change.label || change.field || key) + ': ' + change.newValue
       }).join('; ')
     },
+    profileRequestTitle(item) {
+      return item.requesterName || item.requester_user_id || 'Profile change request'
+    },
+    profileRequestMeta(item) {
+      return [item.status, this.formatDate(item.createdAt)].filter(Boolean).join(' - ')
+    },
+    profileRequestKey(item) {
+      return String(item && item._id || '')
+    },
+    isProfileChangeHistory(item) {
+      return String(item && item.status || '').trim().toLowerCase() !== 'pending'
+    },
+    hideProfileChangeRequest(item) {
+      const key = this.profileRequestKey(item)
+      this.hiddenProfileRequestIds = {
+        ...this.hiddenProfileRequestIds,
+        [key]: true
+      }
+      this.saveHiddenProfileRequestIds()
+    },
+    hiddenProfileRequestStorageKey() {
+      return `ai_ems_hidden_profile_requests_${this.session.userId || 'student'}`
+    },
+    loadHiddenProfileRequestIds() {
+      try {
+        const stored = uni.getStorageSync(this.hiddenProfileRequestStorageKey())
+        this.hiddenProfileRequestIds = stored && typeof stored === 'object' ? stored : {}
+      } catch (error) {
+        this.hiddenProfileRequestIds = {}
+      }
+    },
+    saveHiddenProfileRequestIds() {
+      try {
+        uni.setStorageSync(this.hiddenProfileRequestStorageKey(), this.hiddenProfileRequestIds)
+      } catch (error) {}
+    },
+    profileChangeItems(item) {
+      const changes = item.changes || {}
+      return Object.keys(changes).map(key => {
+        const change = changes[key] || {}
+        return {
+          key,
+          label: this.profileChangeLabel(change, key),
+          oldValue: String(change.oldValue || ''),
+          newValue: String(change.newValue || '')
+        }
+      })
+    },
+    profileChangeLabel(change, key) {
+      const field = String(change && change.field || key || '')
+      const label = String(change && change.label || '').trim()
+      if (field === 'familyInfo.guardianPhone' || field === 'family_info.guardianPhone' || field === 'family_info.guardian_phone') {
+        return 'Phone'
+      }
+      if (label === 'Guardian Phone') {
+        return 'Phone'
+      }
+      return label || field || key
+    },
+    profileCommentKey(item) {
+      return String(item && item._id || '')
+    },
+    isProfileCommentVisible(item) {
+      return Boolean(this.profileCommentVisibility[this.profileCommentKey(item)])
+    },
+    toggleProfileComment(item) {
+      const key = this.profileCommentKey(item)
+      this.profileCommentVisibility = {
+        ...this.profileCommentVisibility,
+        [key]: !this.profileCommentVisibility[key]
+      }
+    },
     formatDate(value) {
       const timestamp = Number(value || 0)
       return timestamp ? new Date(timestamp).toISOString().slice(0, 10) : ''
@@ -463,6 +597,227 @@ export default {
   background: #f8fafc;
   border: 1rpx solid #e2e8f0;
   border-radius: 8rpx;
+}
+
+.info-cell .label,
+.info-cell .value {
+  display: block;
+}
+
+.info-cell .value {
+  margin-top: 6rpx;
+}
+
+.profile-summary-card,
+.profile-form-panel {
+  margin-top: 16rpx;
+  padding: 18rpx;
+  background: #ffffff;
+  border: 1rpx solid #e2e8f0;
+  border-radius: 8rpx;
+}
+
+.profile-summary-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-bottom: 14rpx;
+}
+
+.profile-summary-head > view {
+  min-width: 0;
+}
+
+.profile-name {
+  display: block;
+  color: #0f172a;
+  font-size: 32rpx;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.profile-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12rpx;
+}
+
+.profile-info-cell {
+  padding: 14rpx;
+  background: #f8fafc;
+  border: 1rpx solid #e2e8f0;
+  border-radius: 8rpx;
+}
+
+.profile-info-cell .label,
+.profile-info-cell .value {
+  display: block;
+}
+
+.profile-info-cell .value {
+  margin-top: 6rpx;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.profile-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14rpx;
+}
+
+.profile-request-card {
+  margin-top: 16rpx;
+  padding: 18rpx;
+  background: #ffffff;
+  border: 1rpx solid #e2e8f0;
+  border-radius: 8rpx;
+}
+
+.profile-request-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-bottom: 14rpx;
+}
+
+.profile-request-title {
+  min-width: 0;
+}
+
+.request-name,
+.request-meta {
+  display: block;
+}
+
+.request-name {
+  color: #0f172a;
+  font-size: 30rpx;
+  font-weight: 700;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.request-meta {
+  margin-top: 4rpx;
+  color: #64748b;
+  font-size: 24rpx;
+  line-height: 1.4;
+}
+
+.profile-change-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12rpx;
+}
+
+.profile-change-cell,
+.profile-review-note {
+  padding: 14rpx;
+  background: #f8fafc;
+  border: 1rpx solid #e2e8f0;
+  border-radius: 8rpx;
+}
+
+.profile-change-cell .label {
+  display: block;
+}
+
+.profile-change-values {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 10rpx;
+  align-items: center;
+  margin-top: 8rpx;
+}
+
+.profile-change-old,
+.profile-change-new,
+.profile-change-arrow,
+.note-text {
+  display: block;
+  font-size: 26rpx;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.profile-change-old {
+  color: #64748b;
+}
+
+.profile-change-arrow {
+  padding: 0 4rpx;
+  color: #94a3b8;
+  font-size: 22rpx;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.profile-change-new,
+.note-text {
+  color: #0f172a;
+}
+
+.note-text {
+  margin-top: 6rpx;
+}
+
+.profile-request-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin-top: 14rpx;
+}
+
+.profile-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto !important;
+  min-width: 132rpx;
+  min-height: 66rpx;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 22rpx !important;
+  border: 1rpx solid #cbd5e1;
+  border-radius: 8rpx;
+  background: #ffffff;
+  color: #334155;
+  font-size: 24rpx;
+  line-height: 1.25 !important;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.profile-action-btn::after {
+  border: 0;
+}
+
+.profile-action-btn.active {
+  border-color: #2563eb;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.profile-action-btn.danger {
+  border-color: #fecaca;
+  background: #fff7f7;
+  color: #b91c1c;
+}
+
+.profile-review-note {
+  margin-top: 12rpx;
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.compact-btn {
+  min-width: 126rpx;
+  font-size: 24rpx;
 }
 
 .full-btn {
@@ -623,6 +978,23 @@ export default {
 }
 
 @media (max-width: 700px) {
+  .profile-summary-grid,
+  .profile-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-change-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-change-values {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-change-arrow {
+    text-align: left;
+  }
+
   .teacher-choice-grid {
     grid-template-columns: 1fr;
   }
