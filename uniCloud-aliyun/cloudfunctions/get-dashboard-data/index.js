@@ -80,21 +80,32 @@ exports.main = async (event = {}) => {
     .map(normalizeLeave)
     .filter((item) => {
       if (session.role === "admin") {
-        return item.status === "pending";
+        return true;
       }
       if (session.role === "teacher") {
-        return item.status === "pending" && allowedOfferingIds.has(item.courseOfferingId) && (!teacherStudentIds.size || teacherStudentIds.has(item.studentId));
+        return allowedOfferingIds.has(item.courseOfferingId) && (!teacherStudentIds.size || teacherStudentIds.has(item.studentId));
       }
       return studentIds.has(item.studentId);
     })
-    .map((item) => ({
-      ...item,
-      studentName: item.studentName || resolveStudentName(students, item.studentId),
-      student_name: item.studentName || resolveStudentName(students, item.studentId),
-      studentNo: item.studentNo || resolveStudentNo(students, item.studentId),
-      student_no: item.studentNo || resolveStudentNo(students, item.studentId),
-      courseName: item.courseName || buildCourseName(offeringMap.get(item.courseOfferingId), courseMap),
-    }));
+    .map((item) => {
+      const offering = offeringMap.get(item.courseOfferingId);
+      const enrollment = findEnrollmentForLeave(enrollments, item);
+      const teacherView = buildLeaveTeacherView({ offering, enrollment, teacherMap });
+      return {
+        ...item,
+        studentName: item.studentName || resolveStudentName(students, item.studentId),
+        student_name: item.studentName || resolveStudentName(students, item.studentId),
+        studentNo: item.studentNo || resolveStudentNo(students, item.studentId),
+        student_no: item.studentNo || resolveStudentNo(students, item.studentId),
+        courseName: item.courseName || buildCourseName(offering, courseMap),
+        ...teacherView,
+      };
+    })
+    .sort((left, right) => {
+      if (left.status === "pending" && right.status !== "pending") return -1;
+      if (left.status !== "pending" && right.status === "pending") return 1;
+      return Number(right.createdAt || right.updatedAt || 0) - Number(left.createdAt || left.updatedAt || 0);
+    });
 
   const summary = buildEvaluationSummary(coursesView, evaluations);
   const materialView = buildVisibleMaterials({
@@ -132,6 +143,8 @@ exports.main = async (event = {}) => {
     role: session.role,
     sessionUserId: session.userId,
     rows: profileChangeRequests,
+    students,
+    teachers,
   });
 
   return {
@@ -186,10 +199,10 @@ exports.main = async (event = {}) => {
   };
 };
 
-function buildProfileChangeRequests({ role, sessionUserId, rows }) {
+function buildProfileChangeRequests({ role, sessionUserId, rows, students = [], teachers = [] }) {
   const sessionUserKeys = buildUserKeys(sessionUserId);
   return (rows || [])
-    .map(normalizeProfileChangeRequest)
+    .map((item) => normalizeProfileChangeRequest(item, { students, teachers }))
     .filter((item) => {
       if (role === "admin") {
         return isPendingStatus(item.status);
@@ -199,11 +212,19 @@ function buildProfileChangeRequests({ role, sessionUserId, rows }) {
     .sort((left, right) => Number(right.createdAt || 0) - Number(left.createdAt || 0));
 }
 
-function normalizeProfileChangeRequest(item = {}) {
+function normalizeProfileChangeRequest(item = {}, context = {}) {
   const requesterUserId = String(item.requester_user_id || item.requesterUserId || "").trim();
-  const requesterName = String(item.requester_name || item.requesterName || requesterUserId).trim();
   const targetType = String(item.target_type || item.targetType || "").trim();
   const targetId = String(item.target_id || item.targetId || "").trim();
+  const rawRequesterName = String(item.requester_name || item.requesterName || "").trim();
+  const requesterName = resolveProfileRequesterName({
+    requesterUserId,
+    requesterName: rawRequesterName,
+    targetType,
+    targetId,
+    students: context.students || [],
+    teachers: context.teachers || [],
+  });
   const status = normalizeStatus(item.status || "pending");
   return {
     _id: item._id,
@@ -228,6 +249,23 @@ function normalizeProfileChangeRequest(item = {}) {
     updatedAt: Number(item.updated_at || item.updatedAt || 0),
     updated_at: Number(item.updated_at || item.updatedAt || 0),
   };
+}
+
+function resolveProfileRequesterName({ requesterUserId, requesterName, targetType, targetId, students, teachers }) {
+  const existing = String(requesterName || "").trim();
+  const requesterKeys = buildUserKeys(requesterUserId);
+  const target = String(targetId || "").trim();
+  const collection = targetType === "teacher" ? teachers : students;
+  const matched = (collection || []).find((item) =>
+    requesterKeys.has(String(item.user_id || item.userId || "").trim()) ||
+    requesterKeys.has(String(item._id || "").trim()) ||
+    (target && String(item._id || "").trim() === target)
+  );
+  const resolved = matched && (matched.name || matched.display_name || matched.student_no || matched.teacher_no || matched._id);
+  if (resolved) {
+    return String(resolved).trim();
+  }
+  return existing || requesterUserId;
 }
 
 function isPendingStatus(status) {
@@ -490,6 +528,54 @@ function normalizeLeave(item) {
   };
 }
 
+function findEnrollmentForLeave(enrollments, leave) {
+  const studentKeys = buildUserKeys(leave.studentId);
+  const offeringId = String(leave.courseOfferingId || "").trim();
+  return (enrollments || []).find((item) =>
+    String(item.course_offering_id || item.courseOfferingId || "").trim() === offeringId &&
+    studentKeys.has(String(item.student_id || item.studentId || "").trim())
+  ) || null;
+}
+
+function buildLeaveTeacherView({ offering = {}, enrollment = {}, teacherMap = new Map() }) {
+  const teacherIds = Array.isArray(offering && offering.teacher_ids) ? offering.teacher_ids.map((value) => String(value || "").trim()).filter(Boolean) : [];
+  const teacherOptions = teacherIds
+    .map((teacherId) => teacherMap.get(teacherId))
+    .filter(Boolean)
+    .map((teacher) => ({
+      teacherId: teacher._id || "",
+      teacherUserId: teacher.user_id || teacher.userId || "",
+      teacherName: teacher.name || teacher.display_name || teacher.teacher_no || teacher._id || "",
+    }));
+  const selectedTeacherId = String(enrollment && (enrollment.selected_teacher_id || enrollment.selectedTeacherId) || "").trim();
+  const selectedTeacherUserId = String(enrollment && (enrollment.selected_teacher_user_id || enrollment.selectedTeacherUserId) || "").trim();
+  const selectedTeacher = teacherOptions.find((teacher) =>
+    (selectedTeacherId && teacher.teacherId === selectedTeacherId) ||
+    (selectedTeacherUserId && teacher.teacherUserId === selectedTeacherUserId)
+  ) || null;
+  const selectedTeacherName = String(enrollment && (enrollment.selected_teacher_name || enrollment.selectedTeacherName) || selectedTeacher && selectedTeacher.teacherName || "").trim();
+  const teacherNames = selectedTeacherName
+    ? [selectedTeacherName]
+    : teacherOptions.map((teacher) => teacher.teacherName).filter(Boolean);
+  const teacherUserIds = teacherOptions.map((teacher) => teacher.teacherUserId).filter(Boolean);
+  return {
+    teacherIds,
+    teacher_ids: teacherIds,
+    teacherUserIds,
+    teacher_user_ids: teacherUserIds,
+    teacherNames,
+    teacher_names: teacherNames,
+    teacherName: teacherNames.join(", "),
+    teacher_name: teacherNames.join(", "),
+    selectedTeacherId,
+    selected_teacher_id: selectedTeacherId,
+    selectedTeacherUserId,
+    selected_teacher_user_id: selectedTeacherUserId,
+    selectedTeacherName,
+    selected_teacher_name: selectedTeacherName,
+  };
+}
+
 function resolveStudentName(students, studentId) {
   const student = findStudentByAnyId(students, studentId);
   return student ? student.name || student.student_no || student._id : String(studentId || "");
@@ -641,6 +727,8 @@ function buildStudentProfile(input) {
   const major = input.majorMap.get(student.major_id) || {};
   const adminClass = input.adminClassMap.get(student.admin_class_id) || {};
   const plan = input.trainingPlanMap.get(student.training_plan_id) || {};
+  const contact = resolveStudentContact(student);
+  const adminClassName = resolveStudentAdminClassName(student, adminClass);
   const studentIds = buildStudentIdSet(student, input.session.userId);
   const enrolledOfferingIds = new Set(
     input.enrollments
@@ -687,7 +775,8 @@ function buildStudentProfile(input) {
     name: student.name || "",
     gender: student.gender || "",
     major: major.name || student.major_name || "",
-    adminClass: adminClass.name || student.admin_class_name || "",
+    adminClass: adminClassName,
+    adminClassName,
     gpa: "0.0",
     creditsEarned,
     totalCredits,
@@ -696,13 +785,36 @@ function buildStudentProfile(input) {
     attendanceStats,
     enrollmentYear: Number(student.enrollment_year || 0),
     trainingPlanId: student.training_plan_id || "",
-    contact: student.contact || {},
+    contact,
+    contactAddress: contact.address,
     familyInfo: student.family_info || {},
     moduleCredits,
     gpaTrend: [],
     percentileRank: Number(student.percentile_rank || 0),
     interestTags: [],
   };
+}
+
+function resolveStudentContact(student = {}) {
+  const contact = student && student.contact && typeof student.contact === "object" && !Array.isArray(student.contact)
+    ? student.contact
+    : {};
+  return {
+    email: String(contact.email || student.contact_email || student.contactEmail || student.email || "").trim(),
+    phone: String(contact.phone || student.contact_phone || student.contactPhone || student.phone || "").trim(),
+    address: String(contact.address || student.contact_address || student.contactAddress || student.address || "").trim(),
+  };
+}
+
+function resolveStudentAdminClassName(student = {}, adminClass = null) {
+  return String(
+    (adminClass && (adminClass.name || adminClass.code || adminClass._id)) ||
+    student.admin_class_name ||
+    student.adminClassName ||
+    student.adminClass ||
+    student.admin_class ||
+    ""
+  ).trim();
 }
 
 function studentMatchesPlanOffering(student, offering) {

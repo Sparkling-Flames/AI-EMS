@@ -134,20 +134,96 @@
 
     <view class="section">
       <text class="section-title">Pending Leave Reviews</text>
-      <template v-if="!data.leaveRequests.length">
-        <text class="muted">No pending leave requests.</text>
+      <view class="leave-filter-panel">
+        <view class="field">
+          <text class="label">Course</text>
+          <picker class="picker-shell" :range="leaveFilterCourseLabels" :value="leaveFilterCourseIndex" @change="changeLeaveFilterCourse">
+            <view class="picker-value">{{ selectedLeaveFilterCourseLabel }}</view>
+          </picker>
+        </view>
+        <view class="field">
+          <text class="label">Start Date</text>
+          <picker mode="date" class="picker-shell" :value="leaveFilterStartDate" @change="changeLeaveFilterStartDate">
+            <view class="picker-value">{{ leaveFilterStartDate || 'All dates' }}</view>
+          </picker>
+        </view>
+        <view class="field">
+          <text class="label">End Date</text>
+          <picker mode="date" class="picker-shell" :value="leaveFilterEndDate" @change="changeLeaveFilterEndDate">
+            <view class="picker-value">{{ leaveFilterEndDate || 'All dates' }}</view>
+          </picker>
+        </view>
+        <button class="secondary-btn leave-filter-reset-btn" @click="resetLeaveFilters">Reset</button>
+      </view>
+      <template v-if="!pendingLeaveRequests.length">
+        <text class="muted">{{ unfilteredPendingLeaveRequests.length ? 'No pending leave requests match the selected filters.' : 'No pending leave requests.' }}</text>
       </template>
-      <DataCard
-        v-for="item in data.leaveRequests"
+      <view
+        v-for="item in pendingLeaveRequests"
         :key="item._id"
-        :title="[item.studentName, item.courseName].filter(Boolean).join(' - ')"
-        :subtitle="[item.date, item.reason].filter(Boolean).join(' - ')"
+        class="leave-review-card"
       >
+        <view class="leave-review-head">
+          <view>
+            <text class="value">{{ leaveTitle(item) }}</text>
+            <text class="muted">{{ [item.studentNo, item.date].filter(Boolean).join(' - ') }}</text>
+          </view>
+          <StatusBadge :status="item.status" />
+        </view>
+        <view class="leave-review-grid">
+          <view class="info-cell">
+            <text class="label">Course</text>
+            <text class="value">{{ item.courseName || 'Course unavailable' }}</text>
+          </view>
+          <view class="info-cell">
+            <text class="label">Leave Date</text>
+            <text class="value">{{ item.date || 'Not set' }}</text>
+          </view>
+          <view class="info-cell">
+            <text class="label">Reason Type</text>
+            <text class="value">{{ item.reasonType || 'Other' }}</text>
+          </view>
+        </view>
+        <view class="note-box">
+          <text class="label">Leave Reason</text>
+          <text class="note-text">{{ item.reasonDetail || item.reason || 'No reason provided.' }}</text>
+        </view>
+        <view class="comment-control">
+          <view class="comment-toggle" :class="{ active: isLeaveCommentEnabled(item) }" @tap="toggleLeaveComment(item)">
+            <text>{{ isLeaveCommentEnabled(item) ? 'With comment' : 'No comment' }}</text>
+          </view>
+          <textarea
+            v-if="isLeaveCommentEnabled(item)"
+            :value="leaveReviewCommentFor(item)"
+            class="review-textarea"
+            placeholder="Optional note for this request."
+            @input="changeLeaveReviewComment(item, $event)"
+          />
+        </view>
         <view class="inline-actions">
           <button class="primary-btn compact-btn" @click="review(item, 'approved')">Approve</button>
           <button class="danger-btn compact-btn" @click="review(item, 'rejected')">Reject</button>
         </view>
-      </DataCard>
+      </view>
+    </view>
+
+    <view class="section">
+      <text class="section-title">Leave Review History</text>
+      <template v-if="!leaveReviewHistory.length">
+        <text class="muted">{{ unfilteredLeaveReviewHistory.length ? 'No reviewed leave records match the selected filters.' : 'No reviewed leave records yet.' }}</text>
+      </template>
+      <view
+        v-for="item in leaveReviewHistory"
+        :key="item._id"
+        class="leave-history-row"
+      >
+        <view class="history-main">
+          <text class="value">{{ leaveTitle(item) }}</text>
+          <text class="muted">{{ [item.date, item.reasonType || item.reason].filter(Boolean).join(' - ') }}</text>
+          <text v-if="item.reviewComment" class="history-comment">Comment: {{ item.reviewComment }}</text>
+        </view>
+        <StatusBadge :status="item.status" />
+      </view>
     </view>
 
     <view class="section">
@@ -180,9 +256,12 @@ export default {
       savingProfile: false,
       savingAttendance: false,
       lastUpdatedAt: 0,
-      reviewComment: '',
+      reviewDrafts: {},
       attendanceCourseIndex: 0,
       attendanceSessionIndex: 0,
+      leaveFilterCourseIndex: 0,
+      leaveFilterStartDate: '',
+      leaveFilterEndDate: '',
       attendanceDrafts: {},
       attendanceStatuses: [
         { value: 'present', label: 'Present' },
@@ -272,6 +351,42 @@ export default {
     },
     attendanceStatusLabels() {
       return this.attendanceStatuses.map(item => item.label)
+    },
+    leaveFilterCourses() {
+      const seen = new Set()
+      const courses = [{ value: '', label: 'All Courses' }]
+      const requests = this.data.leaveRequests || []
+      requests.forEach(item => {
+        const value = this.leaveCourseFilterValue(item)
+        if (!value || seen.has(value)) return
+        seen.add(value)
+        courses.push({
+          value,
+          label: item.courseName || value
+        })
+      })
+      return courses
+    },
+    leaveFilterCourseLabels() {
+      return this.leaveFilterCourses.map(item => item.label)
+    },
+    selectedLeaveFilterCourseLabel() {
+      return this.leaveFilterCourseLabels[this.leaveFilterCourseIndex] || 'All Courses'
+    },
+    filteredLeaveRequests() {
+      return (this.data.leaveRequests || []).filter(item => this.matchesLeaveFilters(item))
+    },
+    unfilteredPendingLeaveRequests() {
+      return (this.data.leaveRequests || []).filter(item => item.status === 'pending')
+    },
+    unfilteredLeaveReviewHistory() {
+      return (this.data.leaveRequests || []).filter(item => item.status !== 'pending')
+    },
+    pendingLeaveRequests() {
+      return this.filteredLeaveRequests.filter(item => item.status === 'pending')
+    },
+    leaveReviewHistory() {
+      return this.filteredLeaveRequests.filter(item => item.status !== 'pending')
     }
   },
   onShow() {
@@ -315,6 +430,7 @@ export default {
         }
         this.lastUpdatedAt = Date.now()
         this.normalizeAttendanceSelection()
+        this.normalizeLeaveFilterSelection()
       }
     },
     refresh() {
@@ -339,11 +455,12 @@ export default {
       uni.showToast({ title: result.message || 'Submit failed.', icon: 'none' })
     },
     async review(item, decision) {
+      const draft = this.leaveReviewDraftFor(item)
       const result = await callAiemsFunction('review-leave', {
         session: getSession(),
         leaveId: item._id,
         decision,
-        reviewComment: this.reviewComment
+        reviewComment: draft.enabled ? draft.comment.trim() : ''
       })
       if (result.ok) {
         uni.showToast({ title: decision === 'approved' ? 'Approved' : 'Rejected', icon: 'success' })
@@ -364,6 +481,20 @@ export default {
     changeAttendanceSession(event) {
       this.attendanceSessionIndex = Number(event.detail.value)
       this.attendanceDrafts = {}
+    },
+    changeLeaveFilterCourse(event) {
+      this.leaveFilterCourseIndex = Number(event.detail.value)
+    },
+    changeLeaveFilterStartDate(event) {
+      this.leaveFilterStartDate = event.detail.value
+    },
+    changeLeaveFilterEndDate(event) {
+      this.leaveFilterEndDate = event.detail.value
+    },
+    resetLeaveFilters() {
+      this.leaveFilterCourseIndex = 0
+      this.leaveFilterStartDate = ''
+      this.leaveFilterEndDate = ''
     },
     attendanceRecord(student) {
       const session = this.selectedAttendanceSession
@@ -456,6 +587,60 @@ export default {
     formatTime(value) {
       const date = new Date(value)
       return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+    },
+    leaveTitle(item) {
+      return [item.studentName, item.courseName].filter(Boolean).join(' - ') || 'Leave request'
+    },
+    normalizeLeaveFilterSelection() {
+      if (this.leaveFilterCourseIndex >= this.leaveFilterCourses.length) {
+        this.leaveFilterCourseIndex = 0
+      }
+    },
+    leaveCourseFilterValue(item) {
+      return String(item && (item.courseOfferingId || item.courseId || item.courseName) || '').trim()
+    },
+    matchesLeaveFilters(item) {
+      const selectedCourse = this.leaveFilterCourses[this.leaveFilterCourseIndex] || this.leaveFilterCourses[0]
+      if (selectedCourse && selectedCourse.value && this.leaveCourseFilterValue(item) !== selectedCourse.value) {
+        return false
+      }
+      const leaveDate = String(item && item.date || '').trim()
+      if (this.leaveFilterStartDate && (!leaveDate || leaveDate < this.leaveFilterStartDate)) {
+        return false
+      }
+      if (this.leaveFilterEndDate && (!leaveDate || leaveDate > this.leaveFilterEndDate)) {
+        return false
+      }
+      return true
+    },
+    leaveReviewDraftKey(item) {
+      return String(item && item._id || '')
+    },
+    leaveReviewDraftFor(item) {
+      const key = this.leaveReviewDraftKey(item)
+      return this.reviewDrafts[key] || { enabled: false, comment: '' }
+    },
+    isLeaveCommentEnabled(item) {
+      return this.leaveReviewDraftFor(item).enabled
+    },
+    leaveReviewCommentFor(item) {
+      return this.leaveReviewDraftFor(item).comment
+    },
+    toggleLeaveComment(item) {
+      const key = this.leaveReviewDraftKey(item)
+      const current = this.leaveReviewDraftFor(item)
+      this.reviewDrafts = {
+        ...this.reviewDrafts,
+        [key]: { ...current, enabled: !current.enabled }
+      }
+    },
+    changeLeaveReviewComment(item, event) {
+      const key = this.leaveReviewDraftKey(item)
+      const current = this.leaveReviewDraftFor(item)
+      this.reviewDrafts = {
+        ...this.reviewDrafts,
+        [key]: { ...current, comment: event.detail.value }
+      }
     }
   }
 }
@@ -531,6 +716,100 @@ export default {
   background: #f8fafc;
   border: 1rpx solid #e2e8f0;
   border-radius: 8rpx;
+}
+
+.leave-filter-panel {
+  display: grid;
+  grid-template-columns: minmax(220rpx, 1.4fr) repeat(2, minmax(180rpx, 1fr)) auto;
+  align-items: end;
+  gap: 14rpx;
+  margin-top: 16rpx;
+  margin-bottom: 8rpx;
+}
+
+.leave-filter-panel .field {
+  margin-bottom: 0;
+}
+
+.leave-filter-reset-btn {
+  min-width: 128rpx;
+  margin: 0 !important;
+}
+
+.leave-review-card,
+.leave-history-row {
+  margin-top: 16rpx;
+  padding: 18rpx;
+  background: #ffffff;
+  border: 1rpx solid #e2e8f0;
+  border-radius: 8rpx;
+}
+
+.leave-review-head,
+.leave-history-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.leave-review-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12rpx;
+  margin-top: 14rpx;
+}
+
+.note-box {
+  margin-top: 12rpx;
+  padding: 14rpx;
+  background: #f8fafc;
+  border: 1rpx solid #e2e8f0;
+  border-radius: 8rpx;
+}
+
+.note-text,
+.history-comment {
+  display: block;
+  margin-top: 6rpx;
+  color: #0f172a;
+  font-size: 26rpx;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.comment-control {
+  margin-top: 12rpx;
+}
+
+.comment-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 64rpx;
+  padding: 0 20rpx;
+  border: 1rpx solid #cbd5e1;
+  border-radius: 8rpx;
+  background: #ffffff;
+  color: #334155;
+  font-size: 24rpx;
+}
+
+.comment-toggle.active {
+  border-color: #2563eb;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.review-textarea {
+  width: 100%;
+  min-height: 150rpx;
+  margin-top: 12rpx;
+  box-sizing: border-box;
+}
+
+.history-main {
+  min-width: 0;
 }
 
 .picker-value {
@@ -619,6 +898,10 @@ export default {
 }
 
 @media (max-width: 700px) {
+  .leave-filter-panel {
+    grid-template-columns: 1fr;
+  }
+
   .attendance-controls {
     grid-template-columns: 1fr;
   }

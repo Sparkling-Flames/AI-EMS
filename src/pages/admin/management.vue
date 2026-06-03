@@ -51,9 +51,19 @@
         </view>
         <view v-if="accountForm.roleCode === 'student'" class="field">
           <text class="label">Major</text>
-          <picker :range="optionLabels.majors" :value="majorIndex" @change="majorIndex = Number($event.detail.value)">
+          <picker :range="optionLabels.majors" :value="majorIndex" @change="changeStudentMajor">
             <view class="picker-value">{{ optionLabels.majors[majorIndex] || 'Select major' }}</view>
           </picker>
+        </view>
+        <view v-if="accountForm.roleCode === 'student' && studentClassLabels.length" class="field">
+          <text class="label">Class</text>
+          <picker :range="studentClassLabels" :value="adminClassIndex" @change="changeStudentClass">
+            <view class="picker-value">{{ studentClassLabels[adminClassIndex] || 'Select class' }}</view>
+          </picker>
+        </view>
+        <view v-if="accountForm.roleCode === 'student' && !studentClassLabels.length" class="field">
+          <text class="label">Class</text>
+          <input v-model="accountForm.adminClassName" placeholder="Class name" />
         </view>
         <view v-if="accountForm.roleCode === 'student'" class="field">
           <text class="label">Enrollment Year</text>
@@ -295,6 +305,7 @@
           semesters: [],
           trainingPlans: [],
           teachers: [],
+          adminClasses: [],
           classrooms: []
         },
         accountRoleOptions: [{
@@ -308,6 +319,7 @@
         ],
         accountRoleIndex: 0,
         majorIndex: 0,
+        adminClassIndex: 0,
         teacherDepartmentIndex: 0,
         courseMajorIndex: 0,
         timetableMajorIndex: 0,
@@ -322,6 +334,7 @@
           teacherNo: '',
           email: '',
           phone: '',
+          adminClassName: '',
           enrollmentYear: '2026',
           title: '',
           office: ''
@@ -354,6 +367,23 @@
       },
       accountSubmitLabel() {
         return 'Create Student/Teacher'
+      },
+      studentClassOptions() {
+        const majorId = this.optionValue('majors', this.majorIndex)
+        const rows = this.options.adminClasses || []
+        const filtered = rows.filter(item => !item.majorId || !majorId || item.majorId === majorId)
+        return filtered.length ? filtered : rows
+      },
+      studentClassLabels() {
+        return this.studentClassOptions.map(item => item.label || item.value)
+      },
+      selectedAdminClassId() {
+        const option = this.studentClassOptions[this.adminClassIndex]
+        return option ? option.value : ''
+      },
+      selectedAdminClassLabel() {
+        const option = this.studentClassOptions[this.adminClassIndex]
+        return option ? option.label || option.value || '' : ''
       },
       weeklySessionCount() {
         return this.courseForm.scheduleSlots.length
@@ -416,6 +446,7 @@
           teacherNo: '',
           email: '',
           phone: '',
+          adminClassName: '',
           enrollmentYear: '2026',
           title: '',
           office: ''
@@ -474,6 +505,14 @@
         const role = this.accountRoleOptions[this.accountRoleIndex] || this.accountRoleOptions[0]
         this.accountForm.roleCode = role.value
       },
+      changeStudentMajor(event) {
+        this.majorIndex = Number(event.detail.value)
+        this.adminClassIndex = 0
+      },
+      changeStudentClass(event) {
+        this.adminClassIndex = Number(event.detail.value)
+        this.accountForm.adminClassName = this.selectedAdminClassLabel
+      },
       async saveAccount() {
         const password = this.accountForm.password.trim()
         const roleCode = this.accountForm.roleCode || 'student'
@@ -513,6 +552,8 @@
           payload.studentProfile = {
             studentNo: this.accountForm.studentNo.trim(),
             majorId: this.optionValue('majors', this.majorIndex),
+            adminClassId: this.selectedAdminClassId,
+            adminClassName: this.accountForm.adminClassName.trim() || this.selectedAdminClassLabel,
             enrollmentYear: Number(this.accountForm.enrollmentYear || 0)
           }
         } else {
@@ -533,6 +574,7 @@
           })
           this.accountForm = this.emptyAccountForm()
           this.accountRoleIndex = 0
+          this.adminClassIndex = 0
           this.load(true)
           return
         }
