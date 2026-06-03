@@ -702,25 +702,12 @@ export default {
 
 .full-btn {
   width: 100%;
-  margin-top: 10rpx;
+  margin-top: 12px;
 }
 
 .attendance-save-btn {
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
   width: 100% !important;
-  min-height: 44px !important;
-  height: auto !important;
-  margin: 14px 0 0 !important;
-  padding: 0 16px !important;
-  line-height: 1.25 !important;
-  white-space: nowrap;
-  box-sizing: border-box;
-}
-
-.attendance-save-btn::after {
-  border: 0;
+  margin-top: 14px;
 }
 
 .inline-actions {
@@ -730,8 +717,7 @@ export default {
 }
 
 .compact-btn {
-  min-width: 126rpx;
-  font-size: 24rpx;
+  min-width: 76px;
 }
 
 .info-grid {
@@ -742,10 +728,10 @@ export default {
 }
 
 .info-cell {
-  padding: 16rpx;
-  background: #f8fafc;
-  border: 1rpx solid #e2e8f0;
-  border-radius: 8rpx;
+  padding: 16px;
+  background: #f9fafb;
+  border: 1px solid #eef2f7;
+  border-radius: 10px;
 }
 
 .leave-filter-panel {
@@ -769,10 +755,11 @@ export default {
 .leave-review-card,
 .leave-history-row {
   margin-top: 16rpx;
-  padding: 18rpx;
+  padding: 18px;
   background: #ffffff;
-  border: 1rpx solid #e2e8f0;
-  border-radius: 8rpx;
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
 }
 
 .leave-review-head,
@@ -792,10 +779,10 @@ export default {
 
 .note-box {
   margin-top: 12rpx;
-  padding: 14rpx;
-  background: #f8fafc;
-  border: 1rpx solid #e2e8f0;
-  border-radius: 8rpx;
+  padding: 14px;
+  background: #f9fafb;
+  border: 1px solid #eef2f7;
+  border-radius: 10px;
 }
 
 .note-text,
@@ -816,13 +803,14 @@ export default {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 64rpx;
-  padding: 0 20rpx;
-  border: 1rpx solid #cbd5e1;
-  border-radius: 8rpx;
-  background: #ffffff;
-  color: #334155;
-  font-size: 24rpx;
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f3f4f6;
+  color: #374151;
+  font-size: 14px;
+  line-height: 1.25;
 }
 
 .comment-toggle.active {
@@ -843,13 +831,13 @@ export default {
 }
 
 .picker-value {
-  min-height: 44rpx;
-  padding: 18rpx;
-  background: #ffffff;
-  border: 1rpx solid #cbd5e1;
-  border-radius: 8rpx;
-  color: #0f172a;
-  font-size: 28rpx;
+  min-height: 46px;
+  padding: 11px 16px;
+  background: #f9fafb;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #111827;
+  font-size: 16px;
   line-height: 1.5;
 }
 
@@ -876,10 +864,11 @@ export default {
   align-items: center;
   justify-content: space-between;
   gap: 18rpx;
-  padding: 16rpx;
-  background: #f8fafc;
-  border: 1rpx solid #e2e8f0;
-  border-radius: 8rpx;
+  padding: 16px;
+  background: #ffffff;
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
 }
 
 .student-meta {
@@ -901,16 +890,17 @@ export default {
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  min-width: 126rpx;
-  min-height: 66rpx;
-  margin: 0 !important;
-  padding: 0 18rpx;
-  border: 1rpx solid #cbd5e1;
-  border-radius: 8rpx;
-  background: #ffffff;
-  color: #334155;
-  font-size: 24rpx;
-  line-height: 1.2;
+  min-width: 86px;
+  min-height: 40px;
+  margin: 0;
+  padding: 8px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f3f4f6;
+  color: #374151;
+  font-size: 14px;
+  line-height: 1.25;
+  white-space: normal;
   cursor: pointer;
   user-select: none;
   box-sizing: border-box;

@@ -4,19 +4,19 @@
 
 <script>
 const STYLE_MAP = {
-  present: { bg: "#dcfce7", text: "#16a34a" },
-  approved: { bg: "#dcfce7", text: "#16a34a" },
-  absent: { bg: "#fee2e2", text: "#dc2626" },
-  rejected: { bg: "#fee2e2", text: "#dc2626" },
-  on_leave: { bg: "#fff7ed", text: "#ea580c" },
-  pending: { bg: "#fefce8", text: "#ca8a04" },
-  late: { bg: "#ffedd5", text: "#c2410c" },
-  excused: { bg: "#e0f2fe", text: "#0369a1" },
+  present: { bg: "#d1fae5", text: "#065f46" },
+  approved: { bg: "#d1fae5", text: "#065f46" },
+  absent: { bg: "#fee2e2", text: "#991b1b" },
+  rejected: { bg: "#fee2e2", text: "#991b1b" },
+  on_leave: { bg: "#fef3c7", text: "#92400e" },
+  pending: { bg: "#fef3c7", text: "#92400e" },
+  late: { bg: "#ffedd5", text: "#9a3412" },
+  excused: { bg: "#dbeafe", text: "#1e40af" },
   new: { bg: "#dbeafe", text: "#2563eb" },
-  high: { bg: "#fee2e2", text: "#dc2626" },
-  critical: { bg: "#7f1d1d", text: "#ffffff" },
-  medium: { bg: "#fef3c7", text: "#b45309" },
-  low: { bg: "#e0f2fe", text: "#0369a1" }
+  high: { bg: "#fee2e2", text: "#991b1b" },
+  critical: { bg: "#fee2e2", text: "#7f1d1d" },
+  medium: { bg: "#fef3c7", text: "#92400e" },
+  low: { bg: "#dbeafe", text: "#1e40af" }
 };
 
 const LABEL_MAP = {
@@ -54,10 +54,11 @@ export default {
 <style scoped>
 .status-badge {
   display: inline-block;
-  padding: 4rpx 16rpx;
-  border-radius: 6rpx;
-  font-size: 22rpx;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
   font-weight: 600;
+  line-height: 1.35;
   white-space: nowrap;
 }
 </style>

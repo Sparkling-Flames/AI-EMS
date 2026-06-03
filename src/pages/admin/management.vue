@@ -1031,21 +1031,26 @@ export default {
 }
 
 .picker-value {
-  padding: 18rpx;
-  background: #ffffff;
-  border: 1rpx solid #cbd5e1;
-  border-radius: 8rpx;
-  font-size: 28rpx;
+  min-height: 46px;
+  padding: 11px 16px;
+  background: #f9fafb;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #111827;
+  font-size: 16px;
+  line-height: 1.45;
 }
 
 .readonly-value {
   margin-top: 10rpx;
-  padding: 18rpx;
-  background: #f8fafc;
-  border: 1rpx solid #cbd5e1;
-  border-radius: 8rpx;
-  color: #0f172a;
-  font-size: 28rpx;
+  min-height: 46px;
+  padding: 11px 16px;
+  background: #f9fafb;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #111827;
+  font-size: 16px;
+  line-height: 1.45;
   box-sizing: border-box;
 }
 
@@ -1086,10 +1091,10 @@ export default {
   grid-template-columns: 180rpx 170rpx 170rpx minmax(260rpx, 1fr) 150rpx;
   gap: 12rpx;
   align-items: end;
-  padding: 14rpx;
-  background: #f8fafc;
-  border: 1rpx solid #e2e8f0;
-  border-radius: 8rpx;
+  padding: 16px;
+  background: #f9fafb;
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
 }
 
 .slot-field {
@@ -1098,41 +1103,13 @@ export default {
 
 .slot-action-btn,
 .slot-remove-btn {
-  display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
-  width: auto !important;
-  min-width: 86px !important;
-  min-height: 36px !important;
-  height: auto !important;
-  margin: 0 !important;
-  padding: 0 12px !important;
-  line-height: 1.25 !important;
-  white-space: nowrap;
-  overflow: visible;
-  box-sizing: border-box;
-}
-
-.slot-action-btn::after,
-.slot-remove-btn::after,
-.form-submit-btn::after,
-.full-btn::after {
-  border: 0;
+  min-width: 86px;
+  margin: 0;
 }
 
 .form-submit-btn {
-  display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
   width: 100% !important;
-  min-height: 42px !important;
-  height: auto !important;
-  margin: 10px 0 0 !important;
-  padding: 0 16px !important;
-  line-height: 1.25 !important;
-  white-space: nowrap;
-  overflow: visible;
-  box-sizing: border-box;
+  margin-top: 16px;
 }
 
 .timetable-filters {
@@ -1151,10 +1128,11 @@ export default {
 
 .timetable-day {
   min-width: 170rpx;
-  padding: 12rpx;
-  background: #f8fafc;
-  border: 1rpx solid #e2e8f0;
-  border-radius: 8rpx;
+  padding: 14px;
+  background: #ffffff;
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
 }
 
 .timetable-day-title {
@@ -1175,11 +1153,11 @@ export default {
   flex-direction: column;
   gap: 4rpx;
   margin-bottom: 10rpx;
-  padding: 10rpx;
-  background: #ffffff;
-  border: 1rpx solid #dbeafe;
-  border-left: 6rpx solid #2563eb;
-  border-radius: 6rpx;
+  padding: 10px;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  border-left: 4px solid #2563eb;
+  border-radius: 8px;
 }
 
 .timetable-session.conflict {
@@ -1224,10 +1202,10 @@ export default {
   gap: 10rpx;
   min-height: 80rpx;
   padding: 14rpx 16rpx;
-  background: #f8fafc;
-  border: 1rpx solid #e2e8f0;
-  border-radius: 8rpx;
-  color: #0f172a;
+  background: #f9fafb;
+  border: 1px solid #eef2f7;
+  border-radius: 10px;
+  color: #111827;
 }
 
 .teacher-option.selected {
@@ -1279,18 +1257,8 @@ export default {
 }
 
 .full-btn {
-  display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
   width: 100% !important;
-  min-height: 42px !important;
-  height: auto !important;
-  margin: 10px 0 0 !important;
-  padding: 0 16px !important;
-  line-height: 1.25 !important;
-  white-space: nowrap;
-  overflow: visible;
-  box-sizing: border-box;
+  margin-top: 16px;
 }
 
 .account-actions,
@@ -1301,14 +1269,21 @@ export default {
 }
 
 .mini-btn {
-  min-width: 150rpx;
-  padding: 8rpx 14rpx;
-  border: 1rpx solid #cbd5e1;
-  border-radius: 8rpx;
-  background: #ffffff;
-  color: #1e293b;
-  font-size: 24rpx;
-  line-height: 1.4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 86px;
+  min-height: 36px;
+  margin: 0;
+  padding: 6px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f3f4f6;
+  color: #374151;
+  font-size: 14px;
+  line-height: 1.25;
+  white-space: normal;
+  box-sizing: border-box;
 }
 
 .mini-btn.danger {

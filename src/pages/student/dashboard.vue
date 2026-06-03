@@ -611,7 +611,7 @@ export default {
 
 .full-btn {
   width: 100%;
-  margin-top: 10rpx;
+  margin-top: 12px;
 }
 
 .info-grid {
@@ -622,10 +622,10 @@ export default {
 }
 
 .info-cell {
-  padding: 16rpx;
-  background: #f8fafc;
-  border: 1rpx solid #e2e8f0;
-  border-radius: 8rpx;
+  padding: 16px;
+  background: #f9fafb;
+  border: 1px solid #eef2f7;
+  border-radius: 10px;
 }
 
 .info-cell .label,
@@ -640,10 +640,11 @@ export default {
 .profile-summary-card,
 .profile-form-panel {
   margin-top: 16rpx;
-  padding: 18rpx;
+  padding: 18px;
   background: #ffffff;
-  border: 1rpx solid #e2e8f0;
-  border-radius: 8rpx;
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
 }
 
 .profile-summary-head {
@@ -673,10 +674,10 @@ export default {
 }
 
 .profile-info-cell {
-  padding: 14rpx;
-  background: #f8fafc;
-  border: 1rpx solid #e2e8f0;
-  border-radius: 8rpx;
+  padding: 14px;
+  background: #f9fafb;
+  border: 1px solid #eef2f7;
+  border-radius: 10px;
 }
 
 .profile-info-cell .label,
@@ -698,10 +699,11 @@ export default {
 
 .profile-request-card {
   margin-top: 16rpx;
-  padding: 18rpx;
+  padding: 18px;
   background: #ffffff;
-  border: 1rpx solid #e2e8f0;
-  border-radius: 8rpx;
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
 }
 
 .profile-request-head {
@@ -744,10 +746,10 @@ export default {
 
 .profile-change-cell,
 .profile-review-note {
-  padding: 14rpx;
-  background: #f8fafc;
-  border: 1rpx solid #e2e8f0;
-  border-radius: 8rpx;
+  padding: 14px;
+  background: #f9fafb;
+  border: 1px solid #eef2f7;
+  border-radius: 10px;
 }
 
 .profile-change-cell .label {
@@ -806,19 +808,17 @@ export default {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: auto !important;
-  min-width: 132rpx;
-  min-height: 66rpx;
-  height: auto !important;
-  margin: 0 !important;
-  padding: 0 22rpx !important;
-  border: 1rpx solid #cbd5e1;
-  border-radius: 8rpx;
-  background: #ffffff;
-  color: #334155;
-  font-size: 24rpx;
-  line-height: 1.25 !important;
-  white-space: nowrap;
+  min-width: 86px;
+  min-height: 40px;
+  margin: 0;
+  padding: 8px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f3f4f6;
+  color: #374151;
+  font-size: 14px;
+  line-height: 1.25;
+  white-space: normal;
   box-sizing: border-box;
 }
 
@@ -845,27 +845,12 @@ export default {
 }
 
 .compact-btn {
-  min-width: 126rpx;
-  font-size: 24rpx;
+  min-width: 76px;
 }
 
 .full-btn {
-  display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
   width: 100% !important;
-  min-height: 42px !important;
-  height: auto !important;
-  margin: 10px 0 0 !important;
-  padding: 0 16px !important;
-  line-height: 1.25 !important;
-  white-space: nowrap;
-  overflow: visible;
-  box-sizing: border-box;
-}
-
-.full-btn::after {
-  border: 0;
+  margin-top: 12px;
 }
 
 .course-entry {
@@ -938,10 +923,10 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 6rpx;
-  padding: 18rpx;
-  border: 1rpx solid #e2e8f0;
-  border-radius: 16rpx;
-  background: #f8fafc;
+  padding: 16px;
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+  background: #f9fafb;
 }
 
 .teacher-final-name {

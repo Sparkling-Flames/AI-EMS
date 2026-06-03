@@ -417,14 +417,15 @@ export default {
 }
 
 .picker-value {
-  padding: 18rpx;
-  background: #ffffff;
-  border: 1rpx solid #cbd5e1;
-  border-radius: 8rpx;
-  font-size: 28rpx;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-height: 46px;
+  padding: 11px 16px;
+  background: #f9fafb;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #111827;
+  font-size: 16px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .score-picker {
@@ -463,10 +464,11 @@ export default {
   justify-content: space-between;
   gap: 16rpx;
   min-width: 0;
-  padding: 16rpx 18rpx;
+  padding: 16px 18px;
   background: #ffffff;
-  border: 1rpx solid #e2e8f0;
-  border-radius: 8rpx;
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
 }
 
 .dimension-label {

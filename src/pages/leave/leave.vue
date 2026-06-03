@@ -579,11 +579,14 @@ export default {
 }
 
 .picker-value {
-  padding: 18rpx;
-  background: #ffffff;
-  border: 1rpx solid #cbd5e1;
-  border-radius: 8rpx;
-  font-size: 28rpx;
+  min-height: 46px;
+  padding: 11px 16px;
+  background: #f9fafb;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #111827;
+  font-size: 16px;
+  line-height: 1.45;
 }
 
 .full-btn {
@@ -618,10 +621,11 @@ export default {
 
 .leave-card {
   margin-top: 16rpx;
-  padding: 18rpx;
+  padding: 18px;
   background: #ffffff;
-  border: 1rpx solid #e2e8f0;
-  border-radius: 8rpx;
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
 }
 
 .leave-card-head {
@@ -651,10 +655,10 @@ export default {
 
 .info-cell,
 .note-box {
-  padding: 14rpx;
-  background: #f8fafc;
-  border: 1rpx solid #e2e8f0;
-  border-radius: 8rpx;
+  padding: 14px;
+  background: #f9fafb;
+  border: 1px solid #eef2f7;
+  border-radius: 10px;
 }
 
 .info-cell .value,
@@ -691,13 +695,14 @@ export default {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 64rpx;
-  padding: 0 20rpx;
-  border: 1rpx solid #cbd5e1;
-  border-radius: 8rpx;
-  background: #ffffff;
-  color: #334155;
-  font-size: 24rpx;
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f3f4f6;
+  color: #374151;
+  font-size: 14px;
+  line-height: 1.25;
 }
 
 .comment-toggle.active {

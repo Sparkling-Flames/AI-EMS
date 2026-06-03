@@ -33,40 +33,49 @@ export default {
 
 <style scoped>
 .page-header {
-  margin-bottom: 20rpx;
-  padding: 24rpx 28rpx;
+  margin-bottom: 20px;
+  padding: 24px;
   background: #ffffff;
-  border-bottom: 1rpx solid #e5e7eb;
+  border: 0;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
 }
 
 .header-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .header-left {
   flex: 1;
+  min-width: 220px;
 }
 
 .header-title {
   display: block;
-  color: #0f172a;
-  font-size: 36rpx;
-  font-weight: 700;
+  color: #111827;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.25;
 }
 
 .header-sub {
   display: block;
-  margin-top: 6rpx;
-  color: #64748b;
-  font-size: 24rpx;
+  margin-top: 6px;
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 12rpx;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
   flex-shrink: 0;
 }
 
@@ -78,18 +87,41 @@ export default {
   align-items: center;
   justify-content: center;
   margin: 0;
-  width: 136rpx !important;
-  min-width: 136rpx !important;
-  height: 64rpx;
-  padding: 0 22rpx;
-  border-radius: 8rpx;
-  font-size: 24rpx;
-  line-height: 1;
+  width: auto !important;
+  min-width: 88px !important;
+  min-height: 40px;
+  height: auto;
+  padding: 8px 14px !important;
+  border: 0;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.2;
+  white-space: normal;
+  overflow-wrap: anywhere;
   box-sizing: border-box;
 }
 
 .logout-btn {
   background: #fee2e2;
-  color: #991b1b;
+  color: #b91c1c;
+}
+
+.logout-btn::after {
+  border: 0;
+}
+
+@media (max-width: 700px) {
+  .page-header {
+    padding: 18px;
+  }
+
+  .header-left,
+  .header-right {
+    width: 100%;
+  }
+
+  .header-right {
+    justify-content: flex-start;
+  }
 }
 </style>

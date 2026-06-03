@@ -903,10 +903,11 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 10rpx;
-  padding: 14rpx 16rpx;
+  padding: 14px 16px;
   background: #ffffff;
-  border: 1rpx solid #cbd5e1;
-  border-radius: 12rpx;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
   box-sizing: border-box;
 }
 
@@ -974,9 +975,8 @@ export default {
 }
 
 .settings-toggle {
-  width: auto !important;
-  min-width: 140rpx !important;
-  padding: 0 24rpx !important;
+  min-width: 86px;
+  margin: 0;
   flex-shrink: 0;
 }
 
@@ -985,10 +985,11 @@ export default {
   flex-direction: column;
   gap: 20rpx;
   margin-top: 18rpx;
-  padding: 24rpx;
-  background: #f8fafc;
-  border: 1rpx solid #e2e8f0;
-  border-radius: 8rpx;
+  padding: 20px;
+  background: #ffffff;
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
 }
 
 .settings-row {
@@ -1033,14 +1034,14 @@ export default {
 
 .input-box {
   flex: 1;
-  height: 68rpx;
-  line-height: 68rpx;
-  padding: 0 16rpx;
-  background: #ffffff;
-  border: 1rpx solid #cbd5e1;
-  border-radius: 8rpx;
-  color: #0f172a;
-  font-size: 28rpx;
+  min-height: 46px;
+  padding: 11px 16px;
+  background: #f9fafb;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #111827;
+  font-size: 16px;
+  line-height: 1.45;
   box-sizing: border-box;
 }
 
@@ -1055,16 +1056,8 @@ export default {
 }
 
 .compact-btn {
-  display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
-  width: auto !important;
-  min-width: 104rpx !important;
-  height: 68rpx !important;
-  padding: 0 20rpx !important;
-  font-size: 24rpx !important;
-  line-height: 1 !important;
-  margin: 0 !important;
+  min-width: 78px;
+  margin: 0;
   flex-shrink: 0;
 }
 
@@ -1078,14 +1071,6 @@ export default {
   margin-top: 12rpx;
 }
 
-.save-settings-btn {
-  width: auto !important;
-  min-width: 220rpx !important;
-  height: 72rpx !important;
-  line-height: 72rpx !important;
-  margin: 0 !important;
-}
-
 .notice-text {
   display: block;
   margin-top: 16rpx;
@@ -1095,14 +1080,8 @@ export default {
 }
 
 .save-settings-btn {
-  display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
-  width: 220rpx !important;
-  min-width: 220rpx !important;
-  height: 64rpx !important;
-  padding: 0 28rpx !important;
-  line-height: 1 !important;
+  min-width: 120px;
+  margin: 0;
 }
 
 @media (max-width: 700px) {
@@ -1121,7 +1100,7 @@ export default {
   }
 
   .compact-btn {
-    margin-top: 12rpx !important;
+    margin-top: 12rpx;
   }
 }
 </style>

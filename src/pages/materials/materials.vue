@@ -547,11 +547,14 @@ export default {
 }
 
 .picker-value {
-  padding: 18rpx;
-  background: #ffffff;
-  border: 1rpx solid #cbd5e1;
-  border-radius: 8rpx;
-  font-size: 28rpx;
+  min-height: 46px;
+  padding: 11px 16px;
+  background: #f9fafb;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #111827;
+  font-size: 16px;
+  line-height: 1.45;
 }
 
 .switch-row {
@@ -568,10 +571,10 @@ export default {
   justify-content: space-between;
   gap: 16rpx;
   margin-top: 10rpx;
-  padding: 18rpx;
-  background: #f8fafc;
-  border: 1rpx solid #cbd5e1;
-  border-radius: 8rpx;
+  padding: 16px;
+  background: #f9fafb;
+  border: 1px solid transparent;
+  border-radius: 12px;
   box-sizing: border-box;
 }
 
@@ -590,13 +593,10 @@ export default {
 
 .file-picker-btn {
   flex: 0 0 280rpx;
-  width: 250rpx;
-  min-width: 0;
-  padding: 0 24rpx;
+  min-width: 140px;
   display: flex;
   align-items: center;
   justify-content: center;
-  white-space: nowrap;
 }
 
 .material-card {
@@ -604,7 +604,11 @@ export default {
   grid-template-columns: 76rpx minmax(0, 1fr) auto;
   align-items: center;
   gap: 18rpx;
-  padding: 20rpx;
+  padding: 20px;
+  background: #ffffff;
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
 }
 
 .material-file-icon {
@@ -667,7 +671,7 @@ export default {
 }
 
 .material-actions button {
-  min-width: 150rpx;
+  min-width: 86px;
   margin: 0;
 }
 
@@ -688,7 +692,7 @@ export default {
 
 .primary-btn,
 .secondary-btn {
-  min-width: 160rpx;
+  min-width: 92px;
   margin: 0;
 }
 
@@ -706,9 +710,9 @@ export default {
   gap: 18rpx;
   padding: 18rpx;
   background: #ffffff;
-  border: 1rpx solid #dbe3ef;
-  border-radius: 8rpx;
-  box-shadow: 0 2rpx 8rpx rgba(15, 23, 42, 0.04);
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
   box-sizing: border-box;
 }
 
@@ -775,10 +779,10 @@ export default {
   align-items: center;
   justify-content: space-between;
   gap: 12rpx;
-  padding: 12rpx 14rpx;
-  background: #f8fafc;
-  border: 1rpx solid #e2e8f0;
-  border-radius: 8rpx;
+  padding: 12px 14px;
+  background: #f9fafb;
+  border: 1px solid #eef2f7;
+  border-radius: 10px;
 }
 
 .timeline-material-title {

@@ -1,6 +1,6 @@
 {
   "name": "ai-ems",
-  "version": "1.6.0-beta.1",
+  "version": "1.7.0",
   "private": true,
   "scripts": {
     "test": "node --test test/error-handling-testing.test.cjs test/functional-testing.test.cjs test/performance-testing.test.cjs",

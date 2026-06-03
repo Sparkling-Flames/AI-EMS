@@ -48,7 +48,7 @@ export default {
 <style scoped>
 .nav-tabs-scroll {
   width: 100%;
-  padding: 0 14px 12px 14px;
+  padding: 0 0 16px;
   box-sizing: border-box;
   white-space: nowrap;
 }
@@ -56,12 +56,12 @@ export default {
 .nav-tabs {
   display: flex;
   align-items: stretch;
-  gap: 6px;
+  gap: 8px;
   min-width: max-content;
   padding: 4px;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  background: #e5e7eb;
+  border: 0;
+  border-radius: 12px;
   box-sizing: border-box;
 }
 
@@ -71,32 +71,31 @@ export default {
   justify-content: center;
   flex: 0 0 auto;
   width: auto !important;
-  min-width: 92px;
-  max-width: 150px;
-  min-height: 38px;
+  min-width: 96px;
+  max-width: none;
+  min-height: 42px;
   margin: 0 !important;
-  padding: 6px 12px !important;
+  padding: 8px 16px !important;
   background: transparent;
-  color: #334155;
+  color: #374151;
   border: 0;
-  border-radius: 6px;
-  font-size: 14px;
-  line-height: 1.2;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.25;
   text-align: center;
   white-space: normal;
-  overflow: hidden;
+  overflow: visible;
   box-sizing: border-box;
 }
 
 .nav-label {
-  display: -webkit-box;
+  display: block;
   max-width: 100%;
-  overflow: hidden;
+  overflow: visible;
   word-break: break-word;
   overflow-wrap: anywhere;
-  text-overflow: ellipsis;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  text-overflow: clip;
 }
 
 .nav-btn::after {
@@ -105,8 +104,13 @@ export default {
 
 .nav-btn-active {
   background: #ffffff;
-  color: #1d4ed8;
+  color: #2563eb;
   font-weight: 600;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+}
+
+.nav-btn:active {
+  opacity: 0.85;
+  transform: scale(0.98);
 }
 </style>

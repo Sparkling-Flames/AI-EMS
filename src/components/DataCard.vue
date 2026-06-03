@@ -23,17 +23,20 @@ export default {
 
 <style scoped>
 .data-card {
-  margin-top: 16rpx;
-  padding: 18rpx;
-  background: #f8fafc;
-  border: 1rpx solid #e2e8f0;
-  border-radius: 8rpx;
+  margin-top: 16px;
+  padding: 18px;
+  background: #ffffff;
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
 }
 
 .data-card-body {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .data-card-main {
@@ -44,18 +47,21 @@ export default {
 .data-card-title {
   display: block;
   color: #111827;
-  font-size: 28rpx;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.35;
 }
 
 .data-card-sub {
   display: block;
-  margin-top: 4rpx;
-  color: #64748b;
-  font-size: 24rpx;
+  margin-top: 6px;
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 .data-card-extra {
   flex-shrink: 0;
-  margin-left: 16rpx;
+  margin-left: 0;
 }
 </style>
