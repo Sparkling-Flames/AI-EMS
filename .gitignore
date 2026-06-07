@@ -18,5 +18,5 @@ uniCloud-aliyun/cloudfunctions/*/node_modules/
 *.pdf
 *.docx
 *.png
-!docs/AI-EMS_User_Manual.pdf
-!docs/AI-EMS_User_Manual.docx
+!user_manual/AI-EMS_User_Manual.pdf
+!user_manual/AI-EMS_User_Manual.docx
