@@ -1,6 +1,6 @@
 # AI-EMS
 
-AI-EMS is a Uniapp + UniCloud proof-of-concept for an AI-enhanced educational management system. It focuses on role-based access, leave-to-attendance workflow, anonymous course evaluation, academic planning, profile-review workflows, course materials, location check-in, and local knowledge-base retrieval.
+AI-EMS is a Uniapp + UniCloud proof-of-concept for an educational management system with role-based dashboards, leave-to-attendance workflow, anonymous course evaluation, academic planning, profile-review workflows, course materials, teacher attendance editing, administrator course/account management, and knowledge-base assistant support.
 
 ## User Manual
 
@@ -43,12 +43,26 @@ Use this setup when you want login, database-backed workflows, cloud functions, 
 3. Upload each cloud function under `uniCloud-aliyun/cloudfunctions/`:
    - `auth-login`
    - `get-dashboard-data`
+   - `get-admin-management-data`
    - `submit-leave`
    - `review-leave`
+   - `cancel-leave`
+   - `delete-leave`
+   - `submit-attendance-checkin`
+   - `save-attendance-records`
    - `submit-evaluation`
    - `get-evaluation-summary`
+   - `get-course-materials`
+   - `save-course-material`
+   - `submit-profile-change`
+   - `review-profile-change`
+   - `save-admin-account`
+   - `delete-admin-account`
+   - `save-admin-course`
+   - `delete-admin-course`
+   - `select-course-teacher`
    - `ask-assistant`
-   - Other functions present in the folder, such as course material, attendance, profile, or AI-history helpers
+   - `get-ai-history`
 4. In the UniCloud console, create or import the collections from `uniCloud-aliyun/database/*.schema.json`.
 5. Import seed data from `uniCloud-aliyun/database/import/`.
 6. Import account and role data from `uniCloud-aliyun/database/import/user_data/`.
@@ -65,7 +79,7 @@ Import files use UniCloud JSONL format: one JSON document per line. Files ending
 3. Open the generated local browser URL.
 4. Log in with an account from the `users` collection.
 
-H5 preview can display many non-auth pages with fallback data if UniCloud is unavailable. Login still requires the database-backed `users` collection for normal use.
+For deployed or database-backed use, login accounts come from the `users` collection. If UniCloud is unavailable during local H5 preview, the frontend fallback can still authenticate the built-in administrator account listed below so that core pages can be demonstrated with local fixture data.
 
 ### Optional: Local H5 Script
 
@@ -86,7 +100,7 @@ Provided administrator account:
 - Username: `admin001`
 - Password: `AiEms2026!`
 
-Additional student and teacher accounts should be created or imported in UniCloud. The account role controls the landing page:
+The current import file under `uniCloud-aliyun/database/import/user_data/users.import.json` includes the administrator account. Student and teacher accounts should be created from Admin Management or imported into UniCloud with matching student/teacher profile records. The account role controls the landing page:
 
 - `student`: Student Dashboard
 - `teacher`: Teacher Dashboard
@@ -202,8 +216,8 @@ Administrators manage users, course data, review workflows, and system-wide summ
 3. Student submits a leave request; teacher/admin approves it; attendance status becomes `on_leave`; cancellation restores the previous status where supported.
 4. Student submits anonymous multi-dimensional course evaluation; teacher/admin sees aggregated feedback only; the local knowledge base receives a course-feedback entry.
 5. Student/teacher submits editable profile fields for review; admin approves or rejects the pending change.
-6. Student performs a location check-in against the classroom geofence where the feature is enabled.
-7. Assistant answers from `knowledge_base`; unknown questions trigger a safe fallback.
+6. Teacher edits attendance records from the Teacher Dashboard. `on_leave` records are preserved by the leave workflow and are not manually overwritten in the editor.
+7. Assistant answers from local system data and `knowledge_base`; if an API key is configured, the cloud function can call the selected DeepSeek or OpenAI-compatible chat model. Without an API key, it returns a controlled local answer or fallback.
 
 ## 11. Data Maintenance
 
@@ -211,8 +225,9 @@ Administrators manage users, course data, review workflows, and system-wide summ
 - Store only salted one-way password verifiers in `users.password_hash`.
 - Do not store plain-text passwords.
 - Use `uniCloud-aliyun/database/README.md` for the full collection list, field descriptions, indexes, and import notes.
-- AI assistant history is stored in `ai_conversations` and `ai_messages`. History is scoped to the logged-in user.
+- Assistant history is stored in `ai_conversations` and `ai_messages`. History is scoped to the logged-in user.
 - `ask-assistant` and AI-history functions remove old assistant records when called, according to the implemented retention logic.
+- API keys entered on the Assistant page are stored locally in the browser/app runtime and sent with assistant requests. They are not part of the database import seed.
 
 ## 12. Troubleshooting
 
@@ -247,17 +262,18 @@ Administrators manage users, course data, review workflows, and system-wide summ
 - Confirm that the `knowledge_base` collection contains records.
 - Add relevant keywords to `knowledge_base.keywords`.
 - Ask a question that includes one of the stored keywords.
+- If you expect generated answers from an external provider, configure a valid API key and model in the Assistant page settings.
 
 ## 13. Tech Stack
 
 - Frontend: Uniapp with Vue 3
 - Cloud backend: UniCloud cloud functions on Aliyun
 - Database: UniCloud NoSQL collections
-- AI scope: local keyword retrieval from the `knowledge_base` collection
+- Assistant scope: local system/knowledge-base retrieval with optional DeepSeek or OpenAI-compatible chat completion when a key is configured
 
 ## 14. Scope Limits
 
 - This PoC does not use MySQL.
 - This PoC does not implement production SSO or full `uni-id` login.
-- This PoC does not connect DeepSeek, LangChain, or Pinecone yet.
+- This PoC does not implement production-grade vector search, LangChain, or Pinecone integration.
 - This PoC does not generate official academic documents.
